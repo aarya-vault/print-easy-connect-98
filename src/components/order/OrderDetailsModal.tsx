@@ -15,8 +15,7 @@ import {
   MessageCircle,
   MapPin,
   Star,
-  Calendar,
-  DollarSign
+  Calendar
 } from 'lucide-react';
 
 interface FileItem {
@@ -47,17 +46,6 @@ interface OrderDetails {
     timestamp: Date;
     description: string;
   }[];
-  pricing: {
-    subtotal: number;
-    tax: number;
-    total: number;
-    breakdown: {
-      item: string;
-      quantity: number;
-      rate: number;
-      amount: number;
-    }[];
-  };
 }
 
 interface OrderDetailsModalProps {
@@ -73,7 +61,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   onClose, 
   onOpenChat 
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'files' | 'timeline' | 'billing'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'files' | 'timeline'>('overview');
 
   if (!isOpen) return null;
 
@@ -136,8 +124,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
             {[
               { id: 'overview', label: 'Overview' },
               { id: 'files', label: `Files ${order.files ? `(${order.files.length})` : ''}` },
-              { id: 'timeline', label: 'Timeline' },
-              { id: 'billing', label: 'Billing' }
+              { id: 'timeline', label: 'Timeline' }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -185,12 +172,6 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                         <span className="font-medium">
                           {order.estimatedCompletion.toLocaleString()}
                         </span>
-                      </div>
-                    )}
-                    {order.totalAmount && (
-                      <div className="flex justify-between">
-                        <span className="text-neutral-600">Total:</span>
-                        <span className="font-semibold text-lg">₹{order.totalAmount}</span>
                       </div>
                     )}
                   </div>
@@ -290,46 +271,6 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                   </div>
                 </div>
               ))}
-            </div>
-          )}
-
-          {activeTab === 'billing' && order.pricing && (
-            <div className="space-y-6">
-              {/* Breakdown */}
-              <div>
-                <h3 className="font-semibold text-neutral-900 mb-4">Cost Breakdown</h3>
-                <div className="space-y-3">
-                  {order.pricing.breakdown.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between py-2 border-b border-neutral-100">
-                      <div>
-                        <span className="font-medium">{item.item}</span>
-                        <span className="text-sm text-neutral-600 ml-2">
-                          ({item.quantity} × ₹{item.rate})
-                        </span>
-                      </div>
-                      <span className="font-medium">₹{item.amount}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Summary */}
-              <div className="bg-neutral-50 p-4 rounded-lg">
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span>Subtotal:</span>
-                    <span>₹{order.pricing.subtotal}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Tax:</span>
-                    <span>₹{order.pricing.tax}</span>
-                  </div>
-                  <div className="flex justify-between font-semibold text-lg pt-2 border-t border-neutral-200">
-                    <span>Total:</span>
-                    <span>₹{order.pricing.total}</span>
-                  </div>
-                </div>
-              </div>
             </div>
           )}
         </CardContent>

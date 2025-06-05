@@ -21,12 +21,6 @@ export interface Shop {
   lastVisited?: Date;
   visitCount?: number;
   averageCompletionTime: string;
-  pricing: {
-    blackWhite: number;
-    color: number;
-    binding: number;
-    scanning: number;
-  };
 }
 
 export interface VisitedShop extends Shop {
