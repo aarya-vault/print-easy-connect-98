@@ -53,8 +53,10 @@ const CustomerDashboard: React.FC = () => {
           <div className="grid md:grid-cols-2 gap-6 mb-8">
             <Card className="border-2 border-printeasy-yellow/30 hover:border-printeasy-yellow/50 transition-colors cursor-pointer rounded-printeasy">
               <CardHeader>
-                <CardTitle className="text-printeasy-black flex items-center gap-2">
-                  <span className="text-2xl">📁</span>
+                <CardTitle className="text-printeasy-black flex items-center gap-3">
+                  <div className="w-8 h-8 bg-printeasy-yellow rounded-printeasy flex items-center justify-center">
+                    <div className="w-4 h-5 bg-printeasy-black rounded-sm"></div>
+                  </div>
                   Upload Digital Files
                 </CardTitle>
                 <CardDescription>
@@ -73,8 +75,10 @@ const CustomerDashboard: React.FC = () => {
 
             <Card className="border-2 border-printeasy-black/30 hover:border-printeasy-black/50 transition-colors cursor-pointer rounded-printeasy">
               <CardHeader>
-                <CardTitle className="text-printeasy-black flex items-center gap-2">
-                  <span className="text-2xl">📋</span>
+                <CardTitle className="text-printeasy-black flex items-center gap-3">
+                  <div className="w-8 h-8 bg-printeasy-black rounded-printeasy flex items-center justify-center">
+                    <div className="w-4 h-4 border-2 border-white rounded-sm"></div>
+                  </div>
                   Describe Physical Item
                 </CardTitle>
                 <CardDescription>
@@ -102,6 +106,9 @@ const CustomerDashboard: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="text-center py-8 text-printeasy-gray-dark">
+                <div className="w-16 h-16 bg-printeasy-gray-light rounded-full mx-auto mb-4 flex items-center justify-center">
+                  <div className="w-8 h-8 border-2 border-printeasy-gray-medium rounded-full"></div>
+                </div>
                 <p className="text-lg mb-4">No orders yet!</p>
                 <p className="text-sm">
                   When you place your first order, it will appear here with real-time status updates.

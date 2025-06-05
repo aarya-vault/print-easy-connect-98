@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -207,7 +206,7 @@ const Home: React.FC = () => {
         <div className="mt-16 grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
           <div className="text-center">
             <div className="w-16 h-16 bg-printeasy-yellow rounded-printeasy mx-auto mb-4 flex items-center justify-center">
-              <span className="text-2xl">📱</span>
+              <div className="w-8 h-8 border-2 border-printeasy-black rounded-lg"></div>
             </div>
             <h3 className="font-semibold text-printeasy-black mb-2">Instant Access</h3>
             <p className="text-printeasy-gray-dark text-sm">
@@ -217,7 +216,7 @@ const Home: React.FC = () => {
           
           <div className="text-center">
             <div className="w-16 h-16 bg-printeasy-yellow rounded-printeasy mx-auto mb-4 flex items-center justify-center">
-              <span className="text-2xl">📄</span>
+              <div className="w-8 h-10 bg-printeasy-black rounded-sm"></div>
             </div>
             <h3 className="font-semibold text-printeasy-black mb-2">Any Print Job</h3>
             <p className="text-printeasy-gray-dark text-sm">
@@ -227,7 +226,7 @@ const Home: React.FC = () => {
           
           <div className="text-center">
             <div className="w-16 h-16 bg-printeasy-yellow rounded-printeasy mx-auto mb-4 flex items-center justify-center">
-              <span className="text-2xl">⚡</span>
+              <div className="w-3 h-8 bg-printeasy-black transform rotate-12"></div>
             </div>
             <h3 className="font-semibold text-printeasy-black mb-2">Real-time Updates</h3>
             <p className="text-printeasy-gray-dark text-sm">

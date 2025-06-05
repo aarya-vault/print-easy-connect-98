@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import OrderCreationFlow from "@/components/order/OrderCreationFlow";
 
 import Home from "./pages/Home";
 import CustomerDashboard from "./pages/customer/Dashboard";
@@ -31,6 +32,14 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['customer']}>
                   <CustomerDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/customer/order/new" 
+              element={
+                <ProtectedRoute allowedRoles={['customer']}>
+                  <OrderCreationFlow />
                 </ProtectedRoute>
               } 
             />
