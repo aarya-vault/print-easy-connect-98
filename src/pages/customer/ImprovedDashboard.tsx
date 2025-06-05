@@ -176,7 +176,7 @@ const ImprovedCustomerDashboard: React.FC = () => {
       createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
       filesCount: 2
     }
-  ];
+  ]);
 
   // Filter functions
   const filteredShops = visitedShops.filter(shop =>
