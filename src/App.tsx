@@ -14,67 +14,77 @@ import CustomerDashboard from "./pages/customer/Dashboard";
 import ShopDashboard from "./pages/shop/Dashboard";
 import AdminDashboard from "./pages/admin/Dashboard";
 import NotFound from "./pages/NotFound";
+import { useEffect } from "react";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <AuthProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            
-            {/* Public Routes */}
-            <Route path="/shop/apply" element={<ShopOnboarding />} />
-            
-            {/* Customer Routes */}
-            <Route 
-              path="/customer/dashboard" 
-              element={
-                <ProtectedRoute allowedRoles={['customer']}>
-                  <CustomerDashboard />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/customer/order/new" 
-              element={
-                <ProtectedRoute allowedRoles={['customer']}>
-                  <OrderCreationFlow />
-                </ProtectedRoute>
-              } 
-            />
-            
-            {/* Shop Owner Routes */}
-            <Route 
-              path="/shop/dashboard" 
-              element={
-                <ProtectedRoute allowedRoles={['shop_owner']}>
-                  <ShopDashboard />
-                </ProtectedRoute>
-              } 
-            />
-            
-            {/* Admin Routes */}
-            <Route 
-              path="/admin/dashboard" 
-              element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              } 
-            />
-            
-            {/* Catch-all route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+// Add global CSS custom property for font family
+const App = () => {
+  // Apply font family globally
+  useEffect(() => {
+    document.documentElement.style.setProperty('--font-sans', '"Poppins", sans-serif');
+    document.body.style.fontFamily = 'Poppins, sans-serif';
+  }, []);
+  
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <AuthProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              
+              {/* Public Routes */}
+              <Route path="/shop/apply" element={<ShopOnboarding />} />
+              
+              {/* Customer Routes */}
+              <Route 
+                path="/customer/dashboard" 
+                element={
+                  <ProtectedRoute allowedRoles={['customer']}>
+                    <CustomerDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/customer/order/new" 
+                element={
+                  <ProtectedRoute allowedRoles={['customer']}>
+                    <OrderCreationFlow />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* Shop Owner Routes */}
+              <Route 
+                path="/shop/dashboard" 
+                element={
+                  <ProtectedRoute allowedRoles={['shop_owner']}>
+                    <ShopDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* Admin Routes */}
+              <Route 
+                path="/admin/dashboard" 
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* Catch-all route */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

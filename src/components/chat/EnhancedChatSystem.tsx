@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Phone, Clock, Send, MessageSquare, X } from 'lucide-react';
+import { Phone, Clock, Send, MessageSquare, X, Users } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -24,23 +24,39 @@ interface EnhancedChatSystemProps {
     isOnline: boolean;
     avgResponseTime: string;
   };
+  userRole?: 'customer' | 'shop_owner';
 }
 
-const predefinedMessages = [
-  "Your order is being processed and will be ready soon.",
-  "We have received your order and started printing.",
-  "Your prints are ready for pickup!",
-  "Could you please clarify the paper size requirement?",
-  "Do you need binding for these documents?",
-  "Your order is completed. Thank you for choosing us!",
-  "We're experiencing high volume. Estimated delay: 30 minutes.",
-  "All documents printed successfully. Total: ₹",
+// Role-based quick replies
+const customerQuickReplies = [
+  "When will my order be ready?",
+  "Can I modify my order?",
+  "What's the total cost?",
+  "I need urgent printing",
+  "Can you add more copies?",
+  "Is my order being processed?",
+  "When can I pick up?",
+  "Any additional charges?",
+];
+
+const shopOwnerQuickReplies = [
+  "Order received, processing started",
+  "Ready for pickup in 15 minutes",
+  "Estimated completion in 30 minutes", 
+  "Additional clarification needed",
+  "Order completed successfully",
+  "Minor delay expected - 10 minutes",
+  "Please confirm paper size requirement",
+  "Your order is now ready",
+  "Processing completed, awaiting pickup",
+  "Quality check in progress",
 ];
 
 const EnhancedChatSystem: React.FC<EnhancedChatSystemProps> = ({ 
   orderId, 
   isOpen, 
   onClose,
+  userRole = 'customer',
   shopInfo = {
     name: "Quick Print Shop",
     phone: "+91 98765 43210",
@@ -59,16 +75,18 @@ const EnhancedChatSystem: React.FC<EnhancedChatSystemProps> = ({
     {
       id: '2',
       text: 'Hi! We have received your order. We\'ll start processing it shortly.',
-      sender: 'shop',
+      sender: userRole === 'customer' ? 'shop' : 'customer',
       timestamp: new Date(Date.now() - 5000),
       status: 'delivered'
     }
   ]);
   const [newMessage, setNewMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [showPredefined, setShowPredefined] = useState(false);
+  const [showQuickReplies, setShowQuickReplies] = useState(false);
   const [shopNotified, setShopNotified] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const quickReplies = userRole === 'customer' ? customerQuickReplies : shopOwnerQuickReplies;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -85,19 +103,18 @@ const EnhancedChatSystem: React.FC<EnhancedChatSystemProps> = ({
     const message: Message = {
       id: Date.now().toString(),
       text: text,
-      sender: 'customer',
+      sender: userRole,
       timestamp: new Date(),
       status: 'sent'
     };
 
     setMessages(prev => [...prev, message]);
     setNewMessage('');
-    setShowPredefined(false);
+    setShowQuickReplies(false);
 
-    // Notify shop owner
-    if (!shopNotified) {
+    // Auto-notify system for customers
+    if (userRole === 'customer' && !shopNotified) {
       setShopNotified(true);
-      // Add system message about notification
       setTimeout(() => {
         const notificationMessage: Message = {
           id: (Date.now() + 1).toString(),
@@ -110,15 +127,17 @@ const EnhancedChatSystem: React.FC<EnhancedChatSystemProps> = ({
       }, 1000);
     }
 
-    // Simulate shop response
+    // Simulate response
     setTimeout(() => {
       setIsTyping(true);
       setTimeout(() => {
         setIsTyping(false);
         const response: Message = {
           id: (Date.now() + 2).toString(),
-          text: 'Thank you for your message. We\'ll look into this and get back to you.',
-          sender: 'shop',
+          text: userRole === 'customer' 
+            ? 'Thank you for your message. We\'ll look into this and get back to you.'
+            : 'Thanks for the update! I appreciate the communication.',
+          sender: userRole === 'customer' ? 'shop' : 'customer',
           timestamp: new Date(),
           status: 'delivered'
         };
@@ -127,37 +146,37 @@ const EnhancedChatSystem: React.FC<EnhancedChatSystemProps> = ({
     }, 500);
   };
 
-  const sendPredefinedMessage = (message: string) => {
-    sendMessage(message);
-  };
-
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-lg h-[700px] border border-neutral-200 shadow-strong bg-white flex flex-col">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-lg h-[700px] border-0 shadow-premium bg-white flex flex-col">
         {/* Header */}
-        <CardHeader className="border-b border-neutral-200 pb-4">
+        <CardHeader className="border-b border-neutral-200 bg-gradient-golden-soft">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-4">
               <div className="relative">
-                <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
-                  <MessageSquare className="w-5 h-5 text-yellow-600" />
+                <div className="w-12 h-12 bg-gradient-golden rounded-full flex items-center justify-center">
+                  {userRole === 'customer' ? (
+                    <MessageSquare className="w-6 h-6 text-white" />
+                  ) : (
+                    <Users className="w-6 h-6 text-white" />
+                  )}
                 </div>
                 {shopInfo.isOnline && (
                   <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
                 )}
               </div>
               <div>
-                <CardTitle className="text-lg font-medium text-neutral-900">
-                  {shopInfo.name}
+                <CardTitle className="text-xl font-semibold text-neutral-900">
+                  {userRole === 'customer' ? shopInfo.name : 'Customer'}
                 </CardTitle>
-                <div className="flex items-center space-x-2 mt-1">
-                  <Badge variant={shopInfo.isOnline ? "default" : "secondary"} className="text-xs">
+                <div className="flex items-center space-x-3 mt-1">
+                  <Badge variant={shopInfo.isOnline ? "default" : "secondary"} className="text-xs font-medium">
                     {shopInfo.isOnline ? "Online" : "Offline"}
                   </Badge>
                   {orderId && (
-                    <span className="text-xs text-neutral-500">Order #{orderId}</span>
+                    <span className="text-xs text-neutral-600 font-medium">Order #{orderId}</span>
                   )}
                 </div>
               </div>
@@ -182,34 +201,36 @@ const EnhancedChatSystem: React.FC<EnhancedChatSystemProps> = ({
             </div>
           </div>
           
-          {shopInfo.isOnline && (
-            <div className="flex items-center space-x-2 mt-3 text-xs text-neutral-600">
+          {shopInfo.isOnline && userRole === 'customer' && (
+            <div className="flex items-center space-x-2 mt-3 text-xs text-neutral-700">
               <Clock className="w-3 h-3" />
-              <span>Usually responds in {shopInfo.avgResponseTime}</span>
+              <span className="font-medium">Usually responds in {shopInfo.avgResponseTime}</span>
             </div>
           )}
         </CardHeader>
 
         {/* Messages Area */}
-        <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
+        <CardContent className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-white to-neutral-50/30">
           {messages.map((message) => (
             <div
               key={message.id}
-              className={`flex ${message.sender === 'customer' ? 'justify-end' : 'justify-start'}`}
+              className={`flex ${message.sender === userRole ? 'justify-end' : 'justify-start'}`}
             >
-              <div className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl ${
-                message.sender === 'customer'
-                  ? 'bg-yellow-500 text-white'
-                  : message.sender === 'shop'
-                  ? 'bg-neutral-100 text-neutral-900'
-                  : 'bg-blue-50 text-blue-800 text-center text-sm mx-auto'
+              <div className={`max-w-xs lg:max-w-md px-5 py-4 rounded-2xl shadow-soft ${
+                message.sender === userRole
+                  ? 'bg-gradient-golden text-white'
+                  : message.sender === 'shop' || message.sender === 'customer'
+                  ? 'bg-white border border-neutral-200 text-neutral-900'
+                  : 'bg-blue-50 border border-blue-200 text-blue-800 text-center text-sm mx-auto'
               }`}>
-                <p className="text-sm">{message.text}</p>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-xs opacity-70">
+                <p className="text-sm font-medium leading-relaxed">{message.text}</p>
+                <div className="flex items-center justify-between mt-3">
+                  <span className={`text-xs font-medium ${
+                    message.sender === userRole ? 'text-white/80' : 'text-neutral-500'
+                  }`}>
                     {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
-                  {message.sender === 'customer' && message.status && (
+                  {message.sender === userRole && message.status && (
                     <div className="flex space-x-1">
                       <div className={`w-2 h-2 rounded-full ${
                         message.status === 'sent' ? 'bg-white/60' :
@@ -230,8 +251,8 @@ const EnhancedChatSystem: React.FC<EnhancedChatSystemProps> = ({
 
           {isTyping && (
             <div className="flex justify-start">
-              <div className="bg-neutral-100 px-4 py-3 rounded-2xl">
-                <div className="flex space-x-1">
+              <div className="bg-white border border-neutral-200 px-5 py-4 rounded-2xl shadow-soft">
+                <div className="flex space-x-2">
                   <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce"></div>
                   <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                   <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
@@ -243,16 +264,17 @@ const EnhancedChatSystem: React.FC<EnhancedChatSystemProps> = ({
         </CardContent>
 
         {/* Quick Responses */}
-        {showPredefined && (
-          <div className="border-t border-neutral-200 p-4 bg-neutral-50 max-h-40 overflow-y-auto">
+        {showQuickReplies && (
+          <div className="border-t border-neutral-200 p-4 bg-gradient-golden-soft/30 max-h-48 overflow-y-auto">
             <div className="grid gap-2">
-              {predefinedMessages.map((msg, index) => (
+              <h4 className="font-semibold text-neutral-900 mb-2 text-sm">Quick Replies:</h4>
+              {quickReplies.map((msg, index) => (
                 <Button
                   key={index}
                   variant="outline"
                   size="sm"
-                  onClick={() => sendPredefinedMessage(msg)}
-                  className="text-left text-xs justify-start h-auto py-2 border-neutral-300 hover:bg-white"
+                  onClick={() => sendMessage(msg)}
+                  className="text-left text-xs justify-start h-auto py-3 border-neutral-300 hover:bg-white hover:border-golden-300 transition-all font-medium"
                 >
                   {msg}
                 </Button>
@@ -263,28 +285,33 @@ const EnhancedChatSystem: React.FC<EnhancedChatSystemProps> = ({
 
         {/* Input Area */}
         <div className="border-t border-neutral-200 p-4 bg-white">
-          <div className="flex items-center space-x-2 mb-2">
+          <div className="flex items-center space-x-3 mb-3">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setShowPredefined(!showPredefined)}
-              className="border-neutral-300 hover:bg-neutral-50 text-xs"
+              onClick={() => setShowQuickReplies(!showQuickReplies)}
+              className="border-golden-300 text-golden-700 hover:bg-golden-50 text-xs font-medium"
             >
               Quick Replies
             </Button>
+            {userRole === 'customer' && (
+              <div className="text-xs text-neutral-600 font-medium">
+                💡 Use quick replies for faster communication
+              </div>
+            )}
           </div>
-          <div className="flex space-x-2">
+          <div className="flex space-x-3">
             <Input
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               placeholder="Type your message..."
-              className="flex-1 border-neutral-200 focus:border-yellow-500 focus:ring-yellow-500"
+              className="flex-1 border-2 border-neutral-200 focus:border-golden-500 focus:ring-golden-100 rounded-xl font-medium"
               onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
             />
             <Button
               onClick={() => sendMessage()}
               disabled={!newMessage.trim()}
-              className="bg-yellow-500 hover:bg-yellow-600 text-white px-4"
+              className="bg-gradient-golden hover:shadow-golden text-white px-6 rounded-xl font-semibold"
             >
               <Send className="w-4 h-4" />
             </Button>
