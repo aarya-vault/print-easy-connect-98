@@ -1,8 +1,30 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload, UserCheck } from 'lucide-react';
+import { 
+  Upload, 
+  UserCheck, 
+  Bell, 
+  CheckCircle, 
+  Clock, 
+  Package, 
+  X, 
+  BarChart3, 
+  Users, 
+  Star, 
+  TrendingUp,
+  Printer,
+  Copy,
+  Scan,
+  Scissors,
+  Palette,
+  QrCode,
+  Image,
+  FileText
+} from 'lucide-react';
 import EnhancedChatSystem from '@/components/chat/EnhancedChatSystem';
 import OrderSection from '@/components/shop/OrderSection';
 import OrderFilters from '@/components/shop/OrderFilters';
