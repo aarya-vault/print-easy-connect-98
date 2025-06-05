@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,12 +62,34 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// PrintEasy brand colors
+				printeasy: {
+					yellow: '#FFD700',
+					'yellow-light': '#FFF176',
+					'yellow-dark': '#F57F17',
+					black: '#000000',
+					'gray-light': '#F5F5F5',
+					'gray-medium': '#9E9E9E',
+					'gray-dark': '#424242'
 				}
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
-				sm: 'calc(var(--radius) - 4px)'
+				sm: 'calc(var(--radius) - 4px)',
+				// PrintEasy standard border radius
+				'printeasy': '12px'
+			},
+			spacing: {
+				// PrintEasy standard spacing
+				'printeasy': '16px',
+				'printeasy-lg': '24px'
+			},
+			backgroundImage: {
+				// PrintEasy approved gradients only
+				'gradient-yellow-white': 'linear-gradient(135deg, #FFD700 0%, #FFFFFF 100%)',
+				'gradient-white-black': 'linear-gradient(135deg, #FFFFFF 0%, #000000 100%)',
 			},
 			keyframes: {
 				'accordion-down': {
@@ -84,11 +107,33 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'fade-in': {
+					'0%': {
+						opacity: '0',
+						transform: 'translateY(10px)'
+					},
+					'100%': {
+						opacity: '1',
+						transform: 'translateY(0)'
+					}
+				},
+				'scale-in': {
+					'0%': {
+						transform: 'scale(0.95)',
+						opacity: '0'
+					},
+					'100%': {
+						transform: 'scale(1)',
+						opacity: '1'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fade-in': 'fade-in 0.3s ease-out',
+				'scale-in': 'scale-in 0.2s ease-out'
 			}
 		}
 	},
