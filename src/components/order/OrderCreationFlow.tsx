@@ -76,9 +76,11 @@ const OrderCreationFlow: React.FC = () => {
         lastVisited: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
         visitCount: 8,
         averageCompletionTime: '15-20 mins',
+        uploadSlug: 'quick-print-solutions',
+        isActive: true,
         orderHistory: [
-          { orderId: 'PE123456', date: new Date(), amount: 250, status: 'completed' },
-          { orderId: 'PE123455', date: new Date(), amount: 150, status: 'completed' }
+          { orderId: 'PE123456', date: new Date(), status: 'completed', orderType: 'uploaded-files' },
+          { orderId: 'PE123455', date: new Date(), status: 'completed', orderType: 'walk-in' }
         ]
       },
       {
@@ -105,8 +107,10 @@ const OrderCreationFlow: React.FC = () => {
         lastVisited: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
         visitCount: 3,
         averageCompletionTime: '10-15 mins',
+        uploadSlug: 'campus-copy-center',
+        isActive: true,
         orderHistory: [
-          { orderId: 'PE123454', date: new Date(), amount: 75, status: 'completed' }
+          { orderId: 'PE123454', date: new Date(), status: 'completed', orderType: 'walk-in' }
         ]
       }
     ];
@@ -230,7 +234,7 @@ const OrderCreationFlow: React.FC = () => {
                   </div>
                   <div className="flex items-center space-x-4">
                     <div className="w-4 h-4 bg-neutral-300 rounded-full"></div>
-                    <span className="text-neutral-400">Ready for Pickup</span>
+                    <span className="text-neutral-400">Ready</span>
                   </div>
                   <div className="flex items-center space-x-4">
                     <div className="w-4 h-4 bg-neutral-300 rounded-full"></div>

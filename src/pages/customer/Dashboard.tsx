@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -226,13 +225,14 @@ const CustomerDashboard: React.FC = () => {
     setSelectedOrderId(orderId);
   };
 
-  // Create detailed order for modal (removed pricing)
+  // Create detailed order for modal (removed pricing) - Fixed to include type property
   const getOrderDetails = (orderId: string) => {
     const order = orders.find(o => o.id === orderId);
     if (!order) return null;
 
     return {
       ...order,
+      type: order.orderType, // Add the required type property
       timeline: [
         {
           status: 'Order Placed',
