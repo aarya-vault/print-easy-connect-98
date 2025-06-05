@@ -11,7 +11,9 @@ import {
   Verified,
   TrendingUp,
   Calendar,
-  Plus
+  Plus,
+  Upload,
+  UserCheck
 } from 'lucide-react';
 import { VisitedShop } from '@/types/shop';
 
@@ -57,6 +59,12 @@ const VisitedShopsSection: React.FC<VisitedShopsSectionProps> = ({
     }
   };
 
+  const getOrderTypeStats = (orderHistory: VisitedShop['orderHistory']) => {
+    const uploadedFiles = orderHistory.filter(order => order.orderType === 'uploaded-files').length;
+    const walkIns = orderHistory.filter(order => order.orderType === 'walk-in').length;
+    return { uploadedFiles, walkIns };
+  };
+
   return (
     <div className="space-y-6">
       {title && (
@@ -91,19 +99,20 @@ const VisitedShopsSection: React.FC<VisitedShopsSectionProps> = ({
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {visitedShops.map((shop) => {
             const status = getCurrentStatus(shop.operatingHours);
+            const orderStats = getOrderTypeStats(shop.orderHistory);
             return (
               <Card 
                 key={shop.id} 
                 className="border-2 shadow-medium bg-white/90 backdrop-blur-lg hover:shadow-premium transition-all duration-300 group cursor-pointer border-neutral-200 hover:border-golden-300"
               >
-                <CardContent className="p-6">
+                <CardContent className="p-4 md:p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-neutral-900 text-lg group-hover:text-golden-700 transition-colors">
+                        <h3 className="font-semibold text-neutral-900 text-base md:text-lg group-hover:text-golden-700 transition-colors">
                           {shop.name}
                         </h3>
                         {shop.verified && (
@@ -164,10 +173,10 @@ const VisitedShopsSection: React.FC<VisitedShopsSectionProps> = ({
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 mb-4">
                     <Button
                       size="sm"
-                      className="flex-1 bg-gradient-golden hover:shadow-golden text-white font-semibold"
+                      className="flex-1 bg-gradient-golden hover:shadow-golden text-white font-semibold text-xs md:text-sm"
                       onClick={() => {
                         // Navigate to order creation with pre-selected shop
                         window.location.href = `/customer/order/new?shop=${shop.id}`;
@@ -186,10 +195,24 @@ const VisitedShopsSection: React.FC<VisitedShopsSectionProps> = ({
                   </div>
 
                   {shop.orderHistory && shop.orderHistory.length > 0 && (
-                    <div className="mt-4 pt-4 border-t border-neutral-200">
-                      <p className="text-xs text-neutral-500 font-medium">
-                        Recent orders: {shop.orderHistory.length} completed
-                      </p>
+                    <div className="pt-4 border-t border-neutral-200">
+                      <div className="flex items-center justify-between text-xs text-neutral-500 font-medium">
+                        <span>Order history: {shop.orderHistory.length} total</span>
+                        <div className="flex items-center gap-3">
+                          {orderStats.uploadedFiles > 0 && (
+                            <div className="flex items-center gap-1">
+                              <Upload className="w-3 h-3 text-blue-600" />
+                              <span>{orderStats.uploadedFiles}</span>
+                            </div>
+                          )}
+                          {orderStats.walkIns > 0 && (
+                            <div className="flex items-center gap-1">
+                              <UserCheck className="w-3 h-3 text-purple-600" />
+                              <span>{orderStats.walkIns}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   )}
                 </CardContent>

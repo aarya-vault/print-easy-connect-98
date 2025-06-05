@@ -21,6 +21,8 @@ export interface Shop {
   lastVisited?: Date;
   visitCount?: number;
   averageCompletionTime: string;
+  uploadSlug: string; // Unique slug for QR code uploads
+  isActive: boolean; // For admin control
 }
 
 export interface VisitedShop extends Shop {
@@ -29,7 +31,13 @@ export interface VisitedShop extends Shop {
   orderHistory: {
     orderId: string;
     date: Date;
-    amount: number;
     status: string;
+    orderType: 'walk-in' | 'uploaded-files';
   }[];
+}
+
+export interface OrderType {
+  type: 'walk-in' | 'uploaded-files';
+  count: number;
+  urgentCount: number;
 }
