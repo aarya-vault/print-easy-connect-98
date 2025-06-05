@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -86,90 +87,99 @@ const Home: React.FC = () => {
   };
 
   const formatPhoneInput = (value: string) => {
-    // Remove any non-numeric characters
     const numeric = value.replace(/\D/g, '');
-    // Limit to 10 digits
     return numeric.slice(0, 10);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-printeasy-gray-light to-white">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
+    <div className="min-h-screen bg-gradient-yellow-white">
+      {/* Floating Elements for Visual Interest */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-white-gray rounded-full opacity-30 animate-pulse-glow"></div>
+        <div className="absolute bottom-32 right-16 w-24 h-24 bg-gradient-yellow-light rounded-printeasy opacity-40 animate-gradient-shift"></div>
+        <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-gradient-radial-white rounded-full opacity-20"></div>
+      </div>
+
+      <div className="container mx-auto px-4 py-8 relative z-10">
+        {/* Header with Enhanced Typography */}
         <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold text-printeasy-black mb-4">
-            Print<span className="text-printeasy-yellow">Easy</span>
+          <h1 className="text-6xl font-bold mb-4">
+            <span className="bg-gradient-black-white bg-clip-text text-transparent">Print</span>
+            <span className="bg-gradient-yellow-light bg-clip-text text-transparent">Easy</span>
           </h1>
-          <p className="text-xl text-printeasy-gray-dark max-w-2xl mx-auto">
-            The simplest way to get any print job done. Upload files or describe physical items - 
-            we make printing effortless.
+          <div className="w-24 h-1 bg-gradient-yellow-white mx-auto mb-6 rounded-full"></div>
+          <p className="text-xl text-printeasy-gray-dark max-w-2xl mx-auto leading-relaxed">
+            The most elegant printing platform. Upload files instantly or describe physical items - 
+            we transform complexity into simplicity.
           </p>
         </div>
 
-        {/* Main Content */}
-        <div className="max-w-md mx-auto">
+        {/* Main Login Card */}
+        <div className="max-w-md mx-auto mb-16">
           {!showBusinessLogin ? (
             /* Customer Login */
-            <Card className="border-2 border-printeasy-yellow/20 shadow-lg rounded-printeasy">
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl text-printeasy-black">Get Started</CardTitle>
+            <Card className="border-0 shadow-2xl bg-gradient-white-gray rounded-printeasy overflow-hidden">
+              <div className="h-2 bg-gradient-yellow-white"></div>
+              <CardHeader className="text-center bg-white">
+                <CardTitle className="text-2xl text-printeasy-black mb-2">Begin Your Journey</CardTitle>
                 <CardDescription className="text-printeasy-gray-dark">
-                  Enter your phone number to begin your printing journey
+                  Enter your phone number to access instant printing
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <form onSubmit={handlePhoneLogin} className="space-y-4">
-                  <div>
-                    <div className="flex">
-                      <div className="flex items-center px-3 bg-printeasy-gray-light border border-r-0 border-gray-300 rounded-l-printeasy text-printeasy-gray-dark">
+              <CardContent className="bg-white">
+                <form onSubmit={handlePhoneLogin} className="space-y-6">
+                  <div className="relative">
+                    <div className="flex overflow-hidden rounded-printeasy shadow-lg">
+                      <div className="flex items-center px-4 bg-gradient-gray-white text-printeasy-gray-dark font-medium">
                         +91
                       </div>
                       <Input
                         type="tel"
-                        placeholder="Enter your phone number"
+                        placeholder="Enter phone number"
                         value={phone}
                         onChange={(e) => setPhone(formatPhoneInput(e.target.value))}
-                        className="rounded-l-none rounded-r-printeasy border-l-0 focus:ring-printeasy-yellow focus:border-printeasy-yellow"
+                        className="border-0 rounded-none bg-white focus:ring-0 focus:outline-none text-lg"
                         disabled={isLoading}
                       />
                     </div>
                   </div>
                   <Button
                     type="submit"
-                    className="w-full bg-printeasy-yellow hover:bg-printeasy-yellow-dark text-printeasy-black font-semibold rounded-printeasy h-12"
+                    className="w-full bg-gradient-yellow-white hover:bg-gradient-yellow-light text-printeasy-black font-semibold rounded-printeasy h-14 text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:animate-pulse-glow"
                     disabled={isLoading || phone.length !== 10}
                   >
-                    {isLoading ? 'Getting Started...' : 'Get Started'}
+                    {isLoading ? 'Connecting...' : 'Start Printing'}
                   </Button>
                 </form>
                 
-                <div className="mt-6 text-center">
+                <div className="mt-8 text-center">
                   <button
                     onClick={() => setShowBusinessLogin(true)}
-                    className="text-printeasy-gray-dark hover:text-printeasy-black text-sm underline"
+                    className="text-printeasy-gray-dark hover:text-printeasy-black text-sm underline transition-colors"
                   >
-                    Shop Owner or Admin? Click here
+                    Business Portal Access
                   </button>
                 </div>
               </CardContent>
             </Card>
           ) : (
             /* Business Login */
-            <Card className="border-2 border-printeasy-black/20 shadow-lg rounded-printeasy">
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl text-printeasy-black">Business Login</CardTitle>
+            <Card className="border-0 shadow-2xl bg-gradient-white-black rounded-printeasy overflow-hidden">
+              <div className="h-2 bg-gradient-black-gray"></div>
+              <CardHeader className="text-center bg-white">
+                <CardTitle className="text-2xl text-printeasy-black mb-2">Business Portal</CardTitle>
                 <CardDescription className="text-printeasy-gray-dark">
-                  Shop owners and admins, please login with your credentials
+                  Shop owners and administrators, access your dashboard
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <form onSubmit={handleBusinessLogin} className="space-y-4">
+              <CardContent className="bg-white">
+                <form onSubmit={handleBusinessLogin} className="space-y-6">
                   <Input
                     type="email"
-                    placeholder="Email address"
+                    placeholder="Business email address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="rounded-printeasy focus:ring-printeasy-yellow focus:border-printeasy-yellow"
+                    className="rounded-printeasy border-2 border-printeasy-gray-light focus:border-printeasy-black transition-colors text-lg h-12"
                     disabled={isLoading}
                   />
                   <Input
@@ -177,24 +187,24 @@ const Home: React.FC = () => {
                     placeholder="Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="rounded-printeasy focus:ring-printeasy-yellow focus:border-printeasy-yellow"
+                    className="rounded-printeasy border-2 border-printeasy-gray-light focus:border-printeasy-black transition-colors text-lg h-12"
                     disabled={isLoading}
                   />
                   <Button
                     type="submit"
-                    className="w-full bg-printeasy-black hover:bg-printeasy-gray-dark text-white font-semibold rounded-printeasy h-12"
+                    className="w-full bg-gradient-black-gray hover:bg-printeasy-black text-white font-semibold rounded-printeasy h-14 text-lg shadow-lg hover:shadow-xl transition-all duration-300"
                     disabled={isLoading || !email || !password}
                   >
-                    {isLoading ? 'Logging in...' : 'Login'}
+                    {isLoading ? 'Authenticating...' : 'Access Portal'}
                   </Button>
                 </form>
                 
-                <div className="mt-6 text-center">
+                <div className="mt-8 text-center">
                   <button
                     onClick={() => setShowBusinessLogin(false)}
-                    className="text-printeasy-gray-dark hover:text-printeasy-black text-sm underline"
+                    className="text-printeasy-gray-dark hover:text-printeasy-black text-sm underline transition-colors"
                   >
-                    ← Back to customer login
+                    ← Customer Login
                   </button>
                 </div>
               </CardContent>
@@ -202,36 +212,71 @@ const Home: React.FC = () => {
           )}
         </div>
 
-        {/* Features Section */}
-        <div className="mt-16 grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-printeasy-yellow rounded-printeasy mx-auto mb-4 flex items-center justify-center">
-              <div className="w-8 h-8 border-2 border-printeasy-black rounded-lg"></div>
-            </div>
-            <h3 className="font-semibold text-printeasy-black mb-2">Instant Access</h3>
-            <p className="text-printeasy-gray-dark text-sm">
-              No passwords, no OTPs. Just enter your phone number and start printing.
-            </p>
-          </div>
+        {/* Enhanced Features Section */}
+        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          {/* Instant Access Feature */}
+          <Card className="border-0 bg-gradient-white-gray rounded-printeasy shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden">
+            <div className="h-1 bg-gradient-yellow-white"></div>
+            <CardContent className="p-8 text-center bg-white">
+              <div className="relative mb-6">
+                <div className="w-20 h-20 bg-gradient-radial-yellow rounded-full mx-auto flex items-center justify-center shadow-lg">
+                  <div className="w-8 h-12 bg-white rounded-sm shadow-inner relative">
+                    <div className="absolute top-1 left-1 right-1 h-1 bg-printeasy-gray-light rounded"></div>
+                    <div className="absolute top-3 left-1 right-1 h-1 bg-printeasy-gray-light rounded"></div>
+                  </div>
+                </div>
+              </div>
+              <h3 className="font-bold text-printeasy-black mb-3 text-lg">Instant Access</h3>
+              <p className="text-printeasy-gray-dark text-sm leading-relaxed">
+                No complex registrations. Just your phone number and you're printing in seconds.
+              </p>
+            </CardContent>
+          </Card>
           
-          <div className="text-center">
-            <div className="w-16 h-16 bg-printeasy-yellow rounded-printeasy mx-auto mb-4 flex items-center justify-center">
-              <div className="w-8 h-10 bg-printeasy-black rounded-sm"></div>
-            </div>
-            <h3 className="font-semibold text-printeasy-black mb-2">Any Print Job</h3>
-            <p className="text-printeasy-gray-dark text-sm">
-              Upload digital files or describe physical items. We handle everything.
-            </p>
-          </div>
+          {/* Universal Printing Feature */}
+          <Card className="border-0 bg-gradient-white-gray rounded-printeasy shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden">
+            <div className="h-1 bg-gradient-yellow-white"></div>
+            <CardContent className="p-8 text-center bg-white">
+              <div className="relative mb-6">
+                <div className="w-20 h-20 bg-gradient-radial-yellow rounded-full mx-auto flex items-center justify-center shadow-lg">
+                  <div className="relative">
+                    <div className="w-10 h-12 bg-white rounded-sm shadow-inner"></div>
+                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-yellow-light rounded-full shadow-sm"></div>
+                  </div>
+                </div>
+              </div>
+              <h3 className="font-bold text-printeasy-black mb-3 text-lg">Universal Printing</h3>
+              <p className="text-printeasy-gray-dark text-sm leading-relaxed">
+                Any file type, any description. Our intelligent system handles everything seamlessly.
+              </p>
+            </CardContent>
+          </Card>
           
-          <div className="text-center">
-            <div className="w-16 h-16 bg-printeasy-yellow rounded-printeasy mx-auto mb-4 flex items-center justify-center">
-              <div className="w-3 h-8 bg-printeasy-black transform rotate-12"></div>
-            </div>
-            <h3 className="font-semibold text-printeasy-black mb-2">Real-time Updates</h3>
-            <p className="text-printeasy-gray-dark text-sm">
-              Track your order status and chat directly with your print shop.
-            </p>
+          {/* Real-time Updates Feature */}
+          <Card className="border-0 bg-gradient-white-gray rounded-printeasy shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden">
+            <div className="h-1 bg-gradient-yellow-white"></div>
+            <CardContent className="p-8 text-center bg-white">
+              <div className="relative mb-6">
+                <div className="w-20 h-20 bg-gradient-radial-yellow rounded-full mx-auto flex items-center justify-center shadow-lg">
+                  <div className="relative">
+                    <div className="w-3 h-10 bg-white rounded-full shadow-inner"></div>
+                    <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-5 h-5 bg-gradient-yellow-light rounded-full animate-pulse"></div>
+                  </div>
+                </div>
+              </div>
+              <h3 className="font-bold text-printeasy-black mb-3 text-lg">Live Updates</h3>
+              <p className="text-printeasy-gray-dark text-sm leading-relaxed">
+                Track every step in real-time. Chat directly with your print shop for perfect results.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Trust Indicator */}
+        <div className="text-center mt-16">
+          <div className="inline-flex items-center space-x-3 bg-gradient-white-gray px-6 py-3 rounded-full shadow-lg">
+            <div className="w-3 h-3 bg-gradient-yellow-white rounded-full animate-pulse"></div>
+            <span className="text-printeasy-gray-dark text-sm font-medium">Trusted by thousands of customers</span>
           </div>
         </div>
       </div>

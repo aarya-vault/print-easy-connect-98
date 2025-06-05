@@ -68,6 +68,7 @@ export default {
 					yellow: '#FFD700',
 					'yellow-light': '#FFF176',
 					'yellow-dark': '#F57F17',
+					'yellow-subtle': '#FFFDE7',
 					black: '#000000',
 					'gray-light': '#F5F5F5',
 					'gray-medium': '#9E9E9E',
@@ -87,9 +88,18 @@ export default {
 				'printeasy-lg': '24px'
 			},
 			backgroundImage: {
-				// PrintEasy approved gradients only
+				// PrintEasy approved gradients - NO yellow-black combinations
 				'gradient-yellow-white': 'linear-gradient(135deg, #FFD700 0%, #FFFFFF 100%)',
+				'gradient-white-yellow': 'linear-gradient(135deg, #FFFFFF 0%, #FFD700 100%)',
+				'gradient-yellow-light': 'linear-gradient(135deg, #FFD700 0%, #FFF176 100%)',
+				'gradient-yellow-subtle': 'linear-gradient(135deg, #FFD700 0%, #FFFDE7 100%)',
 				'gradient-white-black': 'linear-gradient(135deg, #FFFFFF 0%, #000000 100%)',
+				'gradient-black-white': 'linear-gradient(135deg, #000000 0%, #FFFFFF 100%)',
+				'gradient-gray-white': 'linear-gradient(135deg, #F5F5F5 0%, #FFFFFF 100%)',
+				'gradient-white-gray': 'linear-gradient(135deg, #FFFFFF 0%, #F5F5F5 100%)',
+				'gradient-black-gray': 'linear-gradient(135deg, #000000 0%, #424242 100%)',
+				'gradient-radial-yellow': 'radial-gradient(circle, #FFD700 0%, #FFFFFF 100%)',
+				'gradient-radial-white': 'radial-gradient(circle, #FFFFFF 0%, #F5F5F5 100%)',
 			},
 			keyframes: {
 				'accordion-down': {
@@ -127,13 +137,34 @@ export default {
 						transform: 'scale(1)',
 						opacity: '1'
 					}
+				},
+				'gradient-shift': {
+					'0%': {
+						backgroundPosition: '0% 50%'
+					},
+					'50%': {
+						backgroundPosition: '100% 50%'
+					},
+					'100%': {
+						backgroundPosition: '0% 50%'
+					}
+				},
+				'pulse-glow': {
+					'0%, 100%': {
+						boxShadow: '0 0 5px rgba(255, 215, 0, 0.5)'
+					},
+					'50%': {
+						boxShadow: '0 0 20px rgba(255, 215, 0, 0.8)'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'fade-in': 'fade-in 0.3s ease-out',
-				'scale-in': 'scale-in 0.2s ease-out'
+				'scale-in': 'scale-in 0.2s ease-out',
+				'gradient-shift': 'gradient-shift 3s ease-in-out infinite',
+				'pulse-glow': 'pulse-glow 2s ease-in-out infinite'
 			}
 		}
 	},
