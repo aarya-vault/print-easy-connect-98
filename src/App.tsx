@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import OrderCreationFlow from "@/components/order/OrderCreationFlow";
+import ShopOnboarding from "@/components/shop/ShopOnboarding";
 
 import Home from "./pages/Home";
 import CustomerDashboard from "./pages/customer/Dashboard";
@@ -25,6 +26,9 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Home />} />
+            
+            {/* Public Routes */}
+            <Route path="/shop/apply" element={<ShopOnboarding />} />
             
             {/* Customer Routes */}
             <Route 

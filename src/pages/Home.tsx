@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { Phone, Mail, Upload, Clock, MessageCircle } from 'lucide-react';
 
 const Home: React.FC = () => {
   const [phone, setPhone] = useState('');
@@ -92,191 +93,183 @@ const Home: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-yellow-white">
-      {/* Floating Elements for Visual Interest */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-white-gray rounded-full opacity-30 animate-pulse-glow"></div>
-        <div className="absolute bottom-32 right-16 w-24 h-24 bg-gradient-yellow-light rounded-printeasy opacity-40 animate-gradient-shift"></div>
-        <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-gradient-radial-white rounded-full opacity-20"></div>
-      </div>
+    <div className="min-h-screen bg-white">
+      {/* Hero Section */}
+      <div className="relative">
+        {/* Subtle background pattern */}
+        <div className="absolute inset-0 bg-gradient-to-br from-neutral-50 to-white opacity-60"></div>
+        
+        <div className="relative container mx-auto px-6 py-16">
+          {/* Header */}
+          <div className="text-center mb-16">
+            <h1 className="text-6xl font-light mb-6 tracking-tight">
+              <span className="text-neutral-900">Print</span>
+              <span className="text-yellow-500 font-medium">Easy</span>
+            </h1>
+            <div className="w-16 h-0.5 bg-yellow-500 mx-auto mb-8"></div>
+            <p className="text-xl text-neutral-600 max-w-2xl mx-auto leading-relaxed font-light">
+              The most elegant printing platform. Upload files instantly or describe physical items - 
+              we transform complexity into simplicity.
+            </p>
+          </div>
 
-      <div className="container mx-auto px-4 py-8 relative z-10">
-        {/* Header with Enhanced Typography */}
-        <div className="text-center mb-12">
-          <h1 className="text-6xl font-bold mb-4">
-            <span className="bg-gradient-black-white bg-clip-text text-transparent">Print</span>
-            <span className="bg-gradient-yellow-light bg-clip-text text-transparent">Easy</span>
-          </h1>
-          <div className="w-24 h-1 bg-gradient-yellow-white mx-auto mb-6 rounded-full"></div>
-          <p className="text-xl text-printeasy-gray-dark max-w-2xl mx-auto leading-relaxed">
-            The most elegant printing platform. Upload files instantly or describe physical items - 
-            we transform complexity into simplicity.
-          </p>
-        </div>
-
-        {/* Main Login Card */}
-        <div className="max-w-md mx-auto mb-16">
-          {!showBusinessLogin ? (
-            /* Customer Login */
-            <Card className="border-0 shadow-2xl bg-gradient-white-gray rounded-printeasy overflow-hidden">
-              <div className="h-2 bg-gradient-yellow-white"></div>
-              <CardHeader className="text-center bg-white">
-                <CardTitle className="text-2xl text-printeasy-black mb-2">Begin Your Journey</CardTitle>
-                <CardDescription className="text-printeasy-gray-dark">
-                  Enter your phone number to access instant printing
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="bg-white">
-                <form onSubmit={handlePhoneLogin} className="space-y-6">
-                  <div className="relative">
-                    <div className="flex overflow-hidden rounded-printeasy shadow-lg">
-                      <div className="flex items-center px-4 bg-gradient-gray-white text-printeasy-gray-dark font-medium">
-                        +91
+          {/* Main Login Section */}
+          <div className="max-w-md mx-auto mb-20">
+            {!showBusinessLogin ? (
+              /* Customer Login */
+              <Card className="border border-neutral-200 shadow-soft bg-white">
+                <CardHeader className="text-center pb-4">
+                  <CardTitle className="text-2xl font-light text-neutral-900 mb-2">
+                    Get Started
+                  </CardTitle>
+                  <CardDescription className="text-neutral-600 font-light">
+                    Enter your phone number to begin printing
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-2">
+                  <form onSubmit={handlePhoneLogin} className="space-y-6">
+                    <div className="relative">
+                      <div className="flex border border-neutral-200 rounded-xl overflow-hidden focus-within:border-yellow-500 focus-within:ring-1 focus-within:ring-yellow-500 transition-all">
+                        <div className="flex items-center px-4 bg-neutral-50 text-neutral-600 font-medium border-r border-neutral-200">
+                          <Phone className="w-4 h-4 mr-2" />
+                          +91
+                        </div>
+                        <Input
+                          type="tel"
+                          placeholder="Enter phone number"
+                          value={phone}
+                          onChange={(e) => setPhone(formatPhoneInput(e.target.value))}
+                          className="border-0 bg-white focus:ring-0 focus:outline-none text-lg font-light h-14"
+                          disabled={isLoading}
+                        />
                       </div>
+                    </div>
+                    <Button
+                      type="submit"
+                      className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-medium h-14 text-lg rounded-xl transition-all duration-200 shadow-soft hover:shadow-medium"
+                      disabled={isLoading || phone.length !== 10}
+                    >
+                      {isLoading ? 'Connecting...' : 'Start Printing'}
+                    </Button>
+                  </form>
+                  
+                  <div className="mt-8 text-center">
+                    <button
+                      onClick={() => setShowBusinessLogin(true)}
+                      className="text-neutral-500 hover:text-neutral-700 text-sm underline underline-offset-4 transition-colors font-light"
+                    >
+                      Business Portal Access
+                    </button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              /* Business Login */
+              <Card className="border border-neutral-200 shadow-soft bg-white">
+                <CardHeader className="text-center pb-4">
+                  <CardTitle className="text-2xl font-light text-neutral-900 mb-2">
+                    Business Portal
+                  </CardTitle>
+                  <CardDescription className="text-neutral-600 font-light">
+                    Shop owners and administrators
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-2">
+                  <form onSubmit={handleBusinessLogin} className="space-y-6">
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-neutral-400" />
                       <Input
-                        type="tel"
-                        placeholder="Enter phone number"
-                        value={phone}
-                        onChange={(e) => setPhone(formatPhoneInput(e.target.value))}
-                        className="border-0 rounded-none bg-white focus:ring-0 focus:outline-none text-lg"
+                        type="email"
+                        placeholder="Business email address"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="pl-12 h-14 border-neutral-200 focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 rounded-xl text-lg font-light"
                         disabled={isLoading}
                       />
                     </div>
+                    <Input
+                      type="password"
+                      placeholder="Password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="h-14 border-neutral-200 focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 rounded-xl text-lg font-light"
+                      disabled={isLoading}
+                    />
+                    <Button
+                      type="submit"
+                      className="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-medium h-14 text-lg rounded-xl transition-all duration-200 shadow-soft hover:shadow-medium"
+                      disabled={isLoading || !email || !password}
+                    >
+                      {isLoading ? 'Authenticating...' : 'Access Portal'}
+                    </Button>
+                  </form>
+                  
+                  <div className="mt-8 text-center">
+                    <button
+                      onClick={() => setShowBusinessLogin(false)}
+                      className="text-neutral-500 hover:text-neutral-700 text-sm underline underline-offset-4 transition-colors font-light"
+                    >
+                      ← Customer Login
+                    </button>
                   </div>
-                  <Button
-                    type="submit"
-                    className="w-full bg-gradient-yellow-white hover:bg-gradient-yellow-light text-printeasy-black font-semibold rounded-printeasy h-14 text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:animate-pulse-glow"
-                    disabled={isLoading || phone.length !== 10}
-                  >
-                    {isLoading ? 'Connecting...' : 'Start Printing'}
-                  </Button>
-                </form>
-                
-                <div className="mt-8 text-center">
-                  <button
-                    onClick={() => setShowBusinessLogin(true)}
-                    className="text-printeasy-gray-dark hover:text-printeasy-black text-sm underline transition-colors"
-                  >
-                    Business Portal Access
-                  </button>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Features Section */}
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <Card className="border border-neutral-200 shadow-soft bg-white hover:shadow-medium transition-all duration-300 group">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 mx-auto mb-6 bg-yellow-50 rounded-2xl flex items-center justify-center group-hover:bg-yellow-100 transition-colors">
+                  <Upload className="w-8 h-8 text-yellow-600" />
                 </div>
+                <h3 className="font-medium text-neutral-900 mb-3 text-lg">
+                  Instant Upload
+                </h3>
+                <p className="text-neutral-600 text-sm leading-relaxed font-light">
+                  No complex registrations. Just your phone number and you're printing in seconds.
+                </p>
               </CardContent>
             </Card>
-          ) : (
-            /* Business Login */
-            <Card className="border-0 shadow-2xl bg-gradient-white-black rounded-printeasy overflow-hidden">
-              <div className="h-2 bg-gradient-black-gray"></div>
-              <CardHeader className="text-center bg-white">
-                <CardTitle className="text-2xl text-printeasy-black mb-2">Business Portal</CardTitle>
-                <CardDescription className="text-printeasy-gray-dark">
-                  Shop owners and administrators, access your dashboard
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="bg-white">
-                <form onSubmit={handleBusinessLogin} className="space-y-6">
-                  <Input
-                    type="email"
-                    placeholder="Business email address"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="rounded-printeasy border-2 border-printeasy-gray-light focus:border-printeasy-black transition-colors text-lg h-12"
-                    disabled={isLoading}
-                  />
-                  <Input
-                    type="password"
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="rounded-printeasy border-2 border-printeasy-gray-light focus:border-printeasy-black transition-colors text-lg h-12"
-                    disabled={isLoading}
-                  />
-                  <Button
-                    type="submit"
-                    className="w-full bg-gradient-black-gray hover:bg-printeasy-black text-white font-semibold rounded-printeasy h-14 text-lg shadow-lg hover:shadow-xl transition-all duration-300"
-                    disabled={isLoading || !email || !password}
-                  >
-                    {isLoading ? 'Authenticating...' : 'Access Portal'}
-                  </Button>
-                </form>
-                
-                <div className="mt-8 text-center">
-                  <button
-                    onClick={() => setShowBusinessLogin(false)}
-                    className="text-printeasy-gray-dark hover:text-printeasy-black text-sm underline transition-colors"
-                  >
-                    ← Customer Login
-                  </button>
+            
+            <Card className="border border-neutral-200 shadow-soft bg-white hover:shadow-medium transition-all duration-300 group">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 mx-auto mb-6 bg-yellow-50 rounded-2xl flex items-center justify-center group-hover:bg-yellow-100 transition-colors">
+                  <Clock className="w-8 h-8 text-yellow-600" />
                 </div>
+                <h3 className="font-medium text-neutral-900 mb-3 text-lg">
+                  Real-time Tracking
+                </h3>
+                <p className="text-neutral-600 text-sm leading-relaxed font-light">
+                  Track every step in real-time. Know exactly when your prints will be ready.
+                </p>
               </CardContent>
             </Card>
-          )}
-        </div>
+            
+            <Card className="border border-neutral-200 shadow-soft bg-white hover:shadow-medium transition-all duration-300 group">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 mx-auto mb-6 bg-yellow-50 rounded-2xl flex items-center justify-center group-hover:bg-yellow-100 transition-colors">
+                  <MessageCircle className="w-8 h-8 text-yellow-600" />
+                </div>
+                <h3 className="font-medium text-neutral-900 mb-3 text-lg">
+                  Direct Communication
+                </h3>
+                <p className="text-neutral-600 text-sm leading-relaxed font-light">
+                  Chat directly with your print shop for perfect results every time.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
 
-        {/* Enhanced Features Section */}
-        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          {/* Instant Access Feature */}
-          <Card className="border-0 bg-gradient-white-gray rounded-printeasy shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden">
-            <div className="h-1 bg-gradient-yellow-white"></div>
-            <CardContent className="p-8 text-center bg-white">
-              <div className="relative mb-6">
-                <div className="w-20 h-20 bg-gradient-radial-yellow rounded-full mx-auto flex items-center justify-center shadow-lg">
-                  <div className="w-8 h-12 bg-white rounded-sm shadow-inner relative">
-                    <div className="absolute top-1 left-1 right-1 h-1 bg-printeasy-gray-light rounded"></div>
-                    <div className="absolute top-3 left-1 right-1 h-1 bg-printeasy-gray-light rounded"></div>
-                  </div>
-                </div>
-              </div>
-              <h3 className="font-bold text-printeasy-black mb-3 text-lg">Instant Access</h3>
-              <p className="text-printeasy-gray-dark text-sm leading-relaxed">
-                No complex registrations. Just your phone number and you're printing in seconds.
-              </p>
-            </CardContent>
-          </Card>
-          
-          {/* Universal Printing Feature */}
-          <Card className="border-0 bg-gradient-white-gray rounded-printeasy shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden">
-            <div className="h-1 bg-gradient-yellow-white"></div>
-            <CardContent className="p-8 text-center bg-white">
-              <div className="relative mb-6">
-                <div className="w-20 h-20 bg-gradient-radial-yellow rounded-full mx-auto flex items-center justify-center shadow-lg">
-                  <div className="relative">
-                    <div className="w-10 h-12 bg-white rounded-sm shadow-inner"></div>
-                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-yellow-light rounded-full shadow-sm"></div>
-                  </div>
-                </div>
-              </div>
-              <h3 className="font-bold text-printeasy-black mb-3 text-lg">Universal Printing</h3>
-              <p className="text-printeasy-gray-dark text-sm leading-relaxed">
-                Any file type, any description. Our intelligent system handles everything seamlessly.
-              </p>
-            </CardContent>
-          </Card>
-          
-          {/* Real-time Updates Feature */}
-          <Card className="border-0 bg-gradient-white-gray rounded-printeasy shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden">
-            <div className="h-1 bg-gradient-yellow-white"></div>
-            <CardContent className="p-8 text-center bg-white">
-              <div className="relative mb-6">
-                <div className="w-20 h-20 bg-gradient-radial-yellow rounded-full mx-auto flex items-center justify-center shadow-lg">
-                  <div className="relative">
-                    <div className="w-3 h-10 bg-white rounded-full shadow-inner"></div>
-                    <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-5 h-5 bg-gradient-yellow-light rounded-full animate-pulse"></div>
-                  </div>
-                </div>
-              </div>
-              <h3 className="font-bold text-printeasy-black mb-3 text-lg">Live Updates</h3>
-              <p className="text-printeasy-gray-dark text-sm leading-relaxed">
-                Track every step in real-time. Chat directly with your print shop for perfect results.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Trust Indicator */}
-        <div className="text-center mt-16">
-          <div className="inline-flex items-center space-x-3 bg-gradient-white-gray px-6 py-3 rounded-full shadow-lg">
-            <div className="w-3 h-3 bg-gradient-yellow-white rounded-full animate-pulse"></div>
-            <span className="text-printeasy-gray-dark text-sm font-medium">Trusted by thousands of customers</span>
+          {/* Trust Section */}
+          <div className="text-center mt-20">
+            <div className="inline-flex items-center space-x-3 bg-neutral-50 px-6 py-3 rounded-full">
+              <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse-soft"></div>
+              <span className="text-neutral-600 text-sm font-light">
+                Trusted by thousands of customers across India
+              </span>
+            </div>
           </div>
         </div>
       </div>

@@ -4,29 +4,54 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useNavigate } from 'react-router-dom';
-import ChatSystem from '@/components/chat/ChatSystem';
-import QRCodeGenerator from '@/components/qr/QRCodeGenerator';
+import EnhancedChatSystem from '@/components/chat/EnhancedChatSystem';
 import { LoadingState } from '@/components/ui/loading-states';
+import { Upload, FileText, Image, X, Plus, MessageCircle, CheckCircle } from 'lucide-react';
 
 type OrderType = 'digital' | 'physical' | null;
+
+interface FileWithId {
+  id: string;
+  file: File;
+  preview?: string;
+}
 
 const OrderCreationFlow: React.FC = () => {
   const [orderType, setOrderType] = useState<OrderType>(null);
   const [orderDescription, setOrderDescription] = useState('');
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<FileWithId[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderSubmitted, setOrderSubmitted] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
+  const [showAddFiles, setShowAddFiles] = useState(false);
   const navigate = useNavigate();
+
+  const generateFileId = () => Date.now().toString() + Math.random().toString(36).substr(2, 9);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    setUploadedFiles(prev => [...prev, ...files]);
+    const newFiles: FileWithId[] = files.map(file => ({
+      id: generateFileId(),
+      file,
+      preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined
+    }));
+    setUploadedFiles(prev => [...prev, ...newFiles]);
   };
 
-  const removeFile = (index: number) => {
-    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  const removeFile = (id: string) => {
+    setUploadedFiles(prev => {
+      const fileToRemove = prev.find(f => f.id === id);
+      if (fileToRemove?.preview) {
+        URL.revokeObjectURL(fileToRemove.preview);
+      }
+      return prev.filter(f => f.id !== id);
+    });
+  };
+
+  const addMoreFiles = (event: React.ChangeEvent<HTMLInputElement>) => {
+    handleFileUpload(event);
+    setShowAddFiles(false);
   };
 
   const handleSubmitOrder = async () => {
@@ -41,94 +66,166 @@ const OrderCreationFlow: React.FC = () => {
     }, 3000);
   };
 
+  const getFileIcon = (fileType: string) => {
+    if (fileType.startsWith('image/')) return <Image className="w-5 h-5" />;
+    return <FileText className="w-5 h-5" />;
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
   if (orderSubmitted && orderId) {
     return (
-      <div className="min-h-screen bg-gradient-white-gray">
+      <div className="min-h-screen bg-neutral-50">
         {/* Header */}
-        <div className="bg-white shadow-lg border-b-4 border-gradient-yellow-white">
-          <div className="container mx-auto px-4 py-6">
-            <h1 className="text-3xl font-bold">
-              <span className="bg-gradient-black-white bg-clip-text text-transparent">Print</span>
-              <span className="bg-gradient-yellow-light bg-clip-text text-transparent">Easy</span>
+        <div className="bg-white shadow-sm border-b border-neutral-200">
+          <div className="container mx-auto px-6 py-6">
+            <h1 className="text-2xl font-light text-neutral-900">
+              <span className="text-neutral-900">Print</span>
+              <span className="text-yellow-500 font-medium">Easy</span>
             </h1>
-            <div className="w-16 h-1 bg-gradient-yellow-white rounded-full mt-1"></div>
           </div>
         </div>
 
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-4xl mx-auto">
+        <div className="container mx-auto px-6 py-12">
+          <div className="max-w-2xl mx-auto">
             {/* Success Message */}
-            <div className="text-center mb-8">
-              <div className="w-24 h-24 bg-gradient-radial-yellow rounded-full mx-auto mb-6 flex items-center justify-center shadow-2xl animate-pulse-glow">
-                <div className="text-3xl">✓</div>
+            <div className="text-center mb-12">
+              <div className="w-20 h-20 bg-green-100 rounded-full mx-auto mb-6 flex items-center justify-center">
+                <CheckCircle className="w-10 h-10 text-green-600" />
               </div>
-              <h2 className="text-4xl font-bold text-printeasy-black mb-4">
-                Order <span className="bg-gradient-yellow-light bg-clip-text text-transparent">Confirmed!</span>
+              <h2 className="text-3xl font-light text-neutral-900 mb-4">
+                Order Confirmed!
               </h2>
-              <p className="text-xl text-printeasy-gray-dark">
+              <p className="text-lg text-neutral-600">
                 Your order #{orderId} has been submitted successfully
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8">
-              {/* QR Code */}
-              <QRCodeGenerator 
-                orderId={orderId}
-                orderDetails={{
-                  customerPhone: '+91 XXXXXXXXXX',
-                  orderType: orderType || 'digital',
-                  description: orderDescription
-                }}
-              />
+            {/* Order Details Card */}
+            <Card className="border border-neutral-200 shadow-soft bg-white mb-8">
+              <CardHeader className="border-b border-neutral-100">
+                <CardTitle className="text-xl font-medium text-neutral-900">Order Status</CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-6">
+                {/* Status Steps */}
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <span className="text-neutral-900 font-medium">Order Received</span>
+                    <span className="text-xs text-neutral-500 ml-auto">Just now</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse-soft"></div>
+                    <span className="text-neutral-600">Matching with Print Shop</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-3 h-3 bg-neutral-300 rounded-full"></div>
+                    <span className="text-neutral-400">Processing</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-3 h-3 bg-neutral-300 rounded-full"></div>
+                    <span className="text-neutral-400">Ready for Pickup</span>
+                  </div>
+                </div>
 
-              {/* Order Status */}
-              <Card className="border-0 shadow-2xl bg-gradient-white-gray rounded-printeasy overflow-hidden">
-                <div className="h-2 bg-gradient-yellow-white"></div>
-                <CardHeader className="bg-white">
-                  <CardTitle className="text-printeasy-black">Order Status</CardTitle>
-                </CardHeader>
-                <CardContent className="bg-white space-y-6">
+                {/* File Management */}
+                {orderType === 'digital' && (
                   <div className="space-y-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-4 h-4 bg-gradient-yellow-white rounded-full"></div>
-                      <span className="text-printeasy-black font-medium">Order Received</span>
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium text-neutral-900">Files ({uploadedFiles.length})</h4>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowAddFiles(true)}
+                        className="border-yellow-500 text-yellow-700 hover:bg-yellow-50"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add More Files
+                      </Button>
                     </div>
-                    <div className="flex items-center space-x-3">
-                      <div className="w-4 h-4 bg-gradient-white-gray border-2 border-printeasy-yellow rounded-full animate-pulse"></div>
-                      <span className="text-printeasy-gray-medium">Processing</span>
+                    
+                    <div className="space-y-2">
+                      {uploadedFiles.map((fileItem) => (
+                        <div key={fileItem.id} className="flex items-center space-x-3 p-3 bg-neutral-50 rounded-lg">
+                          {getFileIcon(fileItem.file.type)}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-neutral-900 truncate">
+                              {fileItem.file.name}
+                            </p>
+                            <p className="text-xs text-neutral-500">
+                              {formatFileSize(fileItem.file.size)}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <div className="flex items-center space-x-3">
-                      <div className="w-4 h-4 bg-gradient-white-gray border-2 border-printeasy-gray-medium rounded-full"></div>
-                      <span className="text-printeasy-gray-medium">Printing</span>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <div className="w-4 h-4 bg-gradient-white-gray border-2 border-printeasy-gray-medium rounded-full"></div>
-                      <span className="text-printeasy-gray-medium">Ready for Pickup</span>
-                    </div>
-                  </div>
 
-                  <div className="space-y-3">
-                    <Button
-                      onClick={() => setChatOpen(true)}
-                      className="w-full bg-gradient-yellow-white hover:bg-gradient-yellow-light text-printeasy-black rounded-printeasy"
-                    >
-                      Chat with Print Shop
-                    </Button>
-                    <Button
-                      onClick={() => navigate('/customer/dashboard')}
-                      variant="outline"
-                      className="w-full border-2 border-printeasy-gray-medium hover:bg-gradient-gray-white rounded-printeasy"
-                    >
-                      Back to Dashboard
-                    </Button>
+                    {/* Add Files Modal */}
+                    {showAddFiles && (
+                      <div className="border-2 border-dashed border-yellow-300 rounded-xl p-6 text-center bg-yellow-50">
+                        <Upload className="w-8 h-8 text-yellow-600 mx-auto mb-3" />
+                        <h4 className="font-medium text-neutral-900 mb-2">Add More Files</h4>
+                        <p className="text-sm text-neutral-600 mb-4">
+                          Upload additional files to this order
+                        </p>
+                        <input
+                          type="file"
+                          multiple
+                          onChange={addMoreFiles}
+                          className="hidden"
+                          id="add-files"
+                          accept="*/*"
+                        />
+                        <div className="space-y-2">
+                          <label htmlFor="add-files">
+                            <Button type="button" className="bg-yellow-500 hover:bg-yellow-600 text-white">
+                              Choose Files
+                            </Button>
+                          </label>
+                          <br />
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setShowAddFiles(false)}
+                            className="border-neutral-300 hover:bg-neutral-50"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="space-y-3 pt-4 border-t border-neutral-100">
+                  <Button
+                    onClick={() => setChatOpen(true)}
+                    className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-medium"
+                  >
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    Chat with Print Shop
+                  </Button>
+                  <Button
+                    onClick={() => navigate('/customer/dashboard')}
+                    variant="outline"
+                    className="w-full border-neutral-300 hover:bg-neutral-50"
+                  >
+                    Back to Dashboard
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
 
-        <ChatSystem 
+        <EnhancedChatSystem 
           orderId={orderId}
           isOpen={chatOpen}
           onClose={() => setChatOpen(false)}
@@ -139,13 +236,12 @@ const OrderCreationFlow: React.FC = () => {
 
   if (isSubmitting) {
     return (
-      <div className="min-h-screen bg-gradient-white-gray flex items-center justify-center">
-        <Card className="border-0 shadow-2xl bg-gradient-white-yellow rounded-printeasy p-8 max-w-md mx-auto">
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+        <Card className="border border-neutral-200 shadow-soft bg-white p-8 max-w-md mx-auto">
           <div className="text-center space-y-6">
-            <div className="w-20 h-20 border-4 border-printeasy-yellow border-t-transparent rounded-full mx-auto animate-spin"></div>
-            <h3 className="text-2xl font-bold text-printeasy-black">Processing Your Order</h3>
-            <p className="text-printeasy-gray-dark">We're matching you with the perfect print shop...</p>
-            <LoadingState variant="dots" size="lg" />
+            <LoadingState variant="spinner" size="lg" />
+            <h3 className="text-xl font-medium text-neutral-900">Processing Your Order</h3>
+            <p className="text-neutral-600">We're matching you with the perfect print shop...</p>
           </div>
         </Card>
       </div>
@@ -154,68 +250,61 @@ const OrderCreationFlow: React.FC = () => {
 
   if (!orderType) {
     return (
-      <div className="min-h-screen bg-gradient-yellow-white">
+      <div className="min-h-screen bg-neutral-50">
         {/* Header */}
-        <div className="bg-white shadow-lg border-b-4 border-gradient-yellow-white">
-          <div className="container mx-auto px-4 py-6">
-            <h1 className="text-3xl font-bold">
-              <span className="bg-gradient-black-white bg-clip-text text-transparent">Print</span>
-              <span className="bg-gradient-yellow-light bg-clip-text text-transparent">Easy</span>
+        <div className="bg-white shadow-sm border-b border-neutral-200">
+          <div className="container mx-auto px-6 py-6">
+            <h1 className="text-2xl font-light text-neutral-900">
+              <span className="text-neutral-900">Print</span>
+              <span className="text-yellow-500 font-medium">Easy</span>
             </h1>
-            <div className="w-16 h-1 bg-gradient-yellow-white rounded-full mt-1"></div>
           </div>
         </div>
 
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-6 py-12">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
-              <h2 className="text-4xl font-bold text-printeasy-black mb-4">
-                What would you like to <span className="bg-gradient-yellow-light bg-clip-text text-transparent">print?</span>
+              <h2 className="text-3xl font-light text-neutral-900 mb-4">
+                What would you like to print?
               </h2>
-              <p className="text-xl text-printeasy-gray-dark">
+              <p className="text-lg text-neutral-600">
                 Choose your preferred method to get started
               </p>
-              <div className="w-24 h-1 bg-gradient-black-white mx-auto mt-4 rounded-full"></div>
             </div>
 
             <div className="grid md:grid-cols-2 gap-8">
               <Card 
-                className="border-0 shadow-2xl bg-gradient-yellow-white rounded-printeasy overflow-hidden hover:shadow-3xl transition-all duration-300 hover:-translate-y-2 cursor-pointer group"
+                className="border border-neutral-200 shadow-soft bg-white hover:shadow-medium transition-all duration-300 cursor-pointer group"
                 onClick={() => setOrderType('digital')}
               >
-                <div className="h-2 bg-gradient-yellow-light"></div>
-                <CardHeader className="text-center bg-white relative">
-                  <div className="w-20 h-20 bg-gradient-radial-yellow rounded-printeasy mx-auto mb-6 flex items-center justify-center shadow-xl group-hover:animate-pulse-glow">
-                    <div className="w-10 h-12 bg-white rounded-sm shadow-inner relative">
-                      <div className="absolute top-1 left-1 right-1 h-1 bg-printeasy-gray-light rounded"></div>
-                      <div className="absolute top-3 left-1 right-1 h-1 bg-printeasy-gray-light rounded"></div>
-                      <div className="absolute bottom-1 left-1 w-3 h-3 bg-gradient-yellow-light rounded-sm"></div>
-                    </div>
+                <CardContent className="p-8 text-center">
+                  <div className="w-16 h-16 bg-yellow-100 rounded-2xl mx-auto mb-6 flex items-center justify-center group-hover:bg-yellow-200 transition-colors">
+                    <Upload className="w-8 h-8 text-yellow-600" />
                   </div>
-                  <CardTitle className="text-printeasy-black text-xl">Digital File Upload</CardTitle>
-                  <CardDescription className="text-printeasy-gray-dark">
+                  <CardTitle className="text-xl font-medium text-neutral-900 mb-3">
+                    Digital File Upload
+                  </CardTitle>
+                  <CardDescription className="text-neutral-600 leading-relaxed">
                     Upload documents, photos, presentations from your device for immediate printing
                   </CardDescription>
-                </CardHeader>
+                </CardContent>
               </Card>
 
               <Card 
-                className="border-0 shadow-2xl bg-gradient-white-black rounded-printeasy overflow-hidden hover:shadow-3xl transition-all duration-300 hover:-translate-y-2 cursor-pointer group"
+                className="border border-neutral-200 shadow-soft bg-white hover:shadow-medium transition-all duration-300 cursor-pointer group"
                 onClick={() => setOrderType('physical')}
               >
-                <div className="h-2 bg-gradient-black-gray"></div>
-                <CardHeader className="text-center bg-white relative">
-                  <div className="w-20 h-20 bg-gradient-radial-white border-4 border-printeasy-black rounded-printeasy mx-auto mb-6 flex items-center justify-center shadow-xl group-hover:shadow-2xl">
-                    <div className="w-8 h-8 border-2 border-printeasy-black rounded-sm relative">
-                      <div className="absolute inset-1 border border-printeasy-gray-medium rounded-sm"></div>
-                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-yellow-white rounded-full shadow-lg"></div>
-                    </div>
+                <CardContent className="p-8 text-center">
+                  <div className="w-16 h-16 bg-neutral-100 rounded-2xl mx-auto mb-6 flex items-center justify-center group-hover:bg-neutral-200 transition-colors">
+                    <FileText className="w-8 h-8 text-neutral-600" />
                   </div>
-                  <CardTitle className="text-printeasy-black text-xl">Physical Item Description</CardTitle>
-                  <CardDescription className="text-printeasy-gray-dark">
+                  <CardTitle className="text-xl font-medium text-neutral-900 mb-3">
+                    Physical Item Description
+                  </CardTitle>
+                  <CardDescription className="text-neutral-600 leading-relaxed">
                     Describe books, documents, or photos you want copied, scanned, or processed
                   </CardDescription>
-                </CardHeader>
+                </CardContent>
               </Card>
             </div>
           </div>
@@ -225,53 +314,49 @@ const OrderCreationFlow: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-white-gray">
+    <div className="min-h-screen bg-neutral-50">
       {/* Header */}
-      <div className="bg-white shadow-lg border-b-4 border-gradient-yellow-white">
-        <div className="container mx-auto px-4 py-6 flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold">
-              <span className="bg-gradient-black-white bg-clip-text text-transparent">Print</span>
-              <span className="bg-gradient-yellow-light bg-clip-text text-transparent">Easy</span>
-            </h1>
-            <div className="w-16 h-1 bg-gradient-yellow-white rounded-full mt-1"></div>
-          </div>
+      <div className="bg-white shadow-sm border-b border-neutral-200">
+        <div className="container mx-auto px-6 py-6 flex justify-between items-center">
+          <h1 className="text-2xl font-light text-neutral-900">
+            <span className="text-neutral-900">Print</span>
+            <span className="text-yellow-500 font-medium">Easy</span>
+          </h1>
           <Button 
             variant="outline"
             onClick={() => setOrderType(null)}
-            className="border-2 border-printeasy-gray-medium hover:bg-gradient-gray-white rounded-printeasy"
+            className="border-neutral-300 hover:bg-neutral-50"
           >
             ← Change Type
           </Button>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-6 py-8">
         <div className="max-w-3xl mx-auto">
           <div className="mb-8 text-center">
-            <h2 className="text-3xl font-bold text-printeasy-black mb-4">
+            <h2 className="text-2xl font-light text-neutral-900 mb-4">
               {orderType === 'digital' ? 'Upload Your Files' : 'Describe Your Item'}
             </h2>
-            <p className="text-lg text-printeasy-gray-dark">
+            <p className="text-neutral-600">
               {orderType === 'digital' 
                 ? 'Upload files and specify your exact printing requirements'
                 : 'Provide detailed description of the physical item you want processed'
               }
             </p>
-            <div className="w-24 h-1 bg-gradient-yellow-white mx-auto mt-4 rounded-full"></div>
           </div>
 
-          <Card className="border-0 shadow-2xl bg-gradient-white-gray rounded-printeasy overflow-hidden mb-6">
-            <div className="h-2 bg-gradient-yellow-white"></div>
-            <CardHeader className="bg-white">
-              <CardTitle className="text-printeasy-black text-xl">
+          <Card className="border border-neutral-200 shadow-soft bg-white">
+            <CardHeader>
+              <CardTitle className="text-xl font-medium text-neutral-900">
                 {orderType === 'digital' ? 'File Upload & Instructions' : 'Item Description & Requirements'}
               </CardTitle>
             </CardHeader>
-            <CardContent className="bg-white space-y-8">
+            <CardContent className="space-y-8">
               {orderType === 'digital' && (
                 <div>
-                  <div className="border-4 border-dashed border-printeasy-yellow/50 bg-gradient-yellow-subtle rounded-printeasy p-12 text-center hover:border-printeasy-yellow transition-colors">
+                  <div className="border-2 border-dashed border-neutral-300 rounded-xl p-8 text-center hover:border-yellow-500 transition-colors">
+                    <Upload className="w-12 h-12 text-neutral-400 mx-auto mb-4" />
                     <input
                       type="file"
                       multiple
@@ -281,56 +366,51 @@ const OrderCreationFlow: React.FC = () => {
                       accept="*/*"
                     />
                     <label htmlFor="file-upload" className="cursor-pointer">
-                      <div className="w-16 h-16 bg-gradient-radial-yellow rounded-printeasy mx-auto mb-6 flex items-center justify-center shadow-lg">
-                        <div className="w-8 h-10 bg-white rounded-sm shadow-inner relative">
-                          <div className="absolute top-1 left-1 right-1 h-1 bg-printeasy-gray-light rounded"></div>
-                          <div className="absolute top-3 left-1 right-1 h-1 bg-printeasy-gray-light rounded"></div>
-                          <div className="absolute bottom-1 left-1 w-2 h-2 bg-gradient-yellow-light rounded-sm"></div>
-                        </div>
-                      </div>
-                      <h3 className="text-xl font-bold text-printeasy-black mb-3">
+                      <h3 className="text-lg font-medium text-neutral-900 mb-2">
                         Upload Your Files
                       </h3>
-                      <p className="text-printeasy-gray-dark">
+                      <p className="text-neutral-600 mb-4">
                         Drag & drop files here or click to browse
                       </p>
-                      <p className="text-sm text-printeasy-gray-medium mt-2">
-                        Any file type • Any size • Secure upload
-                      </p>
+                      <Button type="button" className="bg-yellow-500 hover:bg-yellow-600 text-white">
+                        Choose Files
+                      </Button>
                     </label>
                   </div>
 
                   {uploadedFiles.length > 0 && (
                     <div className="space-y-3">
-                      <h4 className="font-semibold text-printeasy-black">Uploaded Files:</h4>
-                      {uploadedFiles.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between p-4 bg-gradient-white-gray rounded-printeasy border border-printeasy-gray-light">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 bg-gradient-yellow-white rounded flex items-center justify-center">
-                              <div className="w-4 h-5 bg-printeasy-black rounded-sm"></div>
+                      <h4 className="font-medium text-neutral-900">Uploaded Files:</h4>
+                      <div className="space-y-2">
+                        {uploadedFiles.map((fileItem) => (
+                          <div key={fileItem.id} className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg border border-neutral-200">
+                            <div className="flex items-center space-x-3">
+                              {getFileIcon(fileItem.file.type)}
+                              <div>
+                                <span className="text-neutral-900 font-medium">{fileItem.file.name}</span>
+                                <p className="text-sm text-neutral-500">
+                                  {formatFileSize(fileItem.file.size)}
+                                </p>
+                              </div>
                             </div>
-                            <span className="text-printeasy-black font-medium">{file.name}</span>
-                            <span className="text-sm text-printeasy-gray-medium">
-                              ({(file.size / 1024 / 1024).toFixed(2)} MB)
-                            </span>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => removeFile(fileItem.id)}
+                              className="text-red-600 hover:text-red-700 border-red-300 hover:border-red-400"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
                           </div>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => removeFile(index)}
-                            className="text-red-600 hover:text-red-700 border-red-300 hover:border-red-400"
-                          >
-                            Remove
-                          </Button>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
               )}
 
               <div>
-                <label className="block text-printeasy-black font-semibold mb-3 text-lg">
+                <label className="block text-neutral-900 font-medium mb-3 text-lg">
                   {orderType === 'digital' ? 'Print Instructions' : 'Item Description'}
                 </label>
                 <Textarea
@@ -340,14 +420,14 @@ const OrderCreationFlow: React.FC = () => {
                   }
                   value={orderDescription}
                   onChange={(e) => setOrderDescription(e.target.value)}
-                  className="min-h-40 rounded-printeasy border-2 border-printeasy-gray-light focus:border-printeasy-yellow focus:ring-printeasy-yellow text-lg"
+                  className="min-h-32 border-neutral-200 focus:border-yellow-500 focus:ring-yellow-500"
                 />
               </div>
 
               <Button
                 onClick={handleSubmitOrder}
                 disabled={!orderDescription.trim() || (orderType === 'digital' && uploadedFiles.length === 0)}
-                className="w-full bg-gradient-yellow-white hover:bg-gradient-yellow-light text-printeasy-black font-bold rounded-printeasy h-14 text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:animate-pulse-glow"
+                className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-medium h-12 text-lg shadow-soft hover:shadow-medium transition-all duration-200"
               >
                 Submit Order & Get Matched with Print Shop
               </Button>
