@@ -17,9 +17,8 @@ import {
   Phone,
   MapPin,
   Star,
-  TrendingUp,
   Calendar,
-  DollarSign
+  Users
 } from 'lucide-react';
 import { VisitedShop } from '@/types/shop';
 import VisitedShopsSection from '@/components/customer/VisitedShopsSection';
@@ -36,8 +35,6 @@ interface Order {
   shopAddress: string;
   shopRating: number;
   createdAt: Date;
-  estimatedCompletion?: Date;
-  totalAmount?: number;
   filesCount?: number;
 }
 
@@ -49,9 +46,8 @@ const CustomerDashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
-  const [showRequestShop, setShowRequestShop] = useState(false);
 
-  // Sample visited shops data
+  // Sample visited shops data with realistic demo data
   const [visitedShops] = useState<VisitedShop[]>([
     {
       id: 'shop1',
@@ -121,10 +117,45 @@ const CustomerDashboard: React.FC = () => {
       orderHistory: [
         { orderId: 'PE123454', date: new Date(), amount: 75, status: 'completed' }
       ]
+    },
+    {
+      id: 'shop3',
+      name: 'Digital Express Printing',
+      address: 'Forum Mall, Level 1, Koramangala',
+      phone: '+91 76543 21098',
+      email: 'orders@digitalexpress.com',
+      rating: 4.9,
+      totalReviews: 312,
+      services: ['Premium Printing', 'Photo Printing', 'Business Cards', 'Posters'],
+      equipment: ['Digital Press', 'Photo Printer', 'Large Format Printer'],
+      operatingHours: {
+        monday: { open: '10:00', close: '22:00', isOpen: true },
+        tuesday: { open: '10:00', close: '22:00', isOpen: true },
+        wednesday: { open: '10:00', close: '22:00', isOpen: true },
+        thursday: { open: '10:00', close: '22:00', isOpen: true },
+        friday: { open: '10:00', close: '22:00', isOpen: true },
+        saturday: { open: '10:00', close: '22:00', isOpen: true },
+        sunday: { open: '11:00', close: '21:00', isOpen: true }
+      },
+      images: [],
+      verified: true,
+      lastVisited: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
+      visitCount: 5,
+      averageCompletionTime: '20-30 mins',
+      pricing: {
+        blackWhite: 3,
+        color: 12,
+        binding: 35,
+        scanning: 8
+      },
+      orderHistory: [
+        { orderId: 'PE123453', date: new Date(), amount: 320, status: 'completed' },
+        { orderId: 'PE123452', date: new Date(), amount: 180, status: 'completed' }
+      ]
     }
   ]);
 
-  // Sample orders data
+  // Sample orders data with no completion time or billing
   const [orders] = useState<Order[]>([
     {
       id: 'PE123456',
@@ -136,8 +167,6 @@ const CustomerDashboard: React.FC = () => {
       shopAddress: 'Shop 12, MG Road, Bangalore',
       shopRating: 4.8,
       createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-      estimatedCompletion: new Date(Date.now() + 1 * 60 * 60 * 1000),
-      totalAmount: 250,
       filesCount: 3
     },
     {
@@ -149,20 +178,42 @@ const CustomerDashboard: React.FC = () => {
       shopPhone: '+91 87654 32109',
       shopAddress: 'Near College Gate, Whitefield',
       shopRating: 4.5,
-      createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000),
-      totalAmount: 150
+      createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000)
     },
     {
       id: 'PE123454',
       type: 'digital',
       description: 'Resume printing - 10 copies, premium paper',
       status: 'completed',
-      shopName: 'Print Express',
+      shopName: 'Digital Express Printing',
       shopPhone: '+91 76543 21098',
-      shopAddress: 'City Center Mall, Level 2',
+      shopAddress: 'Forum Mall, Level 1, Koramangala',
       shopRating: 4.9,
       createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
-      totalAmount: 75,
+      filesCount: 1
+    },
+    {
+      id: 'PE123453',
+      type: 'digital',
+      description: 'Marketing brochures - 100 copies, glossy paper, full color',
+      status: 'completed',
+      shopName: 'Digital Express Printing',
+      shopPhone: '+91 76543 21098',
+      shopAddress: 'Forum Mall, Level 1, Koramangala',
+      shopRating: 4.9,
+      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      filesCount: 2
+    },
+    {
+      id: 'PE123452',
+      type: 'digital',
+      description: 'Thesis printing - 120 pages, double-sided, hardbound',
+      status: 'completed',
+      shopName: 'Quick Print Solutions',
+      shopPhone: '+91 98765 43210',
+      shopAddress: 'Shop 12, MG Road, Bangalore',
+      shopRating: 4.8,
+      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
       filesCount: 1
     }
   ]);
@@ -219,10 +270,6 @@ const CustomerDashboard: React.FC = () => {
     setSelectedOrderId(orderId);
   };
 
-  const handleRequestNewShop = () => {
-    setShowRequestShop(true);
-  };
-
   // Create detailed order for modal
   const getOrderDetails = (orderId: string) => {
     const order = orders.find(o => o.id === orderId);
@@ -272,23 +319,14 @@ const CustomerDashboard: React.FC = () => {
           size: 45000,
           url: '#'
         }
-      ] : undefined,
-      pricing: {
-        subtotal: order.totalAmount ? order.totalAmount - 20 : 0,
-        tax: 20,
-        total: order.totalAmount || 0,
-        breakdown: [
-          { item: 'Color Printing (50 pages)', quantity: 50, rate: 4, amount: 200 },
-          { item: 'Spiral Binding', quantity: 1, rate: 30, amount: 30 }
-        ]
-      }
+      ] : undefined
     };
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-neutral-100 font-poppins">
+    <div className="min-h-screen bg-gradient-to-br from-golden-50 via-white to-golden-100 font-poppins">
       {/* Header */}
-      <div className="bg-white/80 backdrop-blur-lg shadow-glass border-b border-neutral-200">
+      <div className="bg-white/90 backdrop-blur-lg shadow-glass border-b border-golden-200/30">
         <div className="container mx-auto px-6 py-6">
           <div className="flex justify-between items-center">
             <div>
@@ -322,7 +360,7 @@ const CustomerDashboard: React.FC = () => {
       <div className="container mx-auto px-6 py-8">
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-          <Card className="border-0 shadow-glass bg-white/60 backdrop-blur-lg hover:shadow-premium transition-all duration-300">
+          <Card className="border-0 shadow-glass bg-white/70 backdrop-blur-lg hover:shadow-premium transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -336,7 +374,7 @@ const CustomerDashboard: React.FC = () => {
             </CardContent>
           </Card>
           
-          <Card className="border-0 shadow-glass bg-white/60 backdrop-blur-lg hover:shadow-premium transition-all duration-300">
+          <Card className="border-0 shadow-glass bg-white/70 backdrop-blur-lg hover:shadow-premium transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -352,7 +390,7 @@ const CustomerDashboard: React.FC = () => {
             </CardContent>
           </Card>
           
-          <Card className="border-0 shadow-glass bg-white/60 backdrop-blur-lg hover:shadow-premium transition-all duration-300">
+          <Card className="border-0 shadow-glass bg-white/70 backdrop-blur-lg hover:shadow-premium transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -368,31 +406,32 @@ const CustomerDashboard: React.FC = () => {
             </CardContent>
           </Card>
           
-          <Card className="border-0 shadow-glass bg-white/60 backdrop-blur-lg hover:shadow-premium transition-all duration-300">
+          <Card className="border-0 shadow-glass bg-white/70 backdrop-blur-lg hover:shadow-premium transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-neutral-600 font-medium mb-1">This Month</p>
-                  <p className="text-3xl font-bold text-neutral-900">₹475</p>
+                  <p className="text-sm text-neutral-600 font-medium mb-1">Shops Visited</p>
+                  <p className="text-3xl font-bold text-neutral-900">{visitedShops.length}</p>
                 </div>
                 <div className="w-12 h-12 bg-gradient-golden-soft rounded-2xl flex items-center justify-center">
-                  <DollarSign className="w-6 h-6 text-golden-700" />
+                  <Users className="w-6 h-6 text-golden-700" />
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Visited Shops Section */}
+        {/* Print Shops Previously Visited Section */}
         <div className="mb-10">
           <VisitedShopsSection 
             visitedShops={visitedShops}
-            onRequestNewShop={handleRequestNewShop}
+            title="Print Shops Previously Visited"
+            showRequestButton={false}
           />
         </div>
 
         {/* Search and Filters */}
-        <Card className="border-0 shadow-glass bg-white/60 backdrop-blur-lg mb-8">
+        <Card className="border-0 shadow-glass bg-white/70 backdrop-blur-lg mb-8">
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row gap-4">
               <div className="relative flex-1">
@@ -427,7 +466,7 @@ const CustomerDashboard: React.FC = () => {
           <h2 className="text-2xl font-semibold text-neutral-900">Recent Orders</h2>
           
           {filteredOrders.length === 0 ? (
-            <Card className="border-0 shadow-glass bg-white/60 backdrop-blur-lg">
+            <Card className="border-0 shadow-glass bg-white/70 backdrop-blur-lg">
               <CardContent className="p-16 text-center">
                 <div className="w-20 h-20 bg-gradient-golden-soft rounded-full mx-auto mb-6 flex items-center justify-center">
                   <FileText className="w-10 h-10 text-golden-600" />
@@ -450,7 +489,7 @@ const CustomerDashboard: React.FC = () => {
             </Card>
           ) : (
             filteredOrders.map((order) => (
-              <Card key={order.id} className="border-0 shadow-glass bg-white/60 backdrop-blur-lg hover:shadow-premium transition-all duration-300 group">
+              <Card key={order.id} className="border-0 shadow-glass bg-white/70 backdrop-blur-lg hover:shadow-premium transition-all duration-300 group">
                 <CardContent className="p-6">
                   <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                     {/* Order Info */}
@@ -481,11 +520,6 @@ const CustomerDashboard: React.FC = () => {
                           <div className="flex items-center gap-2 text-neutral-600">
                             <FileText className="w-4 h-4" />
                             <span className="font-medium">{order.filesCount} files</span>
-                          </div>
-                        )}
-                        {order.totalAmount && (
-                          <div className="font-semibold text-neutral-900 text-lg">
-                            ₹{order.totalAmount}
                           </div>
                         )}
                       </div>
@@ -519,21 +553,6 @@ const CustomerDashboard: React.FC = () => {
                       </Button>
                     </div>
                   </div>
-
-                  {/* Estimated Completion */}
-                  {order.estimatedCompletion && order.status === 'processing' && (
-                    <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-                      <div className="flex items-center gap-3 text-blue-800">
-                        <Clock className="w-5 h-5" />
-                        <span className="font-medium">
-                          Estimated completion: {order.estimatedCompletion.toLocaleTimeString([], { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          })}
-                        </span>
-                      </div>
-                    </div>
-                  )}
                 </CardContent>
               </Card>
             ))

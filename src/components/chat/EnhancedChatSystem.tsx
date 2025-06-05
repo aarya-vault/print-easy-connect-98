@@ -27,29 +27,29 @@ interface EnhancedChatSystemProps {
   userRole?: 'customer' | 'shop_owner';
 }
 
-// Role-based quick replies
+// Enhanced role-based quick replies
 const customerQuickReplies = [
-  "When will my order be ready?",
-  "Can I modify my order?",
-  "What's the total cost?",
-  "I need urgent printing",
-  "Can you add more copies?",
-  "Is my order being processed?",
-  "When can I pick up?",
+  "Is my order ready for pickup?",
+  "Can I modify my current order?",
+  "What's the current status?",
+  "I need this urgently, can you prioritize?",
+  "Can you call me when it's ready?",
   "Any additional charges?",
+  "When can I collect it?",
+  "Quality looks good, thank you!",
 ];
 
 const shopOwnerQuickReplies = [
-  "Order received, processing started",
-  "Ready for pickup in 15 minutes",
-  "Estimated completion in 30 minutes", 
-  "Additional clarification needed",
-  "Order completed successfully",
-  "Minor delay expected - 10 minutes",
-  "Please confirm paper size requirement",
-  "Your order is now ready",
-  "Processing completed, awaiting pickup",
-  "Quality check in progress",
+  "Order received, starting processing now",
+  "Your order is ready for pickup",
+  "Processing completed successfully",
+  "Need clarification on specifications",
+  "Estimated completion in 30 minutes",
+  "Please confirm paper type preference",
+  "Order completed, awaiting pickup",
+  "Thank you for your business!",
+  "Minor delay expected - 15 minutes",
+  "Quality check completed, looks perfect",
 ];
 
 const EnhancedChatSystem: React.FC<EnhancedChatSystemProps> = ({ 
@@ -58,7 +58,7 @@ const EnhancedChatSystem: React.FC<EnhancedChatSystemProps> = ({
   onClose,
   userRole = 'customer',
   shopInfo = {
-    name: "Quick Print Shop",
+    name: "Quick Print Solutions",
     phone: "+91 98765 43210",
     isOnline: true,
     avgResponseTime: "2-3 minutes"
@@ -74,7 +74,9 @@ const EnhancedChatSystem: React.FC<EnhancedChatSystemProps> = ({
     },
     {
       id: '2',
-      text: 'Hi! We have received your order. We\'ll start processing it shortly.',
+      text: userRole === 'customer' 
+        ? 'Hi! We have received your order. We\'ll start processing it shortly.'
+        : 'Hello! My order was just placed. When can I expect it to be ready?',
       sender: userRole === 'customer' ? 'shop' : 'customer',
       timestamp: new Date(Date.now() - 5000),
       status: 'delivered'
@@ -140,8 +142,8 @@ const EnhancedChatSystem: React.FC<EnhancedChatSystemProps> = ({
         const response: Message = {
           id: (Date.now() + 2).toString(),
           text: userRole === 'customer' 
-            ? 'Thank you for your message. We\'ll look into this and get back to you.'
-            : 'Thanks for the update! I appreciate the communication.',
+            ? 'Thank you for your message. We\'ll update you on the progress shortly.'
+            : 'Thanks for the update! We appreciate your communication.',
           sender: userRole === 'customer' ? 'shop' : 'customer',
           timestamp: new Date(),
           status: 'delivered'
@@ -299,11 +301,9 @@ const EnhancedChatSystem: React.FC<EnhancedChatSystemProps> = ({
             >
               Quick Replies
             </Button>
-            {userRole === 'customer' && (
-              <div className="text-xs text-neutral-600 font-medium">
-                💡 Use quick replies for faster communication
-              </div>
-            )}
+            <div className="text-xs text-neutral-600 font-medium">
+              💡 Use quick replies for faster communication
+            </div>
           </div>
           <div className="flex space-x-3">
             <Input

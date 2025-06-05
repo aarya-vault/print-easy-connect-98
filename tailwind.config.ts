@@ -67,7 +67,7 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Premium PrintEasy Design System
+				// Premium PrintEasy Design System - Exact Reference Yellow Colors
 				neutral: {
 					50: '#FEFEFE',
 					100: '#FDFDFD',
@@ -81,26 +81,26 @@ export default {
 					900: '#202124',
 					950: '#1A1A1A'
 				},
-				// Premium Golden Yellow System (inspired by reference images)
+				// Exact Yellow System from Reference Image
 				golden: {
-					50: '#FFFEF7',
-					100: '#FFFAEB',
-					200: '#FFF2C7',
-					300: '#FFE8A3',
-					400: '#FFD766',
-					500: '#FFC533',  // Primary golden
-					600: '#FFB800',  // Rich golden
-					700: '#FFA000',  // Deep golden
-					800: '#FF8F00',  // Vibrant golden
-					900: '#E65100',  // Bold golden
-					950: '#BF360C'   // Dark golden
+					50: '#FFFEF0',   // Very light warm yellow
+					100: '#FFFBE6',  // Light warm yellow
+					200: '#FFF5CC',  // Soft yellow
+					300: '#FFED99',  // Medium light yellow
+					400: '#FFE066',  // Bright yellow
+					500: '#F5D905',  // Primary golden yellow (exact match)
+					600: '#F2D024',  // Rich golden yellow
+					700: '#FBBF24',  // Deep golden yellow
+					800: '#F59E0B',  // Vibrant golden
+					900: '#D97706',  // Bold golden
+					950: '#92400E'   // Dark golden
 				},
-				// Advanced gradient colors
+				// Advanced gradient colors for smooth waves
 				gradient: {
-					'golden-light': '#FFE082',
-					'golden-medium': '#FFB74D', 
-					'golden-rich': '#FF8F00',
-					'golden-deep': '#E65100'
+					'yellow-light': '#FFFBE6',
+					'yellow-medium': '#F5D905', 
+					'yellow-rich': '#F2D024',
+					'yellow-deep': '#FBBF24'
 				}
 			},
 			borderRadius: {
@@ -117,18 +117,18 @@ export default {
 				'128': '32rem'
 			},
 			boxShadow: {
-				'glass': '0 8px 32px 0 rgba(255, 181, 77, 0.15)',
-				'golden': '0 4px 20px 0 rgba(255, 184, 0, 0.25)',
+				'glass': '0 8px 32px 0 rgba(245, 217, 5, 0.15)',
+				'golden': '0 4px 20px 0 rgba(245, 217, 5, 0.25)',
 				'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
 				'medium': '0 4px 25px -5px rgba(0, 0, 0, 0.1), 0 20px 40px -10px rgba(0, 0, 0, 0.06)',
 				'strong': '0 10px 40px -10px rgba(0, 0, 0, 0.15), 0 20px 50px -15px rgba(0, 0, 0, 0.1)',
-				'premium': '0 20px 60px -10px rgba(255, 184, 0, 0.2), 0 8px 25px -5px rgba(0, 0, 0, 0.1)'
+				'premium': '0 20px 60px -10px rgba(245, 217, 5, 0.2), 0 8px 25px -5px rgba(0, 0, 0, 0.1)'
 			},
 			backgroundImage: {
-				'gradient-golden': 'linear-gradient(135deg, #FFE082 0%, #FFB74D 25%, #FFA726 50%, #FF8F00 75%, #E65100 100%)',
-				'gradient-golden-soft': 'linear-gradient(135deg, #FFF8E1 0%, #FFECB3 50%, #FFE082 100%)',
+				'gradient-golden': 'linear-gradient(135deg, #F5D905 0%, #F2D024 25%, #FBBF24 50%, #F59E0B 75%, #D97706 100%)',
+				'gradient-golden-soft': 'linear-gradient(135deg, #FFFBE6 0%, #FFF5CC 50%, #FFE066 100%)',
 				'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-				'glass-golden': 'linear-gradient(135deg, rgba(255, 224, 130, 0.1) 0%, rgba(255, 183, 77, 0.05) 100%)'
+				'glass-golden': 'linear-gradient(135deg, rgba(245, 217, 5, 0.1) 0%, rgba(242, 208, 36, 0.05) 100%)'
 			},
 			backdropBlur: {
 				'xs': '2px',
@@ -190,10 +190,10 @@ export default {
 				},
 				'glow': {
 					'0%, 100%': {
-						boxShadow: '0 0 20px rgba(255, 184, 0, 0.5)'
+						boxShadow: '0 0 20px rgba(245, 217, 5, 0.5)'
 					},
 					'50%': {
-						boxShadow: '0 0 30px rgba(255, 184, 0, 0.8)'
+						boxShadow: '0 0 30px rgba(245, 217, 5, 0.8)'
 					}
 				}
 			},
