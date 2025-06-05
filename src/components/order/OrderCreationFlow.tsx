@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -77,12 +76,6 @@ const OrderCreationFlow: React.FC = () => {
         lastVisited: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
         visitCount: 8,
         averageCompletionTime: '15-20 mins',
-        pricing: {
-          blackWhite: 2,
-          color: 8,
-          binding: 25,
-          scanning: 5
-        },
         orderHistory: [
           { orderId: 'PE123456', date: new Date(), amount: 250, status: 'completed' },
           { orderId: 'PE123455', date: new Date(), amount: 150, status: 'completed' }
@@ -112,12 +105,6 @@ const OrderCreationFlow: React.FC = () => {
         lastVisited: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
         visitCount: 3,
         averageCompletionTime: '10-15 mins',
-        pricing: {
-          blackWhite: 1.5,
-          color: 6,
-          binding: 20,
-          scanning: 3
-        },
         orderHistory: [
           { orderId: 'PE123454', date: new Date(), amount: 75, status: 'completed' }
         ]
