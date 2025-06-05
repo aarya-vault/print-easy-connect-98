@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,7 +40,7 @@ const VisitedShopsSection: React.FC<VisitedShopsSectionProps> = ({
 
   const getCurrentStatus = (operatingHours: VisitedShop['operatingHours']) => {
     const now = new Date();
-    const currentDay = now.toLocaleLowerCase() as keyof typeof operatingHours;
+    const currentDay = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() as keyof typeof operatingHours;
     const currentTime = now.getHours() * 100 + now.getMinutes();
     
     const todayHours = operatingHours[currentDay];

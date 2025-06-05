@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -270,7 +269,7 @@ const CustomerDashboard: React.FC = () => {
     setSelectedOrderId(orderId);
   };
 
-  // Create detailed order for modal
+  // Create detailed order for modal with pricing
   const getOrderDetails = (orderId: string) => {
     const order = orders.find(o => o.id === orderId);
     if (!order) return null;
@@ -319,7 +318,16 @@ const CustomerDashboard: React.FC = () => {
           size: 45000,
           url: '#'
         }
-      ] : undefined
+      ] : undefined,
+      pricing: {
+        subtotal: 180,
+        tax: 32,
+        total: 212,
+        breakdown: [
+          { item: 'Color Printing', quantity: 50, rate: 3, amount: 150 },
+          { item: 'Spiral Binding', quantity: 1, rate: 30, amount: 30 }
+        ]
+      }
     };
   };
 
