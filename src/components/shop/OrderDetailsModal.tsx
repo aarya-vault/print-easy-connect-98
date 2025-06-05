@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,8 +19,10 @@ import {
   CheckCircle,
   Clock,
   Package,
-  X
+  X,
+  MessageSquare
 } from 'lucide-react';
+import OrderChat from './OrderChat';
 
 interface OrderFile {
   id: string;
@@ -63,6 +65,8 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   onClose,
   onPrintFile
 }) => {
+  const [isChatOpen, setIsChatOpen] = useState(false);
+
   if (!order) return null;
 
   const getStatusColor = (status: string) => {
@@ -98,175 +102,206 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-3">
-            <span>Order Details - #{order.id}</span>
-            <Badge className={`${getStatusColor(order.status)} border-2`}>
-              {getStatusIcon(order.status)}
-              <span className="ml-2 capitalize">{order.status}</span>
-            </Badge>
-            {order.isUrgent && (
-              <Badge className="bg-red-100 text-red-800 border-red-300">
-                <Zap className="w-4 h-4 mr-1" />
-                URGENT
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <span>Order Details - #{order.id}</span>
+              <Badge className={`${getStatusColor(order.status)} border-2`}>
+                {getStatusIcon(order.status)}
+                <span className="ml-2 capitalize">{order.status}</span>
               </Badge>
-            )}
-          </DialogTitle>
-        </DialogHeader>
+              {order.isUrgent && (
+                <Badge className="bg-red-100 text-red-800 border-red-300">
+                  <Zap className="w-4 h-4 mr-1" />
+                  URGENT
+                </Badge>
+              )}
+            </DialogTitle>
+          </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Customer Information */}
-          <Card>
-            <CardContent className="p-6">
-              <h3 className="font-semibold text-lg mb-4">Customer Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <UserCheck className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-neutral-900">{order.customerName}</p>
-                    <p className="text-sm text-neutral-600">Customer Name</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                    <Phone className="w-5 h-5 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-neutral-900">{order.customerPhone}</p>
-                    <p className="text-sm text-neutral-600">Phone Number</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <Mail className="w-5 h-5 text-purple-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-neutral-900">{order.customerEmail}</p>
-                    <p className="text-sm text-neutral-600">Email Address</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                    <Calendar className="w-5 h-5 text-orange-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-neutral-900">{order.createdAt.toLocaleString()}</p>
-                    <p className="text-sm text-neutral-600">Order Created</p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Order Information */}
-          <Card>
-            <CardContent className="p-6">
-              <h3 className="font-semibold text-lg mb-4">Order Information</h3>
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <Badge className={`${
-                    order.orderType === 'uploaded-files' ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-purple-100 text-purple-700 border-purple-300'
-                  }`}>
-                    {order.orderType === 'uploaded-files' ? (
-                      <><Upload className="w-4 h-4 mr-2" />UPLOADED FILES</>
-                    ) : (
-                      <><UserCheck className="w-4 h-4 mr-2" />WALK-IN</>
-                    )}
-                  </Badge>
-                </div>
-                <div>
-                  <p className="font-medium text-neutral-900 mb-2">Description</p>
-                  <p className="text-neutral-700">{order.description}</p>
-                </div>
-                {order.instructions && (
-                  <div className="p-4 bg-golden-50 border border-golden-200 rounded-lg">
-                    <p className="font-medium text-golden-800 mb-2">Special Instructions</p>
-                    <p className="text-golden-700">{order.instructions}</p>
-                  </div>
-                )}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {order.pages && (
-                    <div>
-                      <p className="text-sm text-neutral-600">Pages</p>
-                      <p className="font-medium text-neutral-900">{order.pages}</p>
-                    </div>
-                  )}
-                  {order.copies && (
-                    <div>
-                      <p className="text-sm text-neutral-600">Copies</p>
-                      <p className="font-medium text-neutral-900">{order.copies}</p>
-                    </div>
-                  )}
-                  {order.paperType && (
-                    <div>
-                      <p className="text-sm text-neutral-600">Paper Type</p>
-                      <p className="font-medium text-neutral-900">{order.paperType}</p>
-                    </div>
-                  )}
-                  {order.binding && (
-                    <div>
-                      <p className="text-sm text-neutral-600">Binding</p>
-                      <p className="font-medium text-neutral-900">{order.binding}</p>
-                    </div>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {order.services.map((service) => (
-                    <Badge key={service} variant="outline" className="border-neutral-300 text-neutral-700">
-                      {service}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Files Section */}
-          {order.files && order.files.length > 0 && (
+          <div className="space-y-6">
+            {/* Customer Information */}
             <Card>
               <CardContent className="p-6">
-                <h3 className="font-semibold text-lg mb-4">Files ({order.files.length})</h3>
-                <div className="space-y-3">
-                  {order.files.map((file) => (
-                    <div key={file.id} className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg border border-neutral-200">
-                      <div className="flex items-center gap-3">
-                        <FileText className="w-6 h-6 text-neutral-600" />
-                        <div>
-                          <p className="font-medium text-neutral-900">{file.name}</p>
-                          <p className="text-sm text-neutral-500">{formatFileSize(file.size)}</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline">
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button size="sm" variant="outline">
-                          <Download className="w-4 h-4" />
-                        </Button>
-                        {onPrintFile && (
-                          <Button 
-                            size="sm"
-                            onClick={() => onPrintFile(file)}
-                            className="bg-gradient-golden hover:shadow-golden text-white"
-                          >
-                            <Printer className="w-4 h-4 mr-2" />
-                            Print
-                          </Button>
-                        )}
-                      </div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-lg">Customer Information</h3>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => window.open(`tel:${order.customerPhone}`)}
+                      className="bg-green-500 hover:bg-green-600 text-white"
+                    >
+                      <Phone className="w-4 h-4 mr-2" />
+                      Call
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => setIsChatOpen(true)}
+                      className="bg-golden-500 hover:bg-golden-600 text-white"
+                    >
+                      <MessageSquare className="w-4 h-4 mr-2" />
+                      Chat
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <UserCheck className="w-5 h-5 text-blue-600" />
                     </div>
-                  ))}
+                    <div>
+                      <p className="font-medium text-neutral-900">{order.customerName}</p>
+                      <p className="text-sm text-neutral-600">Customer Name</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                      <Phone className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-neutral-900">{order.customerPhone}</p>
+                      <p className="text-sm text-neutral-600">Phone Number</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <Mail className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-neutral-900">{order.customerEmail}</p>
+                      <p className="text-sm text-neutral-600">Email Address</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                      <Calendar className="w-5 h-5 text-orange-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-neutral-900">{order.createdAt.toLocaleString()}</p>
+                      <p className="text-sm text-neutral-600">Order Created</p>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+
+            {/* Order Information */}
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="font-semibold text-lg mb-4">Order Information</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <Badge className={`${
+                      order.orderType === 'uploaded-files' ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-purple-100 text-purple-700 border-purple-300'
+                    }`}>
+                      {order.orderType === 'uploaded-files' ? (
+                        <><Upload className="w-4 h-4 mr-2" />UPLOADED FILES</>
+                      ) : (
+                        <><UserCheck className="w-4 h-4 mr-2" />WALK-IN</>
+                      )}
+                    </Badge>
+                  </div>
+                  <div>
+                    <p className="font-medium text-neutral-900 mb-2">Description</p>
+                    <p className="text-neutral-700">{order.description}</p>
+                  </div>
+                  {order.instructions && (
+                    <div className="p-4 bg-golden-50 border border-golden-200 rounded-lg">
+                      <p className="font-medium text-golden-800 mb-2">Special Instructions</p>
+                      <p className="text-golden-700">{order.instructions}</p>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {order.pages && (
+                      <div>
+                        <p className="text-sm text-neutral-600">Pages</p>
+                        <p className="font-medium text-neutral-900">{order.pages}</p>
+                      </div>
+                    )}
+                    {order.copies && (
+                      <div>
+                        <p className="text-sm text-neutral-600">Copies</p>
+                        <p className="font-medium text-neutral-900">{order.copies}</p>
+                      </div>
+                    )}
+                    {order.paperType && (
+                      <div>
+                        <p className="text-sm text-neutral-600">Paper Type</p>
+                        <p className="font-medium text-neutral-900">{order.paperType}</p>
+                      </div>
+                    )}
+                    {order.binding && (
+                      <div>
+                        <p className="text-sm text-neutral-600">Binding</p>
+                        <p className="font-medium text-neutral-900">{order.binding}</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {order.services.map((service) => (
+                      <Badge key={service} variant="outline" className="border-neutral-300 text-neutral-700">
+                        {service}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Files Section - Only show for uploaded files */}
+            {order.orderType === 'uploaded-files' && order.files && order.files.length > 0 && (
+              <Card>
+                <CardContent className="p-6">
+                  <h3 className="font-semibold text-lg mb-4">Files ({order.files.length})</h3>
+                  <div className="space-y-3">
+                    {order.files.map((file) => (
+                      <div key={file.id} className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg border border-neutral-200">
+                        <div className="flex items-center gap-3">
+                          <FileText className="w-6 h-6 text-neutral-600" />
+                          <div>
+                            <p className="font-medium text-neutral-900">{file.name}</p>
+                            <p className="text-sm text-neutral-500">{formatFileSize(file.size)}</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline">
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button size="sm" variant="outline">
+                            <Download className="w-4 h-4" />
+                          </Button>
+                          {onPrintFile && (
+                            <Button 
+                              size="sm"
+                              onClick={() => onPrintFile(file)}
+                              className="bg-gradient-to-r from-golden-500 to-golden-600 hover:from-golden-600 hover:to-golden-700 text-white"
+                            >
+                              <Printer className="w-4 h-4 mr-2" />
+                              Print
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Order Chat Modal */}
+      <OrderChat
+        orderId={order.id}
+        customerName={order.customerName}
+        customerPhone={order.customerPhone}
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+      />
+    </>
   );
 };
 
