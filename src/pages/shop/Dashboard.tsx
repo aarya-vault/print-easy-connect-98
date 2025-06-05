@@ -1,47 +1,13 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Bell, 
-  Search, 
-  Filter, 
-  FileText, 
-  Clock, 
-  CheckCircle, 
-  MessageCircle, 
-  Phone,
-  Download,
-  Eye,
-  Star,
-  TrendingUp,
-  Users,
-  Calendar,
-  Settings,
-  BarChart3,
-  Package,
-  MapPin,
-  Mail,
-  Printer,
-  Scissors,
-  Scan,
-  Copy,
-  Image,
-  Palette,
-  QrCode,
-  AlertTriangle,
-  X,
-  RotateCcw,
-  ArrowUp,
-  Upload,
-  UserCheck,
-  Zap
-} from 'lucide-react';
+import { Upload, UserCheck } from 'lucide-react';
 import EnhancedChatSystem from '@/components/chat/EnhancedChatSystem';
+import OrderSection from '@/components/shop/OrderSection';
+import OrderFilters from '@/components/shop/OrderFilters';
+import ShopStats from '@/components/shop/ShopStats';
+import OrderDetailsModal from '@/components/shop/OrderDetailsModal';
 
 interface ShopOrder {
   id: string;
@@ -76,6 +42,7 @@ const ShopDashboard: React.FC = () => {
   const [orderTypeFilter, setOrderTypeFilter] = useState<string>('all');
   const [urgentOnly, setUrgentOnly] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<ShopOrder | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
 
   // Shop QR Code and Upload URL
@@ -284,6 +251,11 @@ const ShopDashboard: React.FC = () => {
     ));
   };
 
+  const handleViewDetails = (orderId: string) => {
+    const order = orders.find(o => o.id === orderId);
+    setSelectedOrder(order || null);
+  };
+
   const handlePrintFile = (file: { name: string; url: string; type: string }) => {
     // Create a printable version of the file
     const printWindow = window.open('', '_blank');
@@ -391,671 +363,59 @@ const ShopDashboard: React.FC = () => {
           </TabsList>
 
           {/* Orders Tab */}
-          <TabsContent value="orders" className="space-y-8">
-            {/* Enhanced Stats with Order Type Breakdown */}
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
-              <Card className="border-0 shadow-glass bg-white/80 backdrop-blur-lg hover:shadow-premium transition-all duration-300">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-neutral-600 font-medium mb-1">Today's Orders</p>
-                      <p className="text-3xl font-bold text-neutral-900">{todayOrders}</p>
-                    </div>
-                    <div className="w-12 h-12 bg-gradient-golden rounded-2xl flex items-center justify-center">
-                      <Calendar className="w-6 h-6 text-white" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="border-0 shadow-glass bg-white/80 backdrop-blur-lg hover:shadow-premium transition-all duration-300">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-neutral-600 font-medium mb-1">Pending</p>
-                      <p className="text-3xl font-bold text-neutral-900">{pendingOrders}</p>
-                    </div>
-                    <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center">
-                      <Clock className="w-6 h-6 text-orange-600" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="border-0 shadow-glass bg-white/80 backdrop-blur-lg hover:shadow-premium transition-all duration-300">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-neutral-600 font-medium mb-1">Urgent</p>
-                      <p className="text-3xl font-bold text-neutral-900">{urgentOrders}</p>
-                    </div>
-                    <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center">
-                      <Zap className="w-6 h-6 text-red-600" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="border-0 shadow-glass bg-white/80 backdrop-blur-lg hover:shadow-premium transition-all duration-300">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-neutral-600 font-medium mb-1">Completed Today</p>
-                      <p className="text-3xl font-bold text-neutral-900">{completedToday}</p>
-                    </div>
-                    <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center">
-                      <CheckCircle className="w-6 h-6 text-green-600" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-glass bg-white/80 backdrop-blur-lg hover:shadow-premium transition-all duration-300">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-neutral-600 font-medium mb-1">Uploaded Files</p>
-                      <p className="text-3xl font-bold text-neutral-900">{uploadedFilesCount}</p>
-                    </div>
-                    <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center">
-                      <Upload className="w-6 h-6 text-blue-600" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-glass bg-white/80 backdrop-blur-lg hover:shadow-premium transition-all duration-300">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-neutral-600 font-medium mb-1">Walk-ins</p>
-                      <p className="text-3xl font-bold text-neutral-900">{walkInCount}</p>
-                    </div>
-                    <div className="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center">
-                      <UserCheck className="w-6 h-6 text-purple-600" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+          <TabsContent value="orders" className="space-y-6">
+            {/* Enhanced Stats */}
+            <ShopStats
+              todayOrders={todayOrders}
+              pendingOrders={pendingOrders}
+              urgentOrders={urgentOrders}
+              completedToday={completedToday}
+              uploadedFilesCount={uploadedFilesCount}
+              walkInCount={walkInCount}
+            />
 
             {/* Enhanced Filters */}
-            <Card className="border-0 shadow-glass bg-white/90 backdrop-blur-lg">
-              <CardContent className="p-8">
-                <div className="flex flex-col lg:flex-row gap-6">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-neutral-400" />
-                    <Input
-                      placeholder="Search orders, customers, order IDs..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-14 h-14 border-neutral-200 focus:border-golden-500 focus:ring-golden-100 rounded-xl font-medium text-lg"
-                    />
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <Filter className="w-6 h-6 text-neutral-400" />
-                    <select
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                      className="border-2 border-neutral-200 rounded-xl px-4 py-4 font-medium focus:border-golden-500 text-lg min-w-[140px]"
-                    >
-                      <option value="all">All Status</option>
-                      <option value="new">New</option>
-                      <option value="confirmed">Confirmed</option>
-                      <option value="processing">Processing</option>
-                      <option value="ready">Ready</option>
-                      <option value="completed">Completed</option>
-                      <option value="cancelled">Cancelled</option>
-                    </select>
-                    <select
-                      value={orderTypeFilter}
-                      onChange={(e) => setOrderTypeFilter(e.target.value)}
-                      className="border-2 border-neutral-200 rounded-xl px-4 py-4 font-medium focus:border-golden-500 text-lg min-w-[160px]"
-                    >
-                      <option value="all">All Types</option>
-                      <option value="uploaded-files">Uploaded Files</option>
-                      <option value="walk-in">Walk-in Orders</option>
-                    </select>
-                    <Button
-                      variant={urgentOnly ? "default" : "outline"}
-                      onClick={() => setUrgentOnly(!urgentOnly)}
-                      className={`px-6 py-4 text-lg ${urgentOnly ? 'bg-red-600 hover:bg-red-700 text-white' : 'border-red-300 text-red-700 hover:bg-red-50'}`}
-                    >
-                      <Zap className="w-5 h-5 mr-2" />
-                      Urgent Only
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <OrderFilters
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
+              orderTypeFilter={orderTypeFilter}
+              onOrderTypeFilterChange={setOrderTypeFilter}
+              urgentOnly={urgentOnly}
+              onUrgentOnlyChange={setUrgentOnly}
+            />
 
             {/* BIFURCATED ORDER SECTIONS */}
             <div className="space-y-8">
               {/* UPLOADED FILES SECTION */}
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center">
-                      <Upload className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <div>
-                      <h2 className="text-2xl font-bold text-neutral-900">Uploaded Files Orders</h2>
-                      <p className="text-neutral-600">Orders with customer-uploaded files - {sortedUploadedFiles.length} orders</p>
-                    </div>
-                  </div>
-                  <Badge className="bg-blue-100 text-blue-800 border-blue-300 text-lg px-4 py-2">
-                    {sortedUploadedFiles.filter(o => o.isUrgent).length} Urgent
-                  </Badge>
-                </div>
-
-                <div className="space-y-4">
-                  {sortedUploadedFiles.length === 0 ? (
-                    <Card className="border-0 shadow-glass bg-blue-50/30 backdrop-blur-lg">
-                      <CardContent className="p-12 text-center">
-                        <div className="w-20 h-20 bg-blue-100 rounded-full mx-auto mb-6 flex items-center justify-center">
-                          <Upload className="w-10 h-10 text-blue-600" />
-                        </div>
-                        <h3 className="text-xl font-semibold text-neutral-900 mb-3">No uploaded file orders</h3>
-                        <p className="text-neutral-600">File upload orders will appear here when customers submit them.</p>
-                      </CardContent>
-                    </Card>
-                  ) : (
-                    sortedUploadedFiles.map((order) => (
-                      <Card 
-                        key={order.id} 
-                        className={`border-2 shadow-medium bg-white/95 backdrop-blur-lg hover:shadow-premium transition-all duration-300 ${
-                          order.isUrgent ? 'border-red-300 bg-red-50/30' : 'border-blue-200 bg-blue-50/10'
-                        } ${order.status === 'cancelled' ? 'opacity-75' : ''}`}
-                      >
-                        <CardContent className="p-8">
-                          <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-8">
-                            {/* Order Info */}
-                            <div className="flex-1">
-                              <div className="flex items-center gap-4 mb-6 flex-wrap">
-                                <h3 className="font-bold text-neutral-900 text-xl">#{order.id}</h3>
-                                <Badge className="bg-blue-100 text-blue-700 border-blue-300 text-sm px-3 py-1">
-                                  <Upload className="w-4 h-4 mr-2" />
-                                  UPLOADED FILES
-                                </Badge>
-                                <Badge className={`border-2 font-medium text-sm px-3 py-1 ${getStatusColor(order.status)}`}>
-                                  <div className="flex items-center gap-2">
-                                    {getStatusIcon(order.status)}
-                                    <span className="capitalize">{order.status === 'ready' ? 'Ready' : order.status}</span>
-                                  </div>
-                                </Badge>
-                                {order.isUrgent && (
-                                  <Badge className="bg-red-100 text-red-800 border-red-300 font-medium text-sm px-3 py-1">
-                                    <Zap className="w-4 h-4 mr-1" />
-                                    URGENT
-                                  </Badge>
-                                )}
-                                <span className="text-sm text-neutral-500 font-medium">{formatTimeAgo(order.createdAt)}</span>
-                              </div>
-                              
-                              <div className="mb-6">
-                                <h4 className="font-semibold text-neutral-900 mb-2 text-lg">{order.customerName}</h4>
-                                <p className="text-neutral-700 font-medium leading-relaxed text-lg">{order.description}</p>
-                              </div>
-                              
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-sm mb-6">
-                                <div>
-                                  <span className="text-neutral-500 font-medium">Contact:</span>
-                                  <p className="font-semibold text-neutral-900">{order.customerPhone}</p>
-                                </div>
-                                {order.pages && (
-                                  <div>
-                                    <span className="text-neutral-500 font-medium">Pages:</span>
-                                    <p className="font-semibold text-neutral-900">{order.pages}</p>
-                                  </div>
-                                )}
-                                {order.copies && (
-                                  <div>
-                                    <span className="text-neutral-500 font-medium">Copies:</span>
-                                    <p className="font-semibold text-neutral-900">{order.copies}</p>
-                                  </div>
-                                )}
-                                <div>
-                                  <span className="text-neutral-500 font-medium">Files:</span>
-                                  <p className="font-semibold text-neutral-900">{order.files?.length || 0}</p>
-                                </div>
-                              </div>
-
-                              {order.instructions && (
-                                <div className="mb-6 p-4 bg-golden-50 border border-golden-200 rounded-xl">
-                                  <h5 className="font-semibold text-golden-800 mb-2">Instructions:</h5>
-                                  <p className="text-golden-700">{order.instructions}</p>
-                                </div>
-                              )}
-
-                              {/* FILES WITH DIRECT PRINT BUTTONS */}
-                              {order.files && order.files.length > 0 && (
-                                <div className="mb-6">
-                                  <h5 className="font-semibold text-neutral-900 mb-4 text-lg">Files ({order.files.length}):</h5>
-                                  <div className="space-y-3">
-                                    {order.files.map((file) => (
-                                      <div key={file.id} className="flex items-center justify-between p-4 bg-neutral-50 rounded-xl border border-neutral-200">
-                                        <div className="flex items-center gap-4">
-                                          <FileText className="w-6 h-6 text-neutral-600" />
-                                          <div>
-                                            <p className="font-medium text-neutral-900 text-lg">{file.name}</p>
-                                            <p className="text-sm text-neutral-500">{formatFileSize(file.size)}</p>
-                                          </div>
-                                        </div>
-                                        <div className="flex gap-2">
-                                          <Button 
-                                            size="sm" 
-                                            variant="outline"
-                                            className="px-4 py-2"
-                                          >
-                                            <Eye className="w-4 h-4" />
-                                          </Button>
-                                          <Button 
-                                            size="sm" 
-                                            variant="outline"
-                                            className="px-4 py-2"
-                                          >
-                                            <Download className="w-4 h-4" />
-                                          </Button>
-                                          <Button 
-                                            size="sm"
-                                            onClick={() => handlePrintFile(file)}
-                                            className="bg-gradient-golden hover:shadow-golden text-white px-4 py-2"
-                                          >
-                                            <Printer className="w-4 h-4 mr-2" />
-                                            Print
-                                          </Button>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-
-                              <div className="flex flex-wrap gap-2">
-                                {order.services.map((service) => (
-                                  <Badge key={service} variant="outline" className="border-neutral-300 text-neutral-700">
-                                    {service}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-
-                            {/* Actions - Desktop Optimized */}
-                            <div className="flex flex-col gap-4 min-w-[280px]">
-                              <div className="flex gap-3">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => window.open(`tel:${order.customerPhone}`)}
-                                  className="flex-1 px-4 py-3"
-                                >
-                                  <Phone className="w-4 h-4 mr-2" />
-                                  Call
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => setChatOpen(true)}
-                                  className="flex-1 px-4 py-3"
-                                >
-                                  <MessageCircle className="w-4 h-4 mr-2" />
-                                  Chat
-                                </Button>
-                              </div>
-                              
-                              {/* Urgency Toggle */}
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => toggleOrderUrgency(order.id)}
-                                className={`${order.isUrgent ? 'bg-red-100 text-red-700 border-red-300' : 'border-neutral-300'} px-4 py-3`}
-                              >
-                                <Zap className="w-4 h-4 mr-2" />
-                                {order.isUrgent ? 'Remove Urgent' : 'Mark Urgent'}
-                              </Button>
-                              
-                              {/* Status Controls */}
-                              <div className="space-y-2">
-                                {order.status === 'new' && (
-                                  <>
-                                    <Button
-                                      size="sm"
-                                      onClick={() => updateOrderStatus(order.id, 'confirmed')}
-                                      className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3"
-                                    >
-                                      Confirm Order
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => updateOrderStatus(order.id, 'cancelled')}
-                                      className="w-full border-red-300 text-red-700 hover:bg-red-50 py-3"
-                                    >
-                                      Cancel Order
-                                    </Button>
-                                  </>
-                                )}
-                                {order.status === 'confirmed' && (
-                                  <>
-                                    <Button
-                                      size="sm"
-                                      onClick={() => updateOrderStatus(order.id, 'processing')}
-                                      className="w-full bg-orange-600 hover:bg-orange-700 text-white py-3"
-                                    >
-                                      Start Processing
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => updateOrderStatus(order.id, 'new')}
-                                      className="w-full border-neutral-300 py-3"
-                                    >
-                                      <RotateCcw className="w-4 h-4 mr-2" />
-                                      Back to New
-                                    </Button>
-                                  </>
-                                )}
-                                {order.status === 'processing' && (
-                                  <>
-                                    <Button
-                                      size="sm"
-                                      onClick={() => updateOrderStatus(order.id, 'ready')}
-                                      className="w-full bg-green-600 hover:bg-green-700 text-white py-3"
-                                    >
-                                      Mark Ready
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => updateOrderStatus(order.id, 'confirmed')}
-                                      className="w-full border-neutral-300 py-3"
-                                    >
-                                      <RotateCcw className="w-4 h-4 mr-2" />
-                                      Back to Confirmed
-                                    </Button>
-                                  </>
-                                )}
-                                {order.status === 'ready' && (
-                                  <>
-                                    <Button
-                                      size="sm"
-                                      onClick={() => updateOrderStatus(order.id, 'completed')}
-                                      className="w-full bg-gradient-golden hover:shadow-golden text-white py-3"
-                                    >
-                                      Complete Order
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => updateOrderStatus(order.id, 'processing')}
-                                      className="w-full border-neutral-300 py-3"
-                                    >
-                                      <RotateCcw className="w-4 h-4 mr-2" />
-                                      Back to Processing
-                                    </Button>
-                                  </>
-                                )}
-                                {order.status === 'cancelled' && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => updateOrderStatus(order.id, 'new')}
-                                    className="w-full border-green-300 text-green-700 hover:bg-green-50 py-3"
-                                  >
-                                    <RotateCcw className="w-4 h-4 mr-2" />
-                                    Restore Order
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))
-                  )}
-                </div>
-              </div>
+              <OrderSection
+                title="Uploaded Files Orders"
+                description="Orders with customer-uploaded files"
+                icon={<Upload className="w-6 h-6 text-blue-600" />}
+                orders={sortedUploadedFiles}
+                emptyMessage="File upload orders will appear here when customers submit them."
+                emptyIcon={<Upload className="w-10 h-10 text-blue-600" />}
+                sectionColor="bg-blue-100"
+                onToggleUrgency={toggleOrderUrgency}
+                onUpdateStatus={updateOrderStatus}
+                onViewDetails={handleViewDetails}
+                onPrintFile={handlePrintFile}
+              />
 
               {/* WALK-IN ORDERS SECTION */}
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center">
-                      <UserCheck className="w-6 h-6 text-purple-600" />
-                    </div>
-                    <div>
-                      <h2 className="text-2xl font-bold text-neutral-900">Walk-in Orders</h2>
-                      <p className="text-neutral-600">Physical orders from customers at the shop - {sortedWalkIns.length} orders</p>
-                    </div>
-                  </div>
-                  <Badge className="bg-purple-100 text-purple-800 border-purple-300 text-lg px-4 py-2">
-                    {sortedWalkIns.filter(o => o.isUrgent).length} Urgent
-                  </Badge>
-                </div>
-
-                <div className="space-y-4">
-                  {sortedWalkIns.length === 0 ? (
-                    <Card className="border-0 shadow-glass bg-purple-50/30 backdrop-blur-lg">
-                      <CardContent className="p-12 text-center">
-                        <div className="w-20 h-20 bg-purple-100 rounded-full mx-auto mb-6 flex items-center justify-center">
-                          <UserCheck className="w-10 h-10 text-purple-600" />
-                        </div>
-                        <h3 className="text-xl font-semibold text-neutral-900 mb-3">No walk-in orders</h3>
-                        <p className="text-neutral-600">Walk-in orders from customers visiting the shop will appear here.</p>
-                      </CardContent>
-                    </Card>
-                  ) : (
-                    sortedWalkIns.map((order) => (
-                      <Card 
-                        key={order.id} 
-                        className={`border-2 shadow-medium bg-white/95 backdrop-blur-lg hover:shadow-premium transition-all duration-300 ${
-                          order.isUrgent ? 'border-red-300 bg-red-50/30' : 'border-purple-200 bg-purple-50/10'
-                        } ${order.status === 'cancelled' ? 'opacity-75' : ''}`}
-                      >
-                        <CardContent className="p-8">
-                          <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-8">
-                            {/* Order Info */}
-                            <div className="flex-1">
-                              <div className="flex items-center gap-4 mb-6 flex-wrap">
-                                <h3 className="font-bold text-neutral-900 text-xl">#{order.id}</h3>
-                                <Badge className="bg-purple-100 text-purple-700 border-purple-300 text-sm px-3 py-1">
-                                  <UserCheck className="w-4 h-4 mr-2" />
-                                  WALK-IN
-                                </Badge>
-                                <Badge className={`border-2 font-medium text-sm px-3 py-1 ${getStatusColor(order.status)}`}>
-                                  <div className="flex items-center gap-2">
-                                    {getStatusIcon(order.status)}
-                                    <span className="capitalize">{order.status === 'ready' ? 'Ready' : order.status}</span>
-                                  </div>
-                                </Badge>
-                                {order.isUrgent && (
-                                  <Badge className="bg-red-100 text-red-800 border-red-300 font-medium text-sm px-3 py-1">
-                                    <Zap className="w-4 h-4 mr-1" />
-                                    URGENT
-                                  </Badge>
-                                )}
-                                <span className="text-sm text-neutral-500 font-medium">{formatTimeAgo(order.createdAt)}</span>
-                              </div>
-                              
-                              <div className="mb-6">
-                                <h4 className="font-semibold text-neutral-900 mb-2 text-lg">{order.customerName}</h4>
-                                <p className="text-neutral-700 font-medium leading-relaxed text-lg">{order.description}</p>
-                              </div>
-                              
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-sm mb-6">
-                                <div>
-                                  <span className="text-neutral-500 font-medium">Contact:</span>
-                                  <p className="font-semibold text-neutral-900">{order.customerPhone}</p>
-                                </div>
-                                {order.pages && (
-                                  <div>
-                                    <span className="text-neutral-500 font-medium">Pages:</span>
-                                    <p className="font-semibold text-neutral-900">{order.pages}</p>
-                                  </div>
-                                )}
-                                {order.copies && (
-                                  <div>
-                                    <span className="text-neutral-500 font-medium">Copies:</span>
-                                    <p className="font-semibold text-neutral-900">{order.copies}</p>
-                                  </div>
-                                )}
-                                <div>
-                                  <span className="text-neutral-500 font-medium">Type:</span>
-                                  <p className="font-semibold text-neutral-900">Physical Service</p>
-                                </div>
-                              </div>
-
-                              {order.instructions && (
-                                <div className="mb-6 p-4 bg-golden-50 border border-golden-200 rounded-xl">
-                                  <h5 className="font-semibold text-golden-800 mb-2">Instructions:</h5>
-                                  <p className="text-golden-700">{order.instructions}</p>
-                                </div>
-                              )}
-
-                              <div className="flex flex-wrap gap-2">
-                                {order.services.map((service) => (
-                                  <Badge key={service} variant="outline" className="border-neutral-300 text-neutral-700">
-                                    {service}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-
-                            {/* Actions - Same as uploaded files */}
-                            <div className="flex flex-col gap-4 min-w-[280px]">
-                              <div className="flex gap-3">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => window.open(`tel:${order.customerPhone}`)}
-                                  className="flex-1 px-4 py-3"
-                                >
-                                  <Phone className="w-4 h-4 mr-2" />
-                                  Call
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => setChatOpen(true)}
-                                  className="flex-1 px-4 py-3"
-                                >
-                                  <MessageCircle className="w-4 h-4 mr-2" />
-                                  Chat
-                                </Button>
-                              </div>
-                              
-                              {/* Urgency Toggle */}
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => toggleOrderUrgency(order.id)}
-                                className={`${order.isUrgent ? 'bg-red-100 text-red-700 border-red-300' : 'border-neutral-300'} px-4 py-3`}
-                              >
-                                <Zap className="w-4 h-4 mr-2" />
-                                {order.isUrgent ? 'Remove Urgent' : 'Mark Urgent'}
-                              </Button>
-                              
-                              {/* Same status controls as uploaded files */}
-                              <div className="space-y-2">
-                                {order.status === 'new' && (
-                                  <>
-                                    <Button
-                                      size="sm"
-                                      onClick={() => updateOrderStatus(order.id, 'confirmed')}
-                                      className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3"
-                                    >
-                                      Confirm Order
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => updateOrderStatus(order.id, 'cancelled')}
-                                      className="w-full border-red-300 text-red-700 hover:bg-red-50 py-3"
-                                    >
-                                      Cancel Order
-                                    </Button>
-                                  </>
-                                )}
-                                {order.status === 'confirmed' && (
-                                  <>
-                                    <Button
-                                      size="sm"
-                                      onClick={() => updateOrderStatus(order.id, 'processing')}
-                                      className="w-full bg-orange-600 hover:bg-orange-700 text-white py-3"
-                                    >
-                                      Start Processing
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => updateOrderStatus(order.id, 'new')}
-                                      className="w-full border-neutral-300 py-3"
-                                    >
-                                      <RotateCcw className="w-4 h-4 mr-2" />
-                                      Back to New
-                                    </Button>
-                                  </>
-                                )}
-                                {order.status === 'processing' && (
-                                  <>
-                                    <Button
-                                      size="sm"
-                                      onClick={() => updateOrderStatus(order.id, 'ready')}
-                                      className="w-full bg-green-600 hover:bg-green-700 text-white py-3"
-                                    >
-                                      Mark Ready
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => updateOrderStatus(order.id, 'confirmed')}
-                                      className="w-full border-neutral-300 py-3"
-                                    >
-                                      <RotateCcw className="w-4 h-4 mr-2" />
-                                      Back to Confirmed
-                                    </Button>
-                                  </>
-                                )}
-                                {order.status === 'ready' && (
-                                  <>
-                                    <Button
-                                      size="sm"
-                                      onClick={() => updateOrderStatus(order.id, 'completed')}
-                                      className="w-full bg-gradient-golden hover:shadow-golden text-white py-3"
-                                    >
-                                      Complete Order
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => updateOrderStatus(order.id, 'processing')}
-                                      className="w-full border-neutral-300 py-3"
-                                    >
-                                      <RotateCcw className="w-4 h-4 mr-2" />
-                                      Back to Processing
-                                    </Button>
-                                  </>
-                                )}
-                                {order.status === 'cancelled' && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => updateOrderStatus(order.id, 'new')}
-                                    className="w-full border-green-300 text-green-700 hover:bg-green-50 py-3"
-                                  >
-                                    <RotateCcw className="w-4 h-4 mr-2" />
-                                    Restore Order
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))
-                  )}
-                </div>
-              </div>
+              <OrderSection
+                title="Walk-in Orders"
+                description="Physical orders from customers at the shop"
+                icon={<UserCheck className="w-6 h-6 text-purple-600" />}
+                orders={sortedWalkIns}
+                emptyMessage="Walk-in orders from customers visiting the shop will appear here."
+                emptyIcon={<UserCheck className="w-10 h-10 text-purple-600" />}
+                sectionColor="bg-purple-100"
+                onToggleUrgency={toggleOrderUrgency}
+                onUpdateStatus={updateOrderStatus}
+                onViewDetails={handleViewDetails}
+              />
             </div>
           </TabsContent>
 
@@ -1305,6 +665,14 @@ const ShopDashboard: React.FC = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Order Details Modal */}
+      <OrderDetailsModal
+        order={selectedOrder}
+        isOpen={!!selectedOrder}
+        onClose={() => setSelectedOrder(null)}
+        onPrintFile={handlePrintFile}
+      />
 
       {/* Chat System */}
       <EnhancedChatSystem 
