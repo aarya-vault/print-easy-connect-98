@@ -88,6 +88,11 @@ const EnhancedChatSystem: React.FC<EnhancedChatSystemProps> = ({
 
   const quickReplies = userRole === 'customer' ? customerQuickReplies : shopOwnerQuickReplies;
 
+  // Map user role to message sender type
+  const getMessageSender = (): 'customer' | 'shop' => {
+    return userRole === 'customer' ? 'customer' : 'shop';
+  };
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -103,7 +108,7 @@ const EnhancedChatSystem: React.FC<EnhancedChatSystemProps> = ({
     const message: Message = {
       id: Date.now().toString(),
       text: text,
-      sender: userRole,
+      sender: getMessageSender(),
       timestamp: new Date(),
       status: 'sent'
     };
@@ -152,7 +157,7 @@ const EnhancedChatSystem: React.FC<EnhancedChatSystemProps> = ({
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-lg h-[700px] border-0 shadow-premium bg-white flex flex-col">
         {/* Header */}
-        <CardHeader className="border-b border-neutral-200 bg-gradient-golden-soft">
+        <CardHeader className="border-b border-neutral-200 bg-gradient-to-r from-golden-50 to-golden-100/30">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="relative">
@@ -172,7 +177,7 @@ const EnhancedChatSystem: React.FC<EnhancedChatSystemProps> = ({
                   {userRole === 'customer' ? shopInfo.name : 'Customer'}
                 </CardTitle>
                 <div className="flex items-center space-x-3 mt-1">
-                  <Badge variant={shopInfo.isOnline ? "default" : "secondary"} className="text-xs font-medium">
+                  <Badge variant={shopInfo.isOnline ? "default" : "secondary"} className="text-xs font-medium bg-golden-100 text-golden-800 border-golden-200">
                     {shopInfo.isOnline ? "Online" : "Offline"}
                   </Badge>
                   {orderId && (
@@ -214,10 +219,10 @@ const EnhancedChatSystem: React.FC<EnhancedChatSystemProps> = ({
           {messages.map((message) => (
             <div
               key={message.id}
-              className={`flex ${message.sender === userRole ? 'justify-end' : 'justify-start'}`}
+              className={`flex ${message.sender === getMessageSender() ? 'justify-end' : 'justify-start'}`}
             >
               <div className={`max-w-xs lg:max-w-md px-5 py-4 rounded-2xl shadow-soft ${
-                message.sender === userRole
+                message.sender === getMessageSender()
                   ? 'bg-gradient-golden text-white'
                   : message.sender === 'shop' || message.sender === 'customer'
                   ? 'bg-white border border-neutral-200 text-neutral-900'
@@ -226,11 +231,11 @@ const EnhancedChatSystem: React.FC<EnhancedChatSystemProps> = ({
                 <p className="text-sm font-medium leading-relaxed">{message.text}</p>
                 <div className="flex items-center justify-between mt-3">
                   <span className={`text-xs font-medium ${
-                    message.sender === userRole ? 'text-white/80' : 'text-neutral-500'
+                    message.sender === getMessageSender() ? 'text-white/80' : 'text-neutral-500'
                   }`}>
                     {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
-                  {message.sender === userRole && message.status && (
+                  {message.sender === getMessageSender() && message.status && (
                     <div className="flex space-x-1">
                       <div className={`w-2 h-2 rounded-full ${
                         message.status === 'sent' ? 'bg-white/60' :
@@ -265,7 +270,7 @@ const EnhancedChatSystem: React.FC<EnhancedChatSystemProps> = ({
 
         {/* Quick Responses */}
         {showQuickReplies && (
-          <div className="border-t border-neutral-200 p-4 bg-gradient-golden-soft/30 max-h-48 overflow-y-auto">
+          <div className="border-t border-neutral-200 p-4 bg-gradient-to-r from-golden-50/30 to-golden-100/20 max-h-48 overflow-y-auto">
             <div className="grid gap-2">
               <h4 className="font-semibold text-neutral-900 mb-2 text-sm">Quick Replies:</h4>
               {quickReplies.map((msg, index) => (

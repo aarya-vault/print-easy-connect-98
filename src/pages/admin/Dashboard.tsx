@@ -23,7 +23,8 @@ import {
   UserX,
   BarChart3,
   PieChart,
-  Activity
+  Activity,
+  MapPin
 } from 'lucide-react';
 
 interface ShopApplication {
