@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Send, Phone, MessageSquare } from 'lucide-react';
+import { Send, Phone, MessageSquare, X } from 'lucide-react';
 
 interface ChatMessage {
   id: string;
@@ -37,7 +37,7 @@ const OrderChat: React.FC<OrderChatProps> = ({
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const [quickReplies, setQuickReplies] = useState<QuickReply[]>([
+  const [quickReplies] = useState<QuickReply[]>([
     { id: '1', messageText: 'Order confirmed! Will be ready in 30 minutes.', category: 'confirmation' },
     { id: '2', messageText: 'Your order is ready for pickup!', category: 'status_update' },
     { id: '3', messageText: 'There might be a slight delay due to high volume.', category: 'status_update' },
@@ -46,26 +46,28 @@ const OrderChat: React.FC<OrderChatProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Demo messages
-    setMessages([
-      {
-        id: '1',
-        senderId: customerPhone,
-        senderType: 'customer',
-        message: 'Hi, when will my order be ready?',
-        createdAt: new Date(Date.now() - 10 * 60 * 1000),
-        isRead: true
-      },
-      {
-        id: '2',
-        senderId: 'shop',
-        senderType: 'shop',
-        message: 'Hello! Your order is currently being processed. It should be ready in about 20 minutes.',
-        createdAt: new Date(Date.now() - 5 * 60 * 1000),
-        isRead: true
-      }
-    ]);
-  }, [orderId, customerPhone]);
+    if (isOpen) {
+      // Demo messages
+      setMessages([
+        {
+          id: '1',
+          senderId: customerPhone,
+          senderType: 'customer',
+          message: 'Hi, when will my order be ready?',
+          createdAt: new Date(Date.now() - 10 * 60 * 1000),
+          isRead: true
+        },
+        {
+          id: '2',
+          senderId: 'shop',
+          senderType: 'shop',
+          message: 'Hello! Your order is currently being processed. It should be ready in about 20 minutes.',
+          createdAt: new Date(Date.now() - 5 * 60 * 1000),
+          isRead: true
+        }
+      ]);
+    }
+  }, [orderId, customerPhone, isOpen]);
 
   useEffect(() => {
     scrollToBottom();
@@ -112,13 +114,20 @@ const OrderChat: React.FC<OrderChatProps> = ({
     });
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md h-[600px] flex flex-col">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md h-[600px] flex flex-col border-2 border-neutral-200">
         {/* Header */}
-        <div className="bg-gradient-to-r from-golden-500 to-golden-600 text-white p-4 rounded-t-2xl">
+        <div className="bg-gradient-to-r from-golden-500 to-golden-600 text-white p-4 rounded-t-2xl border-b border-golden-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <MessageSquare className="w-6 h-6" />
@@ -132,7 +141,7 @@ const OrderChat: React.FC<OrderChatProps> = ({
                 size="sm"
                 variant="outline"
                 onClick={() => window.open(`tel:${customerPhone}`)}
-                className="bg-white/20 border-white/30 text-white hover:bg-white/30"
+                className="bg-white/20 border-white/30 text-white hover:bg-white/30 shadow-sm"
               >
                 <Phone className="w-4 h-4" />
               </Button>
@@ -140,26 +149,26 @@ const OrderChat: React.FC<OrderChatProps> = ({
                 size="sm"
                 variant="outline"
                 onClick={onClose}
-                className="bg-white/20 border-white/30 text-white hover:bg-white/30"
+                className="bg-white/20 border-white/30 text-white hover:bg-white/30 shadow-sm"
               >
-                ✕
+                <X className="w-4 h-4" />
               </Button>
             </div>
           </div>
         </div>
 
         {/* Messages */}
-        <div className="flex-1 p-4 overflow-y-auto space-y-4">
+        <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-gray-50">
           {messages.map((message) => (
             <div
               key={message.id}
               className={`flex ${message.senderType === 'shop' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[80%] p-3 rounded-2xl ${
+                className={`max-w-[80%] p-3 rounded-2xl shadow-sm ${
                   message.senderType === 'shop'
                     ? 'bg-golden-500 text-white rounded-br-sm'
-                    : 'bg-gray-100 text-gray-900 rounded-bl-sm'
+                    : 'bg-white text-gray-900 rounded-bl-sm border border-gray-200'
                 }`}
               >
                 <p className="text-sm">{message.message}</p>
@@ -175,8 +184,8 @@ const OrderChat: React.FC<OrderChatProps> = ({
         </div>
 
         {/* Quick Replies */}
-        <div className="p-4 border-t border-gray-100">
-          <p className="text-xs text-gray-600 mb-2">Quick Replies:</p>
+        <div className="p-4 border-t border-gray-100 bg-white">
+          <p className="text-xs text-gray-600 mb-2 font-medium">Quick Replies:</p>
           <div className="flex flex-wrap gap-2 mb-3">
             {quickReplies.map((reply) => (
               <Button
@@ -184,10 +193,10 @@ const OrderChat: React.FC<OrderChatProps> = ({
                 size="sm"
                 variant="outline"
                 onClick={() => handleQuickReply(reply.messageText)}
-                className="text-xs h-auto py-1 px-2 border-golden-200 text-golden-700 hover:bg-golden-50"
+                className="text-xs h-auto py-1 px-2 border-golden-200 text-golden-700 hover:bg-golden-50 shadow-sm"
               >
-                {reply.messageText.length > 30 
-                  ? reply.messageText.substring(0, 30) + '...' 
+                {reply.messageText.length > 25 
+                  ? reply.messageText.substring(0, 25) + '...' 
                   : reply.messageText}
               </Button>
             ))}
@@ -195,18 +204,19 @@ const OrderChat: React.FC<OrderChatProps> = ({
         </div>
 
         {/* Message Input */}
-        <div className="p-4 border-t border-gray-100">
+        <div className="p-4 border-t border-gray-100 bg-white rounded-b-2xl">
           <div className="flex gap-2">
             <Input
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               placeholder="Type your message..."
-              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              className="flex-1"
+              onKeyPress={handleKeyPress}
+              className="flex-1 border-2 border-neutral-200 focus:border-golden-400 rounded-lg shadow-sm"
             />
             <Button
               onClick={handleSendMessage}
-              className="bg-golden-500 hover:bg-golden-600 text-white"
+              disabled={!newMessage.trim()}
+              className="bg-golden-500 hover:bg-golden-600 text-white shadow-sm"
             >
               <Send className="w-4 h-4" />
             </Button>
