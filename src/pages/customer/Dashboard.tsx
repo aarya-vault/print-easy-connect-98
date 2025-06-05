@@ -225,14 +225,14 @@ const CustomerDashboard: React.FC = () => {
     setSelectedOrderId(orderId);
   };
 
-  // Create detailed order for modal (removed pricing) - Fixed to include type property
+  // Create detailed order for modal (removed pricing) - Fixed type mapping
   const getOrderDetails = (orderId: string) => {
     const order = orders.find(o => o.id === orderId);
     if (!order) return null;
 
     return {
       ...order,
-      type: order.orderType, // Add the required type property
+      type: order.orderType === 'uploaded-files' ? 'digital' as const : 'physical' as const, // Map order types correctly
       timeline: [
         {
           status: 'Order Placed',
