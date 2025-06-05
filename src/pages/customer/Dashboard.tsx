@@ -17,7 +17,8 @@ import {
   MapPin,
   Star,
   Calendar,
-  Users
+  Users,
+  Eye
 } from 'lucide-react';
 import { VisitedShop } from '@/types/shop';
 import VisitedShopsSection from '@/components/customer/VisitedShopsSection';
@@ -45,8 +46,9 @@ const CustomerDashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
+  const [shopSearchTerm, setShopSearchTerm] = useState('');
 
-  // Sample visited shops data with realistic demo data
+  // Sample visited shops data with realistic demo data (removed pricing)
   const [visitedShops] = useState<VisitedShop[]>([
     {
       id: 'shop1',
@@ -72,12 +74,6 @@ const CustomerDashboard: React.FC = () => {
       lastVisited: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
       visitCount: 8,
       averageCompletionTime: '15-20 mins',
-      pricing: {
-        blackWhite: 2,
-        color: 8,
-        binding: 25,
-        scanning: 5
-      },
       orderHistory: [
         { orderId: 'PE123456', date: new Date(), amount: 250, status: 'completed' },
         { orderId: 'PE123455', date: new Date(), amount: 150, status: 'completed' }
@@ -107,54 +103,13 @@ const CustomerDashboard: React.FC = () => {
       lastVisited: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
       visitCount: 3,
       averageCompletionTime: '10-15 mins',
-      pricing: {
-        blackWhite: 1.5,
-        color: 6,
-        binding: 20,
-        scanning: 3
-      },
       orderHistory: [
         { orderId: 'PE123454', date: new Date(), amount: 75, status: 'completed' }
-      ]
-    },
-    {
-      id: 'shop3',
-      name: 'Digital Express Printing',
-      address: 'Forum Mall, Level 1, Koramangala',
-      phone: '+91 76543 21098',
-      email: 'orders@digitalexpress.com',
-      rating: 4.9,
-      totalReviews: 312,
-      services: ['Premium Printing', 'Photo Printing', 'Business Cards', 'Posters'],
-      equipment: ['Digital Press', 'Photo Printer', 'Large Format Printer'],
-      operatingHours: {
-        monday: { open: '10:00', close: '22:00', isOpen: true },
-        tuesday: { open: '10:00', close: '22:00', isOpen: true },
-        wednesday: { open: '10:00', close: '22:00', isOpen: true },
-        thursday: { open: '10:00', close: '22:00', isOpen: true },
-        friday: { open: '10:00', close: '22:00', isOpen: true },
-        saturday: { open: '10:00', close: '22:00', isOpen: true },
-        sunday: { open: '11:00', close: '21:00', isOpen: true }
-      },
-      images: [],
-      verified: true,
-      lastVisited: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
-      visitCount: 5,
-      averageCompletionTime: '20-30 mins',
-      pricing: {
-        blackWhite: 3,
-        color: 12,
-        binding: 35,
-        scanning: 8
-      },
-      orderHistory: [
-        { orderId: 'PE123453', date: new Date(), amount: 320, status: 'completed' },
-        { orderId: 'PE123452', date: new Date(), amount: 180, status: 'completed' }
       ]
     }
   ]);
 
-  // Sample orders data with no completion time or billing
+  // Sample orders data (removed billing/pricing)
   const [orders] = useState<Order[]>([
     {
       id: 'PE123456',
@@ -190,32 +145,15 @@ const CustomerDashboard: React.FC = () => {
       shopRating: 4.9,
       createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
       filesCount: 1
-    },
-    {
-      id: 'PE123453',
-      type: 'digital',
-      description: 'Marketing brochures - 100 copies, glossy paper, full color',
-      status: 'completed',
-      shopName: 'Digital Express Printing',
-      shopPhone: '+91 76543 21098',
-      shopAddress: 'Forum Mall, Level 1, Koramangala',
-      shopRating: 4.9,
-      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-      filesCount: 2
-    },
-    {
-      id: 'PE123452',
-      type: 'digital',
-      description: 'Thesis printing - 120 pages, double-sided, hardbound',
-      status: 'completed',
-      shopName: 'Quick Print Solutions',
-      shopPhone: '+91 98765 43210',
-      shopAddress: 'Shop 12, MG Road, Bangalore',
-      shopRating: 4.8,
-      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-      filesCount: 1
     }
   ]);
+
+  // Filter shops based on search term
+  const filteredShops = visitedShops.filter(shop =>
+    shop.name.toLowerCase().includes(shopSearchTerm.toLowerCase()) ||
+    shop.address.toLowerCase().includes(shopSearchTerm.toLowerCase()) ||
+    shop.services.some(service => service.toLowerCase().includes(shopSearchTerm.toLowerCase()))
+  );
 
   const filteredOrders = orders.filter(order => {
     const matchesSearch = order.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -269,7 +207,7 @@ const CustomerDashboard: React.FC = () => {
     setSelectedOrderId(orderId);
   };
 
-  // Create detailed order for modal with pricing
+  // Create detailed order for modal (removed pricing)
   const getOrderDetails = (orderId: string) => {
     const order = orders.find(o => o.id === orderId);
     if (!order) return null;
@@ -318,16 +256,7 @@ const CustomerDashboard: React.FC = () => {
           size: 45000,
           url: '#'
         }
-      ] : undefined,
-      pricing: {
-        subtotal: 180,
-        tax: 32,
-        total: 212,
-        breakdown: [
-          { item: 'Color Printing', quantity: 50, rate: 3, amount: 150 },
-          { item: 'Spiral Binding', quantity: 1, rate: 30, amount: 30 }
-        ]
-      }
+      ] : undefined
     };
   };
 
@@ -366,9 +295,9 @@ const CustomerDashboard: React.FC = () => {
       </div>
 
       <div className="container mx-auto px-6 py-8">
-        {/* Quick Stats */}
+        {/* Quick Stats (removed revenue) */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-          <Card className="border-0 shadow-glass bg-white/70 backdrop-blur-lg hover:shadow-premium transition-all duration-300">
+          <Card className="border-0 shadow-glass bg-white/80 backdrop-blur-lg hover:shadow-premium transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -382,7 +311,7 @@ const CustomerDashboard: React.FC = () => {
             </CardContent>
           </Card>
           
-          <Card className="border-0 shadow-glass bg-white/70 backdrop-blur-lg hover:shadow-premium transition-all duration-300">
+          <Card className="border-0 shadow-glass bg-white/80 backdrop-blur-lg hover:shadow-premium transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -398,7 +327,7 @@ const CustomerDashboard: React.FC = () => {
             </CardContent>
           </Card>
           
-          <Card className="border-0 shadow-glass bg-white/70 backdrop-blur-lg hover:shadow-premium transition-all duration-300">
+          <Card className="border-0 shadow-glass bg-white/80 backdrop-blur-lg hover:shadow-premium transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -414,7 +343,7 @@ const CustomerDashboard: React.FC = () => {
             </CardContent>
           </Card>
           
-          <Card className="border-0 shadow-glass bg-white/70 backdrop-blur-lg hover:shadow-premium transition-all duration-300">
+          <Card className="border-0 shadow-glass bg-white/80 backdrop-blur-lg hover:shadow-premium transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -429,17 +358,62 @@ const CustomerDashboard: React.FC = () => {
           </Card>
         </div>
 
-        {/* Print Shops Previously Visited Section */}
+        {/* Enhanced Print Shops Section */}
         <div className="mb-10">
-          <VisitedShopsSection 
-            visitedShops={visitedShops}
-            title="Print Shops Previously Visited"
-            showRequestButton={false}
-          />
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-semibold text-neutral-900">Print Shops Previously Visited</h2>
+              <p className="text-neutral-600 mt-1">Select from shops you've visited before to place new orders</p>
+            </div>
+          </div>
+
+          {/* Shop Search */}
+          {visitedShops.length > 6 && (
+            <Card className="border-0 shadow-glass bg-white/90 backdrop-blur-lg mb-6">
+              <CardContent className="p-4">
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-neutral-400" />
+                  <Input
+                    placeholder="Search shops by name, location, or services..."
+                    value={shopSearchTerm}
+                    onChange={(e) => setShopSearchTerm(e.target.value)}
+                    className="pl-12 h-12 border-neutral-200 focus:border-golden-500 focus:ring-golden-100 rounded-xl font-medium"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {filteredShops.length === 0 && shopSearchTerm ? (
+            <Card className="border-0 shadow-glass bg-white/70 backdrop-blur-lg">
+              <CardContent className="p-16 text-center">
+                <div className="w-20 h-20 bg-gradient-golden-soft rounded-full mx-auto mb-6 flex items-center justify-center">
+                  <Search className="w-10 h-10 text-golden-600" />
+                </div>
+                <h3 className="text-xl font-semibold text-neutral-900 mb-3">No shops found</h3>
+                <p className="text-neutral-600 max-w-md mx-auto">
+                  Try adjusting your search terms or browse all shops below.
+                </p>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShopSearchTerm('')}
+                  className="mt-4"
+                >
+                  Clear Search
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <VisitedShopsSection 
+              visitedShops={filteredShops}
+              title=""
+              showRequestButton={false}
+            />
+          )}
         </div>
 
-        {/* Search and Filters */}
-        <Card className="border-0 shadow-glass bg-white/70 backdrop-blur-lg mb-8">
+        {/* Search and Filters for Orders */}
+        <Card className="border-0 shadow-glass bg-white/90 backdrop-blur-lg mb-8">
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row gap-4">
               <div className="relative flex-1">
@@ -497,7 +471,7 @@ const CustomerDashboard: React.FC = () => {
             </Card>
           ) : (
             filteredOrders.map((order) => (
-              <Card key={order.id} className="border-0 shadow-glass bg-white/70 backdrop-blur-lg hover:shadow-premium transition-all duration-300 group">
+              <Card key={order.id} className="border-0 shadow-glass bg-white/80 backdrop-blur-lg hover:shadow-premium transition-all duration-300 group">
                 <CardContent className="p-6">
                   <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                     {/* Order Info */}
@@ -557,6 +531,7 @@ const CustomerDashboard: React.FC = () => {
                         onClick={() => handleViewDetails(order.id)}
                         className="bg-gradient-golden hover:shadow-golden text-white font-semibold px-6"
                       >
+                        <Eye className="w-4 h-4 mr-2" />
                         View Details
                       </Button>
                     </div>
@@ -568,7 +543,7 @@ const CustomerDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Order Details Modal */}
+      {/* Order Details Modal (pricing removed) */}
       {selectedOrderId && (
         <OrderDetailsModal
           order={getOrderDetails(selectedOrderId)!}

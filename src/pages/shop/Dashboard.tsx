@@ -23,7 +23,6 @@ import {
   Calendar,
   Settings,
   BarChart3,
-  DollarSign,
   Package,
   MapPin,
   Mail,
@@ -32,7 +31,13 @@ import {
   Scan,
   Copy,
   Image,
-  Palette
+  Palette,
+  QrCode,
+  AlertTriangle,
+  X,
+  RotateCcw,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import EnhancedChatSystem from '@/components/chat/EnhancedChatSystem';
 
@@ -43,7 +48,7 @@ interface ShopOrder {
   customerEmail: string;
   type: 'digital' | 'physical';
   description: string;
-  status: 'new' | 'confirmed' | 'processing' | 'ready' | 'completed';
+  status: 'new' | 'confirmed' | 'processing' | 'ready' | 'completed' | 'cancelled';
   priority: 'normal' | 'urgent';
   createdAt: Date;
   files?: {
@@ -70,6 +75,10 @@ const ShopDashboard: React.FC = () => {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
 
+  // Shop QR Code and Upload URL
+  const shopSlug = 'quick-print-solutions';
+  const uploadUrl = `https://app.printeasy.com/upload/${shopSlug}`;
+
   // Demo orders data for shop owner
   const [orders, setOrders] = useState<ShopOrder[]>([
     {
@@ -80,7 +89,7 @@ const ShopDashboard: React.FC = () => {
       type: 'digital',
       description: 'Business presentation slides - 50 pages, color printing, spiral binding',
       status: 'processing',
-      priority: 'normal',
+      priority: 'urgent',
       createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
       files: [
         {
@@ -210,19 +219,27 @@ const ShopDashboard: React.FC = () => {
     return matchesSearch && matchesStatus && matchesPriority;
   });
 
+  // Sort orders - urgent first, then by creation date
+  const sortedOrders = filteredOrders.sort((a, b) => {
+    if (a.priority === 'urgent' && b.priority !== 'urgent') return -1;
+    if (a.priority !== 'urgent' && b.priority === 'urgent') return 1;
+    return b.createdAt.getTime() - a.createdAt.getTime();
+  });
+
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'new': return 'bg-golden-100 text-golden-800 border-golden-200';
-      case 'confirmed': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'processing': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'ready': return 'bg-green-100 text-green-800 border-green-200';
-      case 'completed': return 'bg-neutral-100 text-neutral-800 border-neutral-200';
-      default: return 'bg-neutral-100 text-neutral-800 border-neutral-200';
+      case 'new': return 'bg-golden-100 text-golden-800 border-golden-300';
+      case 'confirmed': return 'bg-blue-100 text-blue-800 border-blue-300';
+      case 'processing': return 'bg-orange-100 text-orange-800 border-orange-300';
+      case 'ready': return 'bg-green-100 text-green-800 border-green-300';
+      case 'completed': return 'bg-neutral-100 text-neutral-800 border-neutral-300';
+      case 'cancelled': return 'bg-red-100 text-red-800 border-red-300';
+      default: return 'bg-neutral-100 text-neutral-800 border-neutral-300';
     }
   };
 
   const getPriorityColor = (priority: string) => {
-    return priority === 'urgent' ? 'bg-red-100 text-red-800 border-red-200' : 'bg-neutral-100 text-neutral-600 border-neutral-200';
+    return priority === 'urgent' ? 'bg-red-50 text-red-800 border-red-300' : 'bg-neutral-50 text-neutral-600 border-neutral-200';
   };
 
   const getStatusIcon = (status: string) => {
@@ -232,14 +249,49 @@ const ShopDashboard: React.FC = () => {
       case 'processing': return <Clock className="w-4 h-4" />;
       case 'ready': return <Package className="w-4 h-4" />;
       case 'completed': return <CheckCircle className="w-4 h-4" />;
+      case 'cancelled': return <X className="w-4 h-4" />;
       default: return <Clock className="w-4 h-4" />;
     }
   };
 
-  const updateOrderStatus = (orderId: string, newStatus: 'new' | 'confirmed' | 'processing' | 'ready' | 'completed') => {
+  const updateOrderStatus = (orderId: string, newStatus: 'new' | 'confirmed' | 'processing' | 'ready' | 'completed' | 'cancelled') => {
     setOrders(orders.map(order => 
       order.id === orderId ? { ...order, status: newStatus } : order
     ));
+  };
+
+  const updateOrderPriority = (orderId: string, newPriority: 'normal' | 'urgent') => {
+    setOrders(orders.map(order => 
+      order.id === orderId ? { ...order, priority: newPriority } : order
+    ));
+  };
+
+  const handlePrintOrder = (orderId: string) => {
+    const order = orders.find(o => o.id === orderId);
+    if (order) {
+      // Create a print-friendly version of the order
+      const printContent = `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <h1>Order Details - ${order.id}</h1>
+          <h2>Customer: ${order.customerName}</h2>
+          <p>Phone: ${order.customerPhone}</p>
+          <p>Description: ${order.description}</p>
+          <p>Status: ${order.status}</p>
+          <p>Priority: ${order.priority}</p>
+          ${order.instructions ? `<p>Instructions: ${order.instructions}</p>` : ''}
+          <p>Services: ${order.services.join(', ')}</p>
+          ${order.pages ? `<p>Pages: ${order.pages}</p>` : ''}
+          ${order.copies ? `<p>Copies: ${order.copies}</p>` : ''}
+        </div>
+      `;
+      
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+        printWindow.print();
+      }
+    }
   };
 
   const formatTimeAgo = (date: Date) => {
@@ -260,7 +312,7 @@ const ShopDashboard: React.FC = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  // Analytics data
+  // Analytics data (removed revenue)
   const todayOrders = orders.filter(order => {
     const today = new Date();
     return order.createdAt.toDateString() === today.toDateString();
@@ -292,14 +344,6 @@ const ShopDashboard: React.FC = () => {
             <div className="flex items-center space-x-4">
               <Button
                 variant="outline"
-                onClick={() => setChatOpen(true)}
-                className="border-neutral-300 hover:bg-neutral-50 font-medium"
-              >
-                <MessageCircle className="w-5 h-5 mr-2" />
-                Customer Chat
-              </Button>
-              <Button
-                variant="outline"
                 onClick={logout}
                 className="border-neutral-300 hover:bg-neutral-50 font-medium"
               >
@@ -316,14 +360,14 @@ const ShopDashboard: React.FC = () => {
             <TabsTrigger value="orders" className="font-medium">Order Queue</TabsTrigger>
             <TabsTrigger value="analytics" className="font-medium">Analytics</TabsTrigger>
             <TabsTrigger value="services" className="font-medium">Services</TabsTrigger>
-            <TabsTrigger value="profile" className="font-medium">Profile</TabsTrigger>
+            <TabsTrigger value="profile" className="font-medium">Profile & QR</TabsTrigger>
           </TabsList>
 
           {/* Orders Tab */}
           <TabsContent value="orders" className="space-y-6">
             {/* Quick Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <Card className="border-0 shadow-glass bg-white/70 backdrop-blur-lg">
+              <Card className="border-0 shadow-glass bg-white/80 backdrop-blur-lg hover:shadow-premium transition-all duration-300">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -337,7 +381,7 @@ const ShopDashboard: React.FC = () => {
                 </CardContent>
               </Card>
               
-              <Card className="border-0 shadow-glass bg-white/70 backdrop-blur-lg">
+              <Card className="border-0 shadow-glass bg-white/80 backdrop-blur-lg hover:shadow-premium transition-all duration-300">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -351,7 +395,7 @@ const ShopDashboard: React.FC = () => {
                 </CardContent>
               </Card>
               
-              <Card className="border-0 shadow-glass bg-white/70 backdrop-blur-lg">
+              <Card className="border-0 shadow-glass bg-white/80 backdrop-blur-lg hover:shadow-premium transition-all duration-300">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -359,13 +403,13 @@ const ShopDashboard: React.FC = () => {
                       <p className="text-3xl font-bold text-neutral-900">{urgentOrders}</p>
                     </div>
                     <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center">
-                      <Bell className="w-6 h-6 text-red-600" />
+                      <AlertTriangle className="w-6 h-6 text-red-600" />
                     </div>
                   </div>
                 </CardContent>
               </Card>
               
-              <Card className="border-0 shadow-glass bg-white/70 backdrop-blur-lg">
+              <Card className="border-0 shadow-glass bg-white/80 backdrop-blur-lg hover:shadow-premium transition-all duration-300">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -381,7 +425,7 @@ const ShopDashboard: React.FC = () => {
             </div>
 
             {/* Filters */}
-            <Card className="border-0 shadow-glass bg-white/70 backdrop-blur-lg">
+            <Card className="border-0 shadow-glass bg-white/90 backdrop-blur-lg">
               <CardContent className="p-6">
                 <div className="flex flex-col md:flex-row gap-4">
                   <div className="relative flex-1">
@@ -406,6 +450,7 @@ const ShopDashboard: React.FC = () => {
                       <option value="processing">Processing</option>
                       <option value="ready">Ready</option>
                       <option value="completed">Completed</option>
+                      <option value="cancelled">Cancelled</option>
                     </select>
                     <select
                       value={priorityFilter}
@@ -421,9 +466,9 @@ const ShopDashboard: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Orders List */}
+            {/* Orders Stack */}
             <div className="space-y-4">
-              {filteredOrders.length === 0 ? (
+              {sortedOrders.length === 0 ? (
                 <Card className="border-0 shadow-glass bg-white/70 backdrop-blur-lg">
                   <CardContent className="p-16 text-center">
                     <div className="w-20 h-20 bg-gradient-golden-soft rounded-full mx-auto mb-6 flex items-center justify-center">
@@ -434,26 +479,30 @@ const ShopDashboard: React.FC = () => {
                   </CardContent>
                 </Card>
               ) : (
-                filteredOrders.map((order) => (
-                  <Card key={order.id} className="border-0 shadow-glass bg-white/70 backdrop-blur-lg hover:shadow-premium transition-all duration-300">
+                sortedOrders.map((order, index) => (
+                  <Card 
+                    key={order.id} 
+                    className={`border-2 shadow-medium bg-white/95 backdrop-blur-lg hover:shadow-premium transition-all duration-300 ${
+                      order.priority === 'urgent' ? 'border-red-200 bg-red-50/20' : 'border-neutral-200'
+                    } ${order.status === 'cancelled' ? 'opacity-75' : ''}`}
+                    style={{ zIndex: sortedOrders.length - index }}
+                  >
                     <CardContent className="p-6">
                       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
                         {/* Order Info */}
                         <div className="flex-1">
-                          <div className="flex items-center gap-4 mb-4">
+                          <div className="flex items-center gap-4 mb-4 flex-wrap">
                             <h3 className="font-bold text-neutral-900 text-lg">#{order.id}</h3>
-                            <Badge className={`border font-medium ${getStatusColor(order.status)}`}>
+                            <Badge className={`border-2 font-medium ${getStatusColor(order.status)}`}>
                               <div className="flex items-center gap-2">
                                 {getStatusIcon(order.status)}
                                 <span className="capitalize">{order.status}</span>
                               </div>
                             </Badge>
-                            {order.priority === 'urgent' && (
-                              <Badge className={`border font-medium ${getPriorityColor(order.priority)}`}>
-                                <Bell className="w-3 h-3 mr-1" />
-                                URGENT
-                              </Badge>
-                            )}
+                            <Badge className={`border-2 font-medium ${getPriorityColor(order.priority)}`}>
+                              {order.priority === 'urgent' && <AlertTriangle className="w-3 h-3 mr-1" />}
+                              <span className="uppercase">{order.priority}</span>
+                            </Badge>
                             <span className="text-sm text-neutral-500 font-medium">{formatTimeAgo(order.createdAt)}</span>
                           </div>
                           
@@ -497,7 +546,7 @@ const ShopDashboard: React.FC = () => {
                               <h5 className="font-semibold text-neutral-900 mb-2">Files ({order.files.length}):</h5>
                               <div className="space-y-2">
                                 {order.files.map((file) => (
-                                  <div key={file.id} className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg">
+                                  <div key={file.id} className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg border border-neutral-200">
                                     <div className="flex items-center gap-3">
                                       <FileText className="w-5 h-5 text-neutral-600" />
                                       <div>
@@ -529,7 +578,7 @@ const ShopDashboard: React.FC = () => {
                         </div>
 
                         {/* Actions */}
-                        <div className="flex flex-col gap-3 min-w-[200px]">
+                        <div className="flex flex-col gap-3 min-w-[220px]">
                           <div className="flex gap-2">
                             <Button
                               variant="outline"
@@ -547,43 +596,119 @@ const ShopDashboard: React.FC = () => {
                             >
                               <MessageCircle className="w-4 h-4" />
                             </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handlePrintOrder(order.id)}
+                              className="flex-1 bg-gradient-golden hover:shadow-golden text-white border-golden-300"
+                            >
+                              <Printer className="w-4 h-4" />
+                            </Button>
                           </div>
                           
+                          {/* Priority Controls */}
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => updateOrderPriority(order.id, order.priority === 'urgent' ? 'normal' : 'urgent')}
+                              className={`flex-1 ${order.priority === 'urgent' ? 'bg-red-100 text-red-700 border-red-300' : 'border-neutral-300'}`}
+                            >
+                              {order.priority === 'urgent' ? <ArrowDown className="w-4 h-4" /> : <ArrowUp className="w-4 h-4" />}
+                              {order.priority === 'urgent' ? 'Normal' : 'Urgent'}
+                            </Button>
+                          </div>
+                          
+                          {/* Status Controls */}
                           <div className="space-y-2">
                             {order.status === 'new' && (
-                              <Button
-                                size="sm"
-                                onClick={() => updateOrderStatus(order.id, 'confirmed')}
-                                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                              >
-                                Confirm Order
-                              </Button>
+                              <>
+                                <Button
+                                  size="sm"
+                                  onClick={() => updateOrderStatus(order.id, 'confirmed')}
+                                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                                >
+                                  Confirm Order
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => updateOrderStatus(order.id, 'cancelled')}
+                                  className="w-full border-red-300 text-red-700 hover:bg-red-50"
+                                >
+                                  Cancel Order
+                                </Button>
+                              </>
                             )}
                             {order.status === 'confirmed' && (
-                              <Button
-                                size="sm"
-                                onClick={() => updateOrderStatus(order.id, 'processing')}
-                                className="w-full bg-orange-600 hover:bg-orange-700 text-white"
-                              >
-                                Start Processing
-                              </Button>
+                              <>
+                                <Button
+                                  size="sm"
+                                  onClick={() => updateOrderStatus(order.id, 'processing')}
+                                  className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+                                >
+                                  Start Processing
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => updateOrderStatus(order.id, 'new')}
+                                  className="w-full border-neutral-300"
+                                >
+                                  <RotateCcw className="w-4 h-4 mr-2" />
+                                  Back to New
+                                </Button>
+                              </>
                             )}
                             {order.status === 'processing' && (
-                              <Button
-                                size="sm"
-                                onClick={() => updateOrderStatus(order.id, 'ready')}
-                                className="w-full bg-green-600 hover:bg-green-700 text-white"
-                              >
-                                Mark Ready
-                              </Button>
+                              <>
+                                <Button
+                                  size="sm"
+                                  onClick={() => updateOrderStatus(order.id, 'ready')}
+                                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                                >
+                                  Mark Ready
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => updateOrderStatus(order.id, 'confirmed')}
+                                  className="w-full border-neutral-300"
+                                >
+                                  <RotateCcw className="w-4 h-4 mr-2" />
+                                  Back to Confirmed
+                                </Button>
+                              </>
                             )}
                             {order.status === 'ready' && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  onClick={() => updateOrderStatus(order.id, 'completed')}
+                                  className="w-full bg-gradient-golden hover:shadow-golden text-white"
+                                >
+                                  Complete Order
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => updateOrderStatus(order.id, 'processing')}
+                                  className="w-full border-neutral-300"
+                                >
+                                  <RotateCcw className="w-4 h-4 mr-2" />
+                                  Back to Processing
+                                </Button>
+                              </>
+                            )}
+                            {order.status === 'cancelled' && (
                               <Button
                                 size="sm"
-                                onClick={() => updateOrderStatus(order.id, 'completed')}
-                                className="w-full bg-gradient-golden hover:shadow-golden text-white"
+                                variant="outline"
+                                onClick={() => updateOrderStatus(order.id, 'new')}
+                                className="w-full border-green-300 text-green-700 hover:bg-green-50"
                               >
-                                Complete Order
+                                <RotateCcw className="w-4 h-4 mr-2" />
+                                Restore Order
                               </Button>
                             )}
                           </div>
@@ -618,21 +743,6 @@ const ShopDashboard: React.FC = () => {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-neutral-600 font-medium mb-1">Revenue</p>
-                      <p className="text-3xl font-bold text-neutral-900">₹15,240</p>
-                      <p className="text-sm text-green-600 font-medium">+8% from last week</p>
-                    </div>
-                    <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center">
-                      <DollarSign className="w-6 h-6 text-green-600" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="border-0 shadow-glass bg-white/70 backdrop-blur-lg">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
                       <p className="text-sm text-neutral-600 font-medium mb-1">Customers</p>
                       <p className="text-3xl font-bold text-neutral-900">47</p>
                       <p className="text-sm text-green-600 font-medium">+5 new this week</p>
@@ -658,6 +768,21 @@ const ShopDashboard: React.FC = () => {
                   </div>
                 </CardContent>
               </Card>
+
+              <Card className="border-0 shadow-glass bg-white/70 backdrop-blur-lg">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-neutral-600 font-medium mb-1">Completion Rate</p>
+                      <p className="text-3xl font-bold text-neutral-900">96%</p>
+                      <p className="text-sm text-green-600 font-medium">+3% from last month</p>
+                    </div>
+                    <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center">
+                      <TrendingUp className="w-6 h-6 text-green-600" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
 
@@ -678,7 +803,6 @@ const ShopDashboard: React.FC = () => {
                       <h3 className="font-semibold text-neutral-900">Color Printing</h3>
                     </div>
                     <p className="text-sm text-neutral-600 mb-3">High-quality color printing for all document types</p>
-                    <p className="font-semibold text-neutral-900">₹8 per page</p>
                   </div>
                   
                   <div className="p-4 border border-neutral-200 rounded-xl">
@@ -689,7 +813,6 @@ const ShopDashboard: React.FC = () => {
                       <h3 className="font-semibold text-neutral-900">B&W Printing</h3>
                     </div>
                     <p className="text-sm text-neutral-600 mb-3">Fast and economical black & white printing</p>
-                    <p className="font-semibold text-neutral-900">₹2 per page</p>
                   </div>
                   
                   <div className="p-4 border border-neutral-200 rounded-xl">
@@ -700,7 +823,6 @@ const ShopDashboard: React.FC = () => {
                       <h3 className="font-semibold text-neutral-900">Scanning</h3>
                     </div>
                     <p className="text-sm text-neutral-600 mb-3">High-resolution document scanning</p>
-                    <p className="font-semibold text-neutral-900">₹5 per page</p>
                   </div>
                   
                   <div className="p-4 border border-neutral-200 rounded-xl">
@@ -711,7 +833,6 @@ const ShopDashboard: React.FC = () => {
                       <h3 className="font-semibold text-neutral-900">Binding</h3>
                     </div>
                     <p className="text-sm text-neutral-600 mb-3">Spiral, hardbound, and wire binding</p>
-                    <p className="font-semibold text-neutral-900">₹25-50 each</p>
                   </div>
                   
                   <div className="p-4 border border-neutral-200 rounded-xl">
@@ -722,7 +843,6 @@ const ShopDashboard: React.FC = () => {
                       <h3 className="font-semibold text-neutral-900">Photo Printing</h3>
                     </div>
                     <p className="text-sm text-neutral-600 mb-3">Professional photo printing services</p>
-                    <p className="font-semibold text-neutral-900">₹15-30 each</p>
                   </div>
                   
                   <div className="p-4 border border-neutral-200 rounded-xl">
@@ -733,60 +853,110 @@ const ShopDashboard: React.FC = () => {
                       <h3 className="font-semibold text-neutral-900">Design Services</h3>
                     </div>
                     <p className="text-sm text-neutral-600 mb-3">Custom design and layout services</p>
-                    <p className="font-semibold text-neutral-900">₹100+ per hour</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Profile Tab */}
+          {/* Profile & QR Tab */}
           <TabsContent value="profile" className="space-y-6">
-            <Card className="border-0 shadow-glass bg-white/70 backdrop-blur-lg">
-              <CardHeader>
-                <CardTitle className="text-neutral-900">Shop Information</CardTitle>
-                <CardDescription>Manage your shop details and settings</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">Shop Name</label>
-                    <Input defaultValue="Quick Print Solutions" className="border-neutral-200" />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Shop Information */}
+              <Card className="border-0 shadow-glass bg-white/70 backdrop-blur-lg">
+                <CardHeader>
+                  <CardTitle className="text-neutral-900">Shop Information</CardTitle>
+                  <CardDescription>Manage your shop details and settings</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-2">Shop Name</label>
+                      <Input defaultValue="Quick Print Solutions" className="border-neutral-200" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-2">Phone Number</label>
+                      <Input defaultValue="+91 98765 43210" className="border-neutral-200" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-2">Email</label>
+                      <Input defaultValue="shop@printeasy.com" className="border-neutral-200" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-2">Owner Name</label>
+                      <Input defaultValue={user?.name || user?.email || 'Shop Owner'} className="border-neutral-200" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-2">Address</label>
+                      <Input defaultValue="Shop 12, MG Road, Bangalore, Karnataka 560001" className="border-neutral-200" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-700 mb-2">Opening Time</label>
+                        <Input defaultValue="09:00" type="time" className="border-neutral-200" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-700 mb-2">Closing Time</label>
+                        <Input defaultValue="18:00" type="time" className="border-neutral-200" />
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">Phone Number</label>
-                    <Input defaultValue="+91 98765 43210" className="border-neutral-200" />
+                  <div className="flex justify-end">
+                    <Button className="bg-gradient-golden hover:shadow-golden text-white font-semibold px-8">
+                      Save Changes
+                    </Button>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">Email</label>
-                    <Input defaultValue="shop@printeasy.com" className="border-neutral-200" />
+                </CardContent>
+              </Card>
+
+              {/* QR Code Section */}
+              <Card className="border-0 shadow-glass bg-white/70 backdrop-blur-lg">
+                <CardHeader>
+                  <CardTitle className="text-neutral-900 flex items-center gap-2">
+                    <QrCode className="w-6 h-6" />
+                    Shop Upload QR Code
+                  </CardTitle>
+                  <CardDescription>Share this QR code for customers to upload files directly</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="text-center">
+                    <div className="w-48 h-48 bg-white border-2 border-neutral-200 rounded-xl mx-auto mb-4 flex items-center justify-center">
+                      <QrCode className="w-32 h-32 text-neutral-400" />
+                    </div>
+                    <p className="text-sm text-neutral-600 mb-2">Scan to upload files to this shop</p>
+                    <p className="text-xs text-neutral-500 font-mono bg-neutral-100 px-3 py-2 rounded-lg break-all">
+                      {uploadUrl}
+                    </p>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">Owner Name</label>
-                    <Input defaultValue={user?.name || user?.email || 'Shop Owner'} className="border-neutral-200" />
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-2">Shop Slug</label>
+                      <Input 
+                        value={shopSlug} 
+                        readOnly 
+                        className="border-neutral-200 bg-neutral-50 font-mono text-sm" 
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        className="flex-1"
+                        onClick={() => navigator.clipboard?.writeText(uploadUrl)}
+                      >
+                        Copy URL
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="flex-1"
+                        onClick={() => window.print()}
+                      >
+                        Print QR
+                      </Button>
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">Address</label>
-                  <Input defaultValue="Shop 12, MG Road, Bangalore, Karnataka 560001" className="border-neutral-200" />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">Opening Time</label>
-                    <Input defaultValue="09:00" type="time" className="border-neutral-200" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">Closing Time</label>
-                    <Input defaultValue="18:00" type="time" className="border-neutral-200" />
-                  </div>
-                </div>
-                <div className="flex justify-end">
-                  <Button className="bg-gradient-golden hover:shadow-golden text-white font-semibold px-8">
-                    Save Changes
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

@@ -4,96 +4,51 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Phone, Clock, Send, MessageSquare, X, Users } from 'lucide-react';
+import { 
+  MessageCircle, 
+  Send, 
+  X, 
+  Phone, 
+  Clock,
+  CheckCircle,
+  User,
+  Bot,
+  Minimize2,
+  Maximize2
+} from 'lucide-react';
 
 interface Message {
   id: string;
-  text: string;
+  content: string;
   sender: 'customer' | 'shop' | 'system';
   timestamp: Date;
-  status?: 'sent' | 'delivered' | 'read';
+  orderId?: string;
 }
 
 interface EnhancedChatSystemProps {
-  orderId?: string;
   isOpen: boolean;
   onClose: () => void;
-  shopInfo?: {
-    name: string;
-    phone: string;
-    isOnline: boolean;
-    avgResponseTime: string;
-  };
+  orderId?: string;
   userRole?: 'customer' | 'shop_owner';
 }
 
-// Enhanced role-based quick replies
-const customerQuickReplies = [
-  "Is my order ready for pickup?",
-  "Can I modify my current order?",
-  "What's the current status?",
-  "I need this urgently, can you prioritize?",
-  "Can you call me when it's ready?",
-  "Any additional charges?",
-  "When can I collect it?",
-  "Quality looks good, thank you!",
-];
-
-const shopOwnerQuickReplies = [
-  "Order received, starting processing now",
-  "Your order is ready for pickup",
-  "Processing completed successfully",
-  "Need clarification on specifications",
-  "Estimated completion in 30 minutes",
-  "Please confirm paper type preference",
-  "Order completed, awaiting pickup",
-  "Thank you for your business!",
-  "Minor delay expected - 15 minutes",
-  "Quality check completed, looks perfect",
-];
-
-const EnhancedChatSystem: React.FC<EnhancedChatSystemProps> = ({ 
-  orderId, 
-  isOpen, 
+const EnhancedChatSystem: React.FC<EnhancedChatSystemProps> = ({
+  isOpen,
   onClose,
-  userRole = 'customer',
-  shopInfo = {
-    name: "Quick Print Solutions",
-    phone: "+91 98765 43210",
-    isOnline: true,
-    avgResponseTime: "2-3 minutes"
-  }
+  orderId,
+  userRole = 'customer'
 }) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: 'Your order has been received and assigned to our shop.',
-      sender: 'system',
-      timestamp: new Date(Date.now() - 10000),
-      status: 'delivered'
-    },
-    {
-      id: '2',
-      text: userRole === 'customer' 
-        ? 'Hi! We have received your order. We\'ll start processing it shortly.'
-        : 'Hello! My order was just placed. When can I expect it to be ready?',
+      content: 'Hello! How can I help you today?',
       sender: userRole === 'customer' ? 'shop' : 'customer',
-      timestamp: new Date(Date.now() - 5000),
-      status: 'delivered'
+      timestamp: new Date(Date.now() - 10 * 60 * 1000)
     }
   ]);
   const [newMessage, setNewMessage] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const [showQuickReplies, setShowQuickReplies] = useState(false);
-  const [shopNotified, setShopNotified] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const quickReplies = userRole === 'customer' ? customerQuickReplies : shopOwnerQuickReplies;
-
-  // Map user role to message sender type
-  const getMessageSender = (): 'customer' | 'shop' => {
-    return userRole === 'customer' ? 'customer' : 'shop';
-  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -103,225 +58,207 @@ const EnhancedChatSystem: React.FC<EnhancedChatSystemProps> = ({
     scrollToBottom();
   }, [messages]);
 
-  const sendMessage = (messageText?: string) => {
-    const text = messageText || newMessage;
-    if (!text.trim()) return;
+  const sendMessage = () => {
+    if (!newMessage.trim()) return;
 
     const message: Message = {
       id: Date.now().toString(),
-      text: text,
-      sender: getMessageSender(),
+      content: newMessage,
+      sender: userRole === 'customer' ? 'customer' : 'shop',
       timestamp: new Date(),
-      status: 'sent'
+      orderId
     };
 
     setMessages(prev => [...prev, message]);
     setNewMessage('');
-    setShowQuickReplies(false);
-
-    // Auto-notify system for customers
-    if (userRole === 'customer' && !shopNotified) {
-      setShopNotified(true);
-      setTimeout(() => {
-        const notificationMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          text: `Shop owner has been notified of your message. Average response time: ${shopInfo.avgResponseTime}. For urgent matters, you can call directly.`,
-          sender: 'system',
-          timestamp: new Date(),
-          status: 'delivered'
-        };
-        setMessages(prev => [...prev, notificationMessage]);
-      }, 1000);
-    }
 
     // Simulate response
     setTimeout(() => {
-      setIsTyping(true);
-      setTimeout(() => {
-        setIsTyping(false);
-        const response: Message = {
-          id: (Date.now() + 2).toString(),
-          text: userRole === 'customer' 
-            ? 'Thank you for your message. We\'ll update you on the progress shortly.'
-            : 'Thanks for the update! We appreciate your communication.',
-          sender: userRole === 'customer' ? 'shop' : 'customer',
-          timestamp: new Date(),
-          status: 'delivered'
-        };
-        setMessages(prev => [...prev, response]);
-      }, 2000);
-    }, 500);
+      const response: Message = {
+        id: (Date.now() + 1).toString(),
+        content: userRole === 'customer' ? 
+          'Thank you for your message. We\'ll get back to you shortly!' :
+          'Thanks for the update. Let me check on that for you.',
+        sender: userRole === 'customer' ? 'shop' : 'customer',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, response]);
+    }, 1000);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  // Quick replies based on user role (removed pricing-related ones)
+  const customerQuickReplies = [
+    'Is my order ready?',
+    'Can I add more copies?',
+    'What time can I pick up?',
+    'Can you call me when ready?',
+    'Do you have premium paper?',
+    'Is color printing available?'
+  ];
+
+  const shopQuickReplies = [
+    'Your order is ready for pickup',
+    'We need 30 more minutes',
+    'Order is in progress',
+    'Please confirm pickup time',
+    'We have your order ready',
+    'Call us if you need changes'
+  ];
+
+  const quickReplies = userRole === 'customer' ? customerQuickReplies : shopQuickReplies;
+
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: true 
+    });
+  };
+
+  const getSenderIcon = (sender: string) => {
+    switch (sender) {
+      case 'customer': return <User className="w-4 h-4" />;
+      case 'shop': return <MessageCircle className="w-4 h-4" />;
+      case 'system': return <Bot className="w-4 h-4" />;
+      default: return <MessageCircle className="w-4 h-4" />;
+    }
+  };
+
+  const getSenderColor = (sender: string) => {
+    switch (sender) {
+      case 'customer': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'shop': return 'bg-golden-100 text-golden-800 border-golden-200';
+      case 'system': return 'bg-neutral-100 text-neutral-800 border-neutral-200';
+      default: return 'bg-neutral-100 text-neutral-800 border-neutral-200';
+    }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-lg h-[700px] border-0 shadow-premium bg-white flex flex-col">
-        {/* Header */}
-        <CardHeader className="border-b border-neutral-200 bg-gradient-to-r from-golden-50 to-golden-100/30">
+    <div className="fixed bottom-6 right-6 w-96 max-w-[calc(100vw-3rem)] z-50">
+      <Card className="border-0 shadow-premium bg-white/95 backdrop-blur-lg">
+        <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <div className="w-12 h-12 bg-gradient-golden rounded-full flex items-center justify-center">
-                  {userRole === 'customer' ? (
-                    <MessageSquare className="w-6 h-6 text-white" />
-                  ) : (
-                    <Users className="w-6 h-6 text-white" />
-                  )}
-                </div>
-                {shopInfo.isOnline && (
-                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
-                )}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-golden rounded-full flex items-center justify-center">
+                <MessageCircle className="w-5 h-5 text-white" />
               </div>
               <div>
-                <CardTitle className="text-xl font-semibold text-neutral-900">
-                  {userRole === 'customer' ? shopInfo.name : 'Customer'}
+                <CardTitle className="text-lg text-neutral-900">
+                  {userRole === 'customer' ? 'Chat with Shop' : 'Customer Chat'}
                 </CardTitle>
-                <div className="flex items-center space-x-3 mt-1">
-                  <Badge variant={shopInfo.isOnline ? "default" : "secondary"} className="text-xs font-medium bg-golden-100 text-golden-800 border-golden-200">
-                    {shopInfo.isOnline ? "Online" : "Offline"}
-                  </Badge>
-                  {orderId && (
-                    <span className="text-xs text-neutral-600 font-medium">Order #{orderId}</span>
-                  )}
-                </div>
+                {orderId && (
+                  <p className="text-sm text-neutral-600">Order #{orderId}</p>
+                )}
               </div>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                onClick={() => window.open(`tel:${shopInfo.phone}`)}
-                className="border-neutral-300 hover:bg-neutral-50"
+                onClick={() => setIsMinimized(!isMinimized)}
+                className="h-8 w-8 p-0"
               >
-                <Phone className="w-4 h-4" />
+                {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
               </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={onClose}
-                className="border-neutral-300 hover:bg-neutral-50"
+                className="h-8 w-8 p-0"
               >
                 <X className="w-4 h-4" />
               </Button>
             </div>
           </div>
-          
-          {shopInfo.isOnline && userRole === 'customer' && (
-            <div className="flex items-center space-x-2 mt-3 text-xs text-neutral-700">
-              <Clock className="w-3 h-3" />
-              <span className="font-medium">Usually responds in {shopInfo.avgResponseTime}</span>
-            </div>
-          )}
         </CardHeader>
 
-        {/* Messages Area */}
-        <CardContent className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-white to-neutral-50/30">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${message.sender === getMessageSender() ? 'justify-end' : 'justify-start'}`}
-            >
-              <div className={`max-w-xs lg:max-w-md px-5 py-4 rounded-2xl shadow-soft ${
-                message.sender === getMessageSender()
-                  ? 'bg-gradient-golden text-white'
-                  : message.sender === 'shop' || message.sender === 'customer'
-                  ? 'bg-white border border-neutral-200 text-neutral-900'
-                  : 'bg-blue-50 border border-blue-200 text-blue-800 text-center text-sm mx-auto'
-              }`}>
-                <p className="text-sm font-medium leading-relaxed">{message.text}</p>
-                <div className="flex items-center justify-between mt-3">
-                  <span className={`text-xs font-medium ${
-                    message.sender === getMessageSender() ? 'text-white/80' : 'text-neutral-500'
-                  }`}>
-                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                  {message.sender === getMessageSender() && message.status && (
-                    <div className="flex space-x-1">
-                      <div className={`w-2 h-2 rounded-full ${
-                        message.status === 'sent' ? 'bg-white/60' :
-                        message.status === 'delivered' ? 'bg-white/80' :
-                        'bg-white'
-                      }`}></div>
-                      {message.status !== 'sent' && (
-                        <div className={`w-2 h-2 rounded-full ${
-                          message.status === 'read' ? 'bg-white' : 'bg-white/60'
-                        }`}></div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-
-          {isTyping && (
-            <div className="flex justify-start">
-              <div className="bg-white border border-neutral-200 px-5 py-4 rounded-2xl shadow-soft">
-                <div className="flex space-x-2">
-                  <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                </div>
-              </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </CardContent>
-
-        {/* Quick Responses */}
-        {showQuickReplies && (
-          <div className="border-t border-neutral-200 p-4 bg-gradient-to-r from-golden-50/30 to-golden-100/20 max-h-48 overflow-y-auto">
-            <div className="grid gap-2">
-              <h4 className="font-semibold text-neutral-900 mb-2 text-sm">Quick Replies:</h4>
-              {quickReplies.map((msg, index) => (
-                <Button
-                  key={index}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => sendMessage(msg)}
-                  className="text-left text-xs justify-start h-auto py-3 border-neutral-300 hover:bg-white hover:border-golden-300 transition-all font-medium"
+        {!isMinimized && (
+          <CardContent className="p-0">
+            {/* Messages */}
+            <div className="h-80 overflow-y-auto p-4 space-y-4">
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${
+                    (userRole === 'customer' && message.sender === 'customer') ||
+                    (userRole === 'shop_owner' && message.sender === 'shop')
+                      ? 'justify-end' 
+                      : 'justify-start'
+                  }`}
                 >
-                  {msg}
-                </Button>
+                  <div
+                    className={`max-w-[80%] rounded-lg p-3 ${
+                      (userRole === 'customer' && message.sender === 'customer') ||
+                      (userRole === 'shop_owner' && message.sender === 'shop')
+                        ? 'bg-gradient-golden text-white' 
+                        : 'bg-neutral-100 text-neutral-900'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge variant="outline" className={`text-xs ${getSenderColor(message.sender)}`}>
+                        <div className="flex items-center gap-1">
+                          {getSenderIcon(message.sender)}
+                          <span className="capitalize">{message.sender}</span>
+                        </div>
+                      </Badge>
+                      <span className="text-xs opacity-75">
+                        {formatTime(message.timestamp)}
+                      </span>
+                    </div>
+                    <p className="text-sm leading-relaxed">{message.content}</p>
+                  </div>
+                </div>
               ))}
+              <div ref={messagesEndRef} />
             </div>
-          </div>
-        )}
 
-        {/* Input Area */}
-        <div className="border-t border-neutral-200 p-4 bg-white">
-          <div className="flex items-center space-x-3 mb-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowQuickReplies(!showQuickReplies)}
-              className="border-golden-300 text-golden-700 hover:bg-golden-50 text-xs font-medium"
-            >
-              Quick Replies
-            </Button>
-            <div className="text-xs text-neutral-600 font-medium">
-              💡 Use quick replies for faster communication
+            {/* Quick Replies */}
+            <div className="p-4 border-t border-neutral-200 bg-neutral-50/50">
+              <div className="flex flex-wrap gap-2 mb-3">
+                {quickReplies.slice(0, 3).map((reply, index) => (
+                  <Button
+                    key={index}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setNewMessage(reply)}
+                    className="text-xs border-neutral-300 hover:bg-golden-50 hover:border-golden-300"
+                  >
+                    {reply}
+                  </Button>
+                ))}
+              </div>
             </div>
-          </div>
-          <div className="flex space-x-3">
-            <Input
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Type your message..."
-              className="flex-1 border-2 border-neutral-200 focus:border-golden-500 focus:ring-golden-100 rounded-xl font-medium"
-              onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-            />
-            <Button
-              onClick={() => sendMessage()}
-              disabled={!newMessage.trim()}
-              className="bg-gradient-golden hover:shadow-golden text-white px-6 rounded-xl font-semibold"
-            >
-              <Send className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
+
+            {/* Message Input */}
+            <div className="p-4 border-t border-neutral-200">
+              <div className="flex gap-2">
+                <Input
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Type your message..."
+                  className="flex-1 border-neutral-200 focus:border-golden-500"
+                />
+                <Button
+                  onClick={sendMessage}
+                  disabled={!newMessage.trim()}
+                  className="bg-gradient-golden hover:shadow-golden text-white px-4"
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        )}
       </Card>
     </div>
   );

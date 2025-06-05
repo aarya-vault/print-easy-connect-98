@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -58,22 +59,24 @@ const VisitedShopsSection: React.FC<VisitedShopsSectionProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold text-neutral-900">{title}</h2>
-          <p className="text-neutral-600 mt-1">Select from shops you've visited before to place new orders</p>
+      {title && (
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-semibold text-neutral-900">{title}</h2>
+            <p className="text-neutral-600 mt-1">Select from shops you've visited before to place new orders</p>
+          </div>
+          {showRequestButton && onRequestNewShop && (
+            <Button
+              variant="outline"
+              onClick={onRequestNewShop}
+              className="border-golden-300 text-golden-700 hover:bg-golden-50 font-medium"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Request New Shop
+            </Button>
+          )}
         </div>
-        {showRequestButton && onRequestNewShop && (
-          <Button
-            variant="outline"
-            onClick={onRequestNewShop}
-            className="border-golden-300 text-golden-700 hover:bg-golden-50 font-medium"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Request New Shop
-          </Button>
-        )}
-      </div>
+      )}
 
       {visitedShops.length === 0 ? (
         <Card className="border-0 shadow-glass bg-white/70 backdrop-blur-lg">
@@ -92,7 +95,10 @@ const VisitedShopsSection: React.FC<VisitedShopsSectionProps> = ({
           {visitedShops.map((shop) => {
             const status = getCurrentStatus(shop.operatingHours);
             return (
-              <Card key={shop.id} className="border-0 shadow-glass bg-white/70 backdrop-blur-lg hover:shadow-premium transition-all duration-300 group cursor-pointer">
+              <Card 
+                key={shop.id} 
+                className="border-2 shadow-medium bg-white/90 backdrop-blur-lg hover:shadow-premium transition-all duration-300 group cursor-pointer border-neutral-200 hover:border-golden-300"
+              >
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
@@ -110,10 +116,10 @@ const VisitedShopsSection: React.FC<VisitedShopsSectionProps> = ({
                         <span className="text-sm text-neutral-500">({shop.totalReviews} reviews)</span>
                       </div>
                     </div>
-                    <Badge className={`text-xs font-medium ${
+                    <Badge className={`text-xs font-medium border-2 ${
                       status.isOpen 
-                        ? 'bg-green-100 text-green-800 border-green-200' 
-                        : 'bg-red-100 text-red-800 border-red-200'
+                        ? 'bg-green-50 text-green-800 border-green-300' 
+                        : 'bg-red-50 text-red-800 border-red-300'
                     }`}>
                       {status.text}
                     </Badge>
@@ -154,20 +160,6 @@ const VisitedShopsSection: React.FC<VisitedShopsSectionProps> = ({
                             +{shop.services.length - 3} more
                           </Badge>
                         )}
-                      </div>
-                    </div>
-
-                    <div>
-                      <h4 className="text-sm font-semibold text-neutral-900 mb-2">Pricing:</h4>
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div>
-                          <span className="text-neutral-500">B&W:</span>
-                          <span className="font-semibold text-neutral-900 ml-1">₹{shop.pricing.blackWhite}</span>
-                        </div>
-                        <div>
-                          <span className="text-neutral-500">Color:</span>
-                          <span className="font-semibold text-neutral-900 ml-1">₹{shop.pricing.color}</span>
-                        </div>
                       </div>
                     </div>
                   </div>
