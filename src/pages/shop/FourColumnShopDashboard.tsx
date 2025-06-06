@@ -6,21 +6,22 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import UniversalHeader from '@/components/layout/UniversalHeader';
+import CompactOrderCard from '@/components/shop/CompactOrderCard';
+import OrderDetailsModal from '@/components/shop/OrderDetailsModal';
+import OrderChatModal from '@/components/shop/OrderChatModal';
+import QRCodeModal from '@/components/shop/QRCodeModal';
 import { 
   Upload, 
   UserCheck, 
   Search, 
-  Phone,
-  MessageSquare,
-  Eye,
-  Zap,
   Clock,
   Package,
   CheckCircle,
   Users,
   FileText,
   QrCode,
-  ExternalLink
+  ExternalLink,
+  Zap
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -28,17 +29,26 @@ interface Order {
   id: string;
   customerName: string;
   customerPhone: string;
+  customerEmail?: string;
   orderType: 'uploaded-files' | 'walk-in';
   status: 'received' | 'started' | 'completed';
   isUrgent: boolean;
   description: string;
   createdAt: Date;
+  files?: any[];
 }
 
 const FourColumnShopDashboard: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('orders');
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isChatModalOpen, setIsChatModalOpen] = useState(false);
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+  const [chatOrderId, setChatOrderId] = useState('');
+  const [chatCustomerName, setChatCustomerName] = useState('');
+  const [chatCustomerPhone, setChatCustomerPhone] = useState('');
 
   // Mock data with simplified statuses
   useEffect(() => {
@@ -47,26 +57,55 @@ const FourColumnShopDashboard: React.FC = () => {
         id: 'UF001',
         customerName: 'Rajesh Kumar',
         customerPhone: '9876543210',
+        customerEmail: 'rajesh@email.com',
         orderType: 'uploaded-files',
         status: 'started',
         isUrgent: true,
         description: 'Business presentation slides - 50 pages, color printing, spiral binding. Need high quality output for important client meeting.',
-        createdAt: new Date(Date.now() - 120 * 60000)
+        createdAt: new Date(Date.now() - 120 * 60000),
+        files: [{ id: '1', name: 'presentation.pdf', size: 2048000 }]
       },
       {
         id: 'UF002',
         customerName: 'Priya Sharma',
         customerPhone: '8765432109',
+        customerEmail: 'priya@email.com',
         orderType: 'uploaded-files',
         status: 'received',
         isUrgent: true,
         description: 'Resume printing - 10 copies, premium paper',
-        createdAt: new Date(Date.now() - 90 * 60000)
+        createdAt: new Date(Date.now() - 90 * 60000),
+        files: [{ id: '2', name: 'resume.pdf', size: 1024000 }]
+      },
+      {
+        id: 'UF003',
+        customerName: 'Arun Mehta',
+        customerPhone: '9123456789',
+        customerEmail: 'arun@email.com',
+        orderType: 'uploaded-files',
+        status: 'completed',
+        isUrgent: false,
+        description: 'Legal documents - 25 pages, black & white, double-sided',
+        createdAt: new Date(Date.now() - 240 * 60000),
+        files: [{ id: '3', name: 'legal-docs.pdf', size: 3072000 }]
+      },
+      {
+        id: 'UF004',
+        customerName: 'Kavya Patel',
+        customerPhone: '8912345678',
+        customerEmail: 'kavya@email.com',
+        orderType: 'uploaded-files',
+        status: 'received',
+        isUrgent: false,
+        description: 'College assignments - 15 pages, color diagrams',
+        createdAt: new Date(Date.now() - 30 * 60000),
+        files: [{ id: '4', name: 'assignment.docx', size: 1536000 }]
       },
       {
         id: 'WI001',
         customerName: 'Amit Patel',
         customerPhone: '7654321098',
+        customerEmail: 'amit@email.com',
         orderType: 'walk-in',
         status: 'received',
         isUrgent: false,
@@ -77,19 +116,43 @@ const FourColumnShopDashboard: React.FC = () => {
         id: 'WI002',
         customerName: 'Sneha Reddy',
         customerPhone: '6543210987',
+        customerEmail: 'sneha@email.com',
         orderType: 'walk-in',
         status: 'started',
         isUrgent: false,
         description: 'Wedding invitation cards - 100 copies, premium cardstock with gold foil finishing',
         createdAt: new Date(Date.now() - 30 * 60000)
+      },
+      {
+        id: 'WI003',
+        customerName: 'Ravi Singh',
+        customerPhone: '5432109876',
+        customerEmail: 'ravi@email.com',
+        orderType: 'walk-in',
+        status: 'completed',
+        isUrgent: true,
+        description: 'ID photos - passport size, 10 copies',
+        createdAt: new Date(Date.now() - 180 * 60000)
+      },
+      {
+        id: 'WI004',
+        customerName: 'Meera Joshi',
+        customerPhone: '4321098765',
+        customerEmail: 'meera@email.com',
+        orderType: 'walk-in',
+        status: 'received',
+        isUrgent: true,
+        description: 'Business cards - 500 copies, premium finish',
+        createdAt: new Date(Date.now() - 45 * 60000)
       }
     ];
     setOrders(mockOrders);
   }, []);
 
+  // Filter orders by type and status
   const uploadOrders = orders.filter(order => order.orderType === 'uploaded-files');
   const walkInOrders = orders.filter(order => order.orderType === 'walk-in');
-
+  
   const activeOrders = orders.filter(order => order.status !== 'completed');
   const completedOrders = orders.filter(order => order.status === 'completed');
 
@@ -100,19 +163,35 @@ const FourColumnShopDashboard: React.FC = () => {
       order.customerPhone.includes(searchTerm)
     ).sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()); // Oldest first
 
+  // Split orders into columns for true 4-column layout
+  const getColumnOrders = (orderList: Order[], totalColumns: number, columnIndex: number) => {
+    const ordersPerColumn = Math.ceil(orderList.length / totalColumns);
+    const startIndex = columnIndex * ordersPerColumn;
+    const endIndex = Math.min(startIndex + ordersPerColumn, orderList.length);
+    return orderList.slice(startIndex, endIndex);
+  };
+
   const handleCall = (phone: string) => {
     window.open(`tel:${phone}`);
     toast.success(`Calling ${phone}`);
   };
 
   const handleChat = (orderId: string) => {
-    toast.info(`Opening chat for order ${orderId}`);
-    // Open chat modal/page
+    const order = orders.find(o => o.id === orderId);
+    if (order) {
+      setChatOrderId(orderId);
+      setChatCustomerName(order.customerName);
+      setChatCustomerPhone(order.customerPhone);
+      setIsChatModalOpen(true);
+    }
   };
 
   const handleViewDetails = (orderId: string) => {
-    toast.info(`Viewing details for order ${orderId}`);
-    // Open order details modal
+    const order = orders.find(o => o.id === orderId);
+    if (order) {
+      setSelectedOrder(order);
+      setIsDetailsModalOpen(true);
+    }
   };
 
   const handleUpdateStatus = (orderId: string, newStatus: Order['status']) => {
@@ -153,55 +232,56 @@ const FourColumnShopDashboard: React.FC = () => {
         onRefresh={handleRefresh}
       />
       
-      <div className="p-6">
+      <div className="p-3 sm:p-6">
         <div className="max-w-7xl mx-auto">
-          {/* Search and Stats */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="relative">
+          {/* Search and Mobile Title */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-3">
+            <h2 className="text-lg font-semibold text-gray-900 sm:hidden">Order Management</h2>
+            <div className="relative w-full sm:w-auto">
               <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <Input
                 placeholder="Search orders..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-64"
+                className="pl-10 w-full sm:w-64"
               />
             </div>
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-3 sm:p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Total Orders</p>
-                    <p className="text-xl font-bold">{stats.totalOrders}</p>
+                    <p className="text-xs sm:text-sm text-gray-600">Total Orders</p>
+                    <p className="text-lg sm:text-xl font-bold">{stats.totalOrders}</p>
                   </div>
-                  <FileText className="w-6 h-6 text-blue-600" />
+                  <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
                 </div>
               </CardContent>
             </Card>
             
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-3 sm:p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Active Orders</p>
-                    <p className="text-xl font-bold">{stats.activeOrders}</p>
+                    <p className="text-xs sm:text-sm text-gray-600">Active Orders</p>
+                    <p className="text-lg sm:text-xl font-bold">{stats.activeOrders}</p>
                   </div>
-                  <Clock className="w-6 h-6 text-orange-600" />
+                  <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" />
                 </div>
               </CardContent>
             </Card>
             
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-3 sm:p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Urgent Orders</p>
-                    <p className="text-xl font-bold">{stats.urgentOrders}</p>
+                    <p className="text-xs sm:text-sm text-gray-600">Urgent Orders</p>
+                    <p className="text-lg sm:text-xl font-bold">{stats.urgentOrders}</p>
                   </div>
-                  <Zap className="w-6 h-6 text-red-600" />
+                  <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-red-600" />
                 </div>
               </CardContent>
             </Card>
@@ -209,72 +289,123 @@ const FourColumnShopDashboard: React.FC = () => {
 
           {/* Main Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3 mb-6">
-              <TabsTrigger value="orders">Orders ({activeOrders.length})</TabsTrigger>
-              <TabsTrigger value="completed">Completed ({completedOrders.length})</TabsTrigger>
-              <TabsTrigger value="qr-upload">Shop QR & Upload</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3 mb-4 sm:mb-6 h-auto">
+              <TabsTrigger value="orders" className="text-xs sm:text-sm py-2">
+                Orders ({activeOrders.length})
+              </TabsTrigger>
+              <TabsTrigger value="completed" className="text-xs sm:text-sm py-2">
+                Completed ({completedOrders.length})
+              </TabsTrigger>
+              <TabsTrigger value="qr-upload" className="text-xs sm:text-sm py-2">
+                QR & Upload
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="orders">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Upload/Online Orders Section */}
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2 mb-4">
-                    <Upload className="w-5 h-5 text-blue-600" />
-                    <h2 className="text-lg font-semibold text-gray-900">Upload/Online Orders</h2>
-                    <Badge variant="secondary">{filteredOrders(uploadOrders.filter(o => activeOrders.includes(o))).length}</Badge>
+              {/* TRUE 4-COLUMN LAYOUT */}
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
+                {/* Column 1: Upload Orders - Received & Started (Part 1) */}
+                <div className="space-y-3 sm:space-y-4">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <Upload className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                    <h3 className="text-sm sm:text-base font-semibold text-gray-900">Upload Orders (1)</h3>
+                    <Badge variant="secondary" className="text-xs">
+                      {getColumnOrders(filteredOrders(uploadOrders.filter(o => activeOrders.includes(o))), 2, 0).length}
+                    </Badge>
                   </div>
-                  
-                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                    {/* All Upload Orders */}
-                    <div className="xl:col-span-2 space-y-3">
-                      {filteredOrders(uploadOrders.filter(o => activeOrders.includes(o))).map(order => (
-                        <OrderCard
-                          key={order.id}
-                          order={order}
-                          onCall={handleCall}
-                          onChat={handleChat}
-                          onViewDetails={handleViewDetails}
-                          onUpdateStatus={handleUpdateStatus}
-                          onToggleUrgency={handleToggleUrgency}
-                        />
-                      ))}
-                    </div>
+                  <div className="space-y-3">
+                    {getColumnOrders(filteredOrders(uploadOrders.filter(o => activeOrders.includes(o))), 2, 0).map(order => (
+                      <CompactOrderCard
+                        key={order.id}
+                        order={order}
+                        onCall={handleCall}
+                        onChat={handleChat}
+                        onViewDetails={handleViewDetails}
+                        onUpdateStatus={handleUpdateStatus}
+                        onToggleUrgency={handleToggleUrgency}
+                      />
+                    ))}
                   </div>
                 </div>
 
-                {/* Walk-in Orders Section */}
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2 mb-4">
-                    <UserCheck className="w-5 h-5 text-purple-600" />
-                    <h2 className="text-lg font-semibold text-gray-900">Walk-in Orders</h2>
-                    <Badge variant="secondary">{filteredOrders(walkInOrders.filter(o => activeOrders.includes(o))).length}</Badge>
+                {/* Column 2: Upload Orders - Received & Started (Part 2) */}
+                <div className="space-y-3 sm:space-y-4">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <Upload className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                    <h3 className="text-sm sm:text-base font-semibold text-gray-900">Upload Orders (2)</h3>
+                    <Badge variant="secondary" className="text-xs">
+                      {getColumnOrders(filteredOrders(uploadOrders.filter(o => activeOrders.includes(o))), 2, 1).length}
+                    </Badge>
                   </div>
-                  
-                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                    {/* All Walk-in Orders */}
-                    <div className="xl:col-span-2 space-y-3">
-                      {filteredOrders(walkInOrders.filter(o => activeOrders.includes(o))).map(order => (
-                        <OrderCard
-                          key={order.id}
-                          order={order}
-                          onCall={handleCall}
-                          onChat={handleChat}
-                          onViewDetails={handleViewDetails}
-                          onUpdateStatus={handleUpdateStatus}
-                          onToggleUrgency={handleToggleUrgency}
-                        />
-                      ))}
-                    </div>
+                  <div className="space-y-3">
+                    {getColumnOrders(filteredOrders(uploadOrders.filter(o => activeOrders.includes(o))), 2, 1).map(order => (
+                      <CompactOrderCard
+                        key={order.id}
+                        order={order}
+                        onCall={handleCall}
+                        onChat={handleChat}
+                        onViewDetails={handleViewDetails}
+                        onUpdateStatus={handleUpdateStatus}
+                        onToggleUrgency={handleToggleUrgency}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Column 3: Walk-in Orders - Received & Started (Part 1) */}
+                <div className="space-y-3 sm:space-y-4">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
+                    <h3 className="text-sm sm:text-base font-semibold text-gray-900">Walk-in Orders (1)</h3>
+                    <Badge variant="secondary" className="text-xs">
+                      {getColumnOrders(filteredOrders(walkInOrders.filter(o => activeOrders.includes(o))), 2, 0).length}
+                    </Badge>
+                  </div>
+                  <div className="space-y-3">
+                    {getColumnOrders(filteredOrders(walkInOrders.filter(o => activeOrders.includes(o))), 2, 0).map(order => (
+                      <CompactOrderCard
+                        key={order.id}
+                        order={order}
+                        onCall={handleCall}
+                        onChat={handleChat}
+                        onViewDetails={handleViewDetails}
+                        onUpdateStatus={handleUpdateStatus}
+                        onToggleUrgency={handleToggleUrgency}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Column 4: Walk-in Orders - Received & Started (Part 2) */}
+                <div className="space-y-3 sm:space-y-4">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
+                    <h3 className="text-sm sm:text-base font-semibold text-gray-900">Walk-in Orders (2)</h3>
+                    <Badge variant="secondary" className="text-xs">
+                      {getColumnOrders(filteredOrders(walkInOrders.filter(o => activeOrders.includes(o))), 2, 1).length}
+                    </Badge>
+                  </div>
+                  <div className="space-y-3">
+                    {getColumnOrders(filteredOrders(walkInOrders.filter(o => activeOrders.includes(o))), 2, 1).map(order => (
+                      <CompactOrderCard
+                        key={order.id}
+                        order={order}
+                        onCall={handleCall}
+                        onChat={handleChat}
+                        onViewDetails={handleViewDetails}
+                        onUpdateStatus={handleUpdateStatus}
+                        onToggleUrgency={handleToggleUrgency}
+                      />
+                    ))}
                   </div>
                 </div>
               </div>
             </TabsContent>
 
             <TabsContent value="completed">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                 {filteredOrders(completedOrders).map(order => (
-                  <OrderCard
+                  <CompactOrderCard
                     key={order.id}
                     order={order}
                     onCall={handleCall}
@@ -288,36 +419,57 @@ const FourColumnShopDashboard: React.FC = () => {
             </TabsContent>
 
             <TabsContent value="qr-upload">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <QrCode className="w-5 h-5" />
+                  <CardHeader className="pb-3 sm:pb-4">
+                    <CardTitle className="flex items-center space-x-2 text-base sm:text-lg">
+                      <QrCode className="w-4 h-4 sm:w-5 sm:h-5" />
                       <span>Shop QR Code</span>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="bg-gray-100 h-48 rounded-lg flex items-center justify-center">
-                      <QrCode className="w-24 h-24 text-gray-400" />
+                  <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6 pt-0">
+                    <div className="bg-gray-100 h-32 sm:h-48 rounded-lg flex items-center justify-center">
+                      <QrCode className="w-16 h-16 sm:w-24 sm:h-24 text-gray-400" />
                     </div>
-                    <Button className="w-full">Download QR Code</Button>
+                    <Button 
+                      onClick={() => setIsQRModalOpen(true)}
+                      className="w-full bg-golden-500 hover:bg-golden-600 text-white"
+                    >
+                      View & Download QR Code
+                    </Button>
                   </CardContent>
                 </Card>
 
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <ExternalLink className="w-5 h-5" />
+                  <CardHeader className="pb-3 sm:pb-4">
+                    <CardTitle className="flex items-center space-x-2 text-base sm:text-lg">
+                      <ExternalLink className="w-4 h-4 sm:w-5 sm:h-5" />
                       <span>Upload Page</span>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <p className="text-gray-600">Direct link to your shop's upload page</p>
-                    <div className="bg-gray-50 p-3 rounded border text-sm font-mono">
+                  <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6 pt-0">
+                    <p className="text-sm text-gray-600">Direct link to your shop's upload page</p>
+                    <div className="bg-gray-50 p-2 sm:p-3 rounded border text-xs sm:text-sm font-mono break-all">
                       https://printeasy.com/shop/quick-print-solutions/upload
                     </div>
-                    <Button className="w-full" variant="outline">Copy Link</Button>
-                    <Button className="w-full">Open Upload Page</Button>
+                    <div className="space-y-2">
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={() => {
+                          navigator.clipboard.writeText('https://printeasy.com/shop/quick-print-solutions/upload');
+                          toast.success('Upload link copied to clipboard');
+                        }}
+                      >
+                        Copy Link
+                      </Button>
+                      <Button 
+                        className="w-full bg-blue-500 hover:bg-blue-600 text-white"
+                        onClick={() => window.open('/customer/order/quick-print-solutions', '_blank')}
+                      >
+                        Open Upload Page
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -325,149 +477,28 @@ const FourColumnShopDashboard: React.FC = () => {
           </Tabs>
         </div>
       </div>
+
+      {/* Modals */}
+      <OrderDetailsModal
+        order={selectedOrder}
+        isOpen={isDetailsModalOpen}
+        onClose={() => setIsDetailsModalOpen(false)}
+      />
+
+      <OrderChatModal
+        orderId={chatOrderId}
+        customerName={chatCustomerName}
+        customerPhone={chatCustomerPhone}
+        isOpen={isChatModalOpen}
+        onClose={() => setIsChatModalOpen(false)}
+      />
+
+      <QRCodeModal
+        isOpen={isQRModalOpen}
+        onClose={() => setIsQRModalOpen(false)}
+        shopName="Quick Print Solutions"
+      />
     </div>
-  );
-};
-
-// Order Card Component with fixed height and working icons
-const OrderCard: React.FC<{
-  order: Order;
-  onCall: (phone: string) => void;
-  onChat: (orderId: string) => void;
-  onViewDetails: (orderId: string) => void;
-  onUpdateStatus: (orderId: string, status: Order['status']) => void;
-  onToggleUrgency: (orderId: string) => void;
-}> = ({ order, onCall, onChat, onViewDetails, onUpdateStatus, onToggleUrgency }) => {
-  
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'received': return 'bg-amber-100 text-amber-800 border-amber-200';
-      case 'started': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'completed': return 'bg-green-100 text-green-800 border-green-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'received': return <Package className="w-3 h-3" />;
-      case 'started': return <Clock className="w-3 h-3" />;
-      case 'completed': return <CheckCircle className="w-3 h-3" />;
-      default: return <Clock className="w-3 h-3" />;
-    }
-  };
-
-  const formatTimeAgo = (date: Date) => {
-    const now = new Date();
-    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-    
-    if (diffInMinutes < 1) return 'Now';
-    if (diffInMinutes < 60) return `${diffInMinutes}m`;
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) return `${diffInHours}h`;
-    return `${Math.floor(diffInHours / 24)}d`;
-  };
-
-  const getNextStatus = () => {
-    switch (order.status) {
-      case 'received': return 'started';
-      case 'started': return 'completed';
-      default: return null;
-    }
-  };
-
-  const getStatusAction = () => {
-    switch (order.status) {
-      case 'received': return 'Start';
-      case 'started': return 'Complete';
-      default: return null;
-    }
-  };
-
-  const nextStatus = getNextStatus();
-  const statusAction = getStatusAction();
-
-  return (
-    <Card className={`border-l-4 h-40 ${
-      order.isUrgent ? 'border-l-red-500 bg-red-50/30' : 
-      order.orderType === 'uploaded-files' ? 'border-l-blue-500' : 'border-l-purple-500'
-    } hover:shadow-md transition-shadow`}>
-      <CardContent className="p-3 h-full flex flex-col">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center space-x-2">
-              <h3 className="font-semibold text-sm text-gray-900 truncate">{order.customerName}</h3>
-              {order.isUrgent && <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse flex-shrink-0" />}
-            </div>
-            <p className="text-xs text-gray-600">#{order.id}</p>
-          </div>
-          <span className="text-xs text-gray-500">{formatTimeAgo(order.createdAt)}</span>
-        </div>
-
-        {/* Status Badge */}
-        <div className="mb-2">
-          <Badge className={`text-xs px-2 py-1 ${getStatusColor(order.status)}`}>
-            {getStatusIcon(order.status)}
-            <span className="ml-1 capitalize">{order.status}</span>
-          </Badge>
-        </div>
-
-        {/* Description - Fixed height with ellipsis */}
-        <div className="flex-1 mb-3">
-          <p className="text-xs text-gray-700 line-clamp-2 overflow-hidden">{order.description}</p>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="space-y-2">
-          <div className="flex space-x-1">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onCall(order.customerPhone)}
-              className="flex-1 h-7 text-xs"
-            >
-              <Phone className="w-3 h-3" />
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onChat(order.id)}
-              className="flex-1 h-7 text-xs"
-            >
-              <MessageSquare className="w-3 h-3" />
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onViewDetails(order.id)}
-              className="flex-1 h-7 text-xs"
-            >
-              <Eye className="w-3 h-3" />
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onToggleUrgency(order.id)}
-              className={`flex-1 h-7 text-xs ${order.isUrgent ? 'bg-red-50 border-red-200' : ''}`}
-            >
-              <Zap className="w-3 h-3" />
-            </Button>
-          </div>
-
-          {/* Status Action Button */}
-          {nextStatus && statusAction && order.status !== 'completed' && (
-            <Button
-              size="sm"
-              onClick={() => onUpdateStatus(order.id, nextStatus as Order['status'])}
-              className="w-full h-7 text-xs bg-gradient-to-r from-golden-500 to-golden-600 hover:from-golden-600 hover:to-golden-700 text-white"
-            >
-              {statusAction}
-            </Button>
-          )}
-        </div>
-      </CardContent>
-    </Card>
   );
 };
 
