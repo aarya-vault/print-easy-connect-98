@@ -14,6 +14,7 @@ import Login from '@/pages/Login';
 // Customer pages
 import CustomerDashboard from '@/pages/customer/Dashboard';
 import NewOrderFlow from '@/pages/customer/NewOrderFlow';
+import EnhancedOrderFlow from '@/pages/customer/EnhancedOrderFlow';
 import SimplifiedUpload from '@/pages/customer/SimplifiedUpload';
 import WalkInOrder from '@/pages/customer/WalkInOrder';
 import OrderSuccess from '@/pages/customer/OrderSuccess';
@@ -52,7 +53,17 @@ const AppContent: React.FC = () => {
           } />
           <Route path="/customer/order/new" element={
             <ProtectedRoute allowedRoles={['customer']}>
-              <NewOrderFlow />
+              <EnhancedOrderFlow />
+            </ProtectedRoute>
+          } />
+          <Route path="/customer/order/enhanced" element={
+            <ProtectedRoute allowedRoles={['customer']}>
+              <EnhancedOrderFlow />
+            </ProtectedRoute>
+          } />
+          <Route path="/customer/shop/:shopSlug/order" element={
+            <ProtectedRoute allowedRoles={['customer']}>
+              <EnhancedOrderFlow />
             </ProtectedRoute>
           } />
           <Route path="/customer/shop/:shopSlug/upload" element={
