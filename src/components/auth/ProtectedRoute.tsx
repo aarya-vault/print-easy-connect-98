@@ -12,24 +12,36 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
   children, 
   allowedRoles = [], 
-  redirectTo = '/' 
+  redirectTo = '/login' 
 }) => {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-printeasy-yellow"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-golden-50 via-white to-golden-100">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-golden rounded-xl mx-auto mb-4 flex items-center justify-center shadow-lg animate-pulse">
+            <span className="text-2xl font-bold text-white">PE</span>
+          </div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-golden-500 mx-auto"></div>
+          <p className="text-neutral-600 mt-4">Loading...</p>
+        </div>
       </div>
     );
   }
 
   if (!user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
-    return <Navigate to={redirectTo} replace />;
+    // Redirect based on user role
+    const roleRedirects = {
+      customer: '/customer/dashboard',
+      shop_owner: '/shop/dashboard',
+      admin: '/admin/dashboard'
+    };
+    return <Navigate to={roleRedirects[user.role]} replace />;
   }
 
   return <>{children}</>;

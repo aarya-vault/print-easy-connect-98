@@ -65,6 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           id: `user_${Date.now()}`,
           phone,
           role: 'customer' as UserRole,
+          name: `Customer ${phone.slice(-4)}`, // Generate a simple name
         };
         existingUsers.push(userData);
         localStorage.setItem('printeasy_all_users', JSON.stringify(existingUsers));
@@ -113,8 +114,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error('Invalid credentials');
       }
       
-      setUser(userData);
-      localStorage.setItem('printeasy_user', JSON.stringify(userData));
+      // Remove password from stored user data
+      const { password: _, ...userWithoutPassword } = userData;
+      setUser(userWithoutPassword);
+      localStorage.setItem('printeasy_user', JSON.stringify(userWithoutPassword));
     } catch (error) {
       console.error('Email login error:', error);
       throw error;
