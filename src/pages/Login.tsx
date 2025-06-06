@@ -22,7 +22,7 @@ const Login: React.FC = () => {
     e.preventDefault();
     
     if (phoneNumber.length !== 10) {
-      toast.error('Please enter a valid 10-digit phone number');
+      toast.error('Please enter exactly 10 digits');
       return;
     }
 
@@ -98,7 +98,7 @@ const Login: React.FC = () => {
                         type="tel"
                         value={phoneNumber}
                         onChange={handlePhoneChange}
-                        placeholder="Enter 10-digit phone number"
+                        placeholder="Enter exactly 10 digits"
                         className="pl-10 h-12 border-2 border-neutral-200 focus:border-golden-500 focus:ring-golden-100"
                         maxLength={10}
                         required

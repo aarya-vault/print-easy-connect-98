@@ -10,6 +10,7 @@ export interface User {
   name?: string;
   email?: string;
   shopId?: string; // For shop owners
+  needsNameUpdate?: boolean; // Flag for new users who need to provide name
 }
 
 interface AuthContextType {
@@ -19,6 +20,7 @@ interface AuthContextType {
   loginWithEmail: (email: string, password: string) => Promise<void>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
+  updateUserName: (name: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -68,7 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           id: `user_${Date.now()}`,
           phone,
           role: 'customer' as UserRole,
-          name: `Customer ${phone.slice(-4)}`,
+          needsNameUpdate: true, // Flag for name collection popup
         };
         existingUsers.push(userData);
         localStorage.setItem('printeasy_all_users', JSON.stringify(existingUsers));
@@ -126,6 +128,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateUserName = async (name: string) => {
+    if (user) {
+      const updatedUser = { ...user, name, needsNameUpdate: false };
+      setUser(updatedUser);
+      localStorage.setItem('printeasy_user', JSON.stringify(updatedUser));
+      
+      // Update in all users list too
+      const existingUsers = JSON.parse(localStorage.getItem('printeasy_all_users') || '[]');
+      const updatedUsers = existingUsers.map((u: User) => 
+        u.id === user.id ? updatedUser : u
+      );
+      localStorage.setItem('printeasy_all_users', JSON.stringify(updatedUsers));
+    }
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem('printeasy_user');
@@ -146,6 +163,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loginWithEmail,
     logout,
     updateUser,
+    updateUserName,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
