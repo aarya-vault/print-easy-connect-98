@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
@@ -14,9 +13,7 @@ import {
   UserCheck, 
   MapPin, 
   Phone, 
-  Mail, 
   FileText,
-  Clock,
   Star,
   ArrowRight,
   Check
@@ -44,12 +41,10 @@ const EnhancedOrderFlow: React.FC = () => {
   const [shops, setShops] = useState<Shop[]>([]);
   const [customerDetails, setCustomerDetails] = useState({
     name: user?.name || '',
-    phone: user?.phone || '',
-    email: user?.email || ''
+    phone: user?.phone || ''
   });
   const [orderDetails, setOrderDetails] = useState({
     description: '',
-    specialInstructions: '',
     isUrgent: false
   });
   const [files, setFiles] = useState<File[]>([]);
@@ -96,8 +91,7 @@ const EnhancedOrderFlow: React.FC = () => {
     if (user) {
       setCustomerDetails({
         name: user.name || '',
-        phone: user.phone || '',
-        email: user.email || ''
+        phone: user.phone || ''
       });
     }
   }, [user]);
@@ -131,20 +125,13 @@ const EnhancedOrderFlow: React.FC = () => {
         return;
       }
 
-      if (!orderDetails.description.trim()) {
-        toast.error('Please provide order description');
-        return;
-      }
-
       // Create order
       const orderData = {
         shopId: selectedShop?.id,
         orderType,
         customerName: customerDetails.name,
         customerPhone: customerDetails.phone,
-        customerEmail: customerDetails.email,
-        description: orderDetails.description,
-        specialInstructions: orderDetails.specialInstructions,
+        description: orderDetails.description || 'Standard printing request',
         isUrgent: orderDetails.isUrgent,
         files: files
       };
@@ -327,7 +314,7 @@ const EnhancedOrderFlow: React.FC = () => {
             </p>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Customer Details - Pre-filled and mostly read-only */}
+            {/* Customer Details - Pre-filled and grayed out if user is logged in */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900">Customer Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -338,7 +325,7 @@ const EnhancedOrderFlow: React.FC = () => {
                     value={customerDetails.name}
                     onChange={(e) => setCustomerDetails({...customerDetails, name: e.target.value})}
                     className={user?.name ? 'bg-gray-50' : ''}
-                    placeholder="Enter your name"
+                    readOnly={!!user?.name}
                   />
                 </div>
                 <div>
@@ -348,18 +335,7 @@ const EnhancedOrderFlow: React.FC = () => {
                     value={customerDetails.phone}
                     onChange={(e) => setCustomerDetails({...customerDetails, phone: e.target.value})}
                     className={user?.phone ? 'bg-gray-50' : ''}
-                    placeholder="Enter phone number"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Label htmlFor="email">Email (Optional)</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={customerDetails.email}
-                    onChange={(e) => setCustomerDetails({...customerDetails, email: e.target.value})}
-                    className={user?.email ? 'bg-gray-50' : ''}
-                    placeholder="Enter email address"
+                    readOnly={!!user?.phone}
                   />
                 </div>
               </div>
@@ -406,27 +382,17 @@ const EnhancedOrderFlow: React.FC = () => {
               </div>
             )}
 
-            {/* Order Description */}
+            {/* Order Description - Now Optional */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900">Order Description</h3>
               <div>
-                <Label htmlFor="description">Describe your printing requirements *</Label>
+                <Label htmlFor="description">Describe your printing requirements (Optional)</Label>
                 <Textarea
                   id="description"
                   value={orderDetails.description}
                   onChange={(e) => setOrderDetails({...orderDetails, description: e.target.value})}
                   placeholder="e.g., Print 10 copies of resume, color printing, double-sided..."
                   className="min-h-[100px]"
-                />
-              </div>
-              <div>
-                <Label htmlFor="instructions">Special Instructions (Optional)</Label>
-                <Textarea
-                  id="instructions"
-                  value={orderDetails.specialInstructions}
-                  onChange={(e) => setOrderDetails({...orderDetails, specialInstructions: e.target.value})}
-                  placeholder="Any special requirements or instructions..."
-                  className="min-h-[80px]"
                 />
               </div>
             </div>
@@ -443,7 +409,7 @@ const EnhancedOrderFlow: React.FC = () => {
                   className="rounded border-gray-300"
                 />
                 <Label htmlFor="urgent" className="text-sm">
-                  Mark as urgent (may incur additional charges)
+                  Is your order urgent?
                 </Label>
               </div>
             </div>
