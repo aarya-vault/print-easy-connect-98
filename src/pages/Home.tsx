@@ -6,423 +6,386 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
-  ArrowRight, 
-  Star, 
-  Users, 
-  Building, 
-  Smartphone, 
-  Shield, 
-  Zap, 
+  Upload, 
+  UserCheck, 
+  Building,
+  Users,
+  Star,
   Clock,
   CheckCircle,
+  Zap,
+  ArrowRight,
+  Phone,
+  MessageSquare,
   TrendingUp,
-  Award,
-  Globe
+  FileText,
+  MapPin
 } from 'lucide-react';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const handleGetStarted = () => {
+  // Mock dashboard data for preview
+  const mockStats = {
+    todayOrders: 24,
+    urgentOrders: 5,
+    pendingOrders: 12,
+    totalOrders: 156
+  };
+
+  const mockOrder = {
+    id: 'UF001',
+    customerName: 'Rajesh Kumar',
+    customerPhone: '9876543210',
+    orderType: 'uploaded-files',
+    status: 'processing',
+    isUrgent: true,
+    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+    description: 'Business presentation slides - 50 pages, color printing'
+  };
+
+  const getStarted = () => {
     if (user) {
       // Redirect based on user role
-      const roleRedirects = {
-        customer: '/customer/dashboard',
-        shop_owner: '/shop/dashboard',
-        admin: '/admin/dashboard'
-      };
-      navigate(roleRedirects[user.role]);
+      switch (user.role) {
+        case 'customer':
+          navigate('/customer/dashboard');
+          break;
+        case 'shop_owner':
+          navigate('/shop/dashboard');
+          break;
+        case 'admin':
+          navigate('/admin/dashboard');
+          break;
+        default:
+          navigate('/login');
+      }
     } else {
       navigate('/login');
     }
   };
 
-  const features = [
-    {
-      icon: Smartphone,
-      title: "Mobile-First Experience",
-      description: "Upload documents and place orders directly from your phone with our intuitive interface."
-    },
-    {
-      icon: Zap,
-      title: "Instant Processing",
-      description: "Real-time order tracking and immediate shop notifications for fastest turnaround."
-    },
-    {
-      icon: Shield,
-      title: "Secure & Reliable",
-      description: "Your documents are protected with enterprise-grade security and privacy measures."
-    },
-    {
-      icon: Clock,
-      title: "24/7 Availability",
-      description: "Place orders anytime, anywhere. Our platform works round the clock for your convenience."
-    }
-  ];
-
-  const stats = [
-    { number: "10,000+", label: "Happy Customers", icon: Users },
-    { number: "500+", label: "Partner Shops", icon: Building },
-    { number: "50,000+", label: "Orders Completed", icon: CheckCircle },
-    { number: "99.9%", label: "Uptime", icon: TrendingUp }
-  ];
-
-  const testimonials = [
-    {
-      name: "Priya Sharma",
-      role: "Student",
-      content: "PrintEasy saved me so much time during exam season. I could upload and order my study materials from anywhere!",
-      rating: 5,
-      avatar: "PS"
-    },
-    {
-      name: "Rajesh Kumar",
-      role: "Shop Owner",
-      content: "My business has grown 300% since joining PrintEasy. The platform brings customers directly to my shop.",
-      rating: 5,
-      avatar: "RK"
-    },
-    {
-      name: "Anita Desai",
-      role: "Corporate Manager",
-      content: "Professional quality prints with amazing convenience. PrintEasy handles all our office printing needs perfectly.",
-      rating: 5,
-      avatar: "AD"
-    }
-  ];
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-golden-50 via-white to-golden-100">
-      {/* Navigation */}
-      <nav className="bg-white/80 backdrop-blur-lg border-b border-neutral-200 sticky top-0 z-50">
+      {/* Header */}
+      <div className="bg-white/95 backdrop-blur-sm border-b border-golden-200/50 sticky top-0 z-10 shadow-sm">
         <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-golden rounded-lg flex items-center justify-center">
-                <span className="text-lg font-bold text-white">PE</span>
-              </div>
-              <span className="text-xl font-bold text-neutral-900">PrintEasy</span>
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-neutral-900">
+                Print<span className="text-golden-600">Easy</span>
+              </h1>
+              <Badge className="bg-golden-100 text-golden-800 border-golden-300 text-xs">
+                24/7 Service
+              </Badge>
             </div>
-            
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               {user ? (
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-neutral-600">Welcome, {user.name || 'User'}</span>
-                  <Button 
-                    onClick={handleGetStarted}
-                    className="bg-gradient-golden hover:shadow-golden text-white"
-                  >
-                    Go to Dashboard
-                  </Button>
-                </div>
+                <Button 
+                  onClick={getStarted}
+                  className="bg-gradient-to-r from-golden-500 to-golden-600 hover:from-golden-600 hover:to-golden-700 text-white font-semibold shadow-md"
+                >
+                  Go to Dashboard
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
               ) : (
-                <div className="flex items-center gap-3">
+                <>
                   <Button variant="ghost" onClick={() => navigate('/login')}>
                     Sign In
                   </Button>
                   <Button 
                     onClick={() => navigate('/login')}
-                    className="bg-gradient-golden hover:shadow-golden text-white"
+                    className="bg-gradient-to-r from-golden-500 to-golden-600 hover:from-golden-600 hover:to-golden-700 text-white font-semibold shadow-md"
                   >
                     Get Started
                   </Button>
-                </div>
+                </>
               )}
             </div>
           </div>
         </div>
-      </nav>
+      </div>
 
       {/* Hero Section */}
-      <section className="py-20 px-6">
-        <div className="container mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-8">
-              <div className="space-y-6">
-                <Badge className="bg-golden-100 text-golden-800 border-golden-200">
-                  <Award className="w-4 h-4 mr-1" />
-                  India's #1 Digital Printing Platform
-                </Badge>
-                
-                <h1 className="text-4xl lg:text-6xl font-bold leading-tight">
-                  <span className="text-neutral-900">Professional</span>{' '}
-                  <span className="bg-gradient-golden bg-clip-text text-transparent">Printing</span>{' '}
-                  <span className="text-neutral-900">Made Simple</span>
-                </h1>
-                
-                <p className="text-xl text-neutral-600 leading-relaxed">
-                  Upload documents from your phone, connect with local print shops, and get professional 
-                  quality prints delivered fast. Join thousands of satisfied customers across India.
+      <div className="container mx-auto px-6 py-16">
+        <div className="text-center mb-16">
+          <h1 className="text-5xl md:text-6xl font-bold text-neutral-900 mb-6">
+            Your One-Stop
+            <br />
+            <span className="bg-gradient-to-r from-golden-500 to-golden-600 bg-clip-text text-transparent">
+              Print Solution
+            </span>
+          </h1>
+          <p className="text-xl text-neutral-600 max-w-3xl mx-auto mb-8">
+            Connect with local print shops, upload files instantly, and get your documents printed with ease. 
+            Available 24/7 for all your printing needs.
+          </p>
+          <Button 
+            size="lg" 
+            onClick={getStarted}
+            className="h-14 px-8 text-lg bg-gradient-to-r from-golden-500 to-golden-600 hover:from-golden-600 hover:to-golden-700 text-white font-semibold shadow-xl"
+          >
+            Start Printing Now
+            <ArrowRight className="w-5 h-5 ml-2" />
+          </Button>
+        </div>
+
+        {/* Service Types */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+          <Card className="border-2 border-blue-200 shadow-xl bg-white hover:shadow-2xl transition-all duration-300">
+            <CardContent className="p-8">
+              <div className="text-center">
+                <div className="w-20 h-20 bg-blue-100 rounded-full mx-auto mb-6 flex items-center justify-center shadow-lg">
+                  <Upload className="w-10 h-10 text-blue-600" />
+                </div>
+                <h3 className="text-2xl font-bold text-neutral-900 mb-4">Upload & Print</h3>
+                <p className="text-neutral-600 mb-6">
+                  Upload your documents online and get them printed at your nearest shop with custom options.
                 </p>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button 
-                  size="lg"
-                  onClick={handleGetStarted}
-                  className="bg-gradient-golden hover:shadow-golden text-white text-lg px-8 py-6"
-                >
-                  Start Printing Now
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-                <Button 
-                  size="lg"
-                  variant="outline" 
-                  onClick={() => navigate('/shop/apply')}
-                  className="border-neutral-300 text-neutral-700 hover:bg-neutral-50 text-lg px-8 py-6"
-                >
-                  Join as Shop Owner
-                </Button>
-              </div>
-
-              <div className="flex items-center gap-6 pt-4">
-                <div className="flex items-center gap-2">
-                  <div className="flex -space-x-2">
-                    {['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-pink-500'].map((color, i) => (
-                      <div key={i} className={`w-8 h-8 ${color} rounded-full border-2 border-white`} />
-                    ))}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-center gap-2 text-sm text-neutral-700">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span>PDF, DOC, DOCX, Images</span>
                   </div>
-                  <span className="text-sm text-neutral-600">10,000+ happy customers</span>
+                  <div className="flex items-center justify-center gap-2 text-sm text-neutral-700">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span>Custom print settings</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-2 text-sm text-neutral-700">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span>Real-time order tracking</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 text-golden-500 fill-current" />
-                  ))}
-                  <span className="text-sm text-neutral-600 ml-1">4.9/5 rating</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Dashboard Preview */}
-            <div className="relative">
-              <div className="relative z-10">
-                <Card className="shadow-2xl border-0 overflow-hidden">
-                  <div className="bg-gradient-golden p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                        <span className="text-white font-bold">PE</span>
-                      </div>
-                      <span className="text-white font-semibold">Customer Dashboard</span>
-                    </div>
-                  </div>
-                  <CardContent className="p-6 bg-white">
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-blue-50 p-4 rounded-lg">
-                          <div className="text-2xl font-bold text-blue-600">24</div>
-                          <div className="text-sm text-blue-600">Total Orders</div>
-                        </div>
-                        <div className="bg-green-50 p-4 rounded-lg">
-                          <div className="text-2xl font-bold text-green-600">3</div>
-                          <div className="text-sm text-green-600">In Progress</div>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg">
-                          <span className="text-sm font-medium">Assignment Prints</span>
-                          <Badge className="bg-green-100 text-green-700">Ready</Badge>
-                        </div>
-                        <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg">
-                          <span className="text-sm font-medium">Resume Copies</span>
-                          <Badge className="bg-blue-100 text-blue-700">Printing</Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-              
-              {/* Floating elements */}
-              <div className="absolute -top-6 -right-6 w-20 h-20 bg-golden-200 rounded-full opacity-60 animate-pulse" />
-              <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-blue-200 rounded-full opacity-40 animate-pulse" />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-16 bg-white/50">
-        <div className="container mx-auto px-6">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-            {stats.map((stat, index) => {
-              const Icon = stat.icon;
-              return (
-                <div key={index} className="text-center space-y-3">
-                  <div className="w-16 h-16 bg-gradient-golden-soft rounded-full mx-auto flex items-center justify-center">
-                    <Icon className="w-8 h-8 text-golden-600" />
-                  </div>
-                  <div className="text-3xl font-bold text-neutral-900">{stat.number}</div>
-                  <div className="text-neutral-600">{stat.label}</div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-20 px-6">
-        <div className="container mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-neutral-900 mb-4">
-              Why Choose PrintEasy?
-            </h2>
-            <p className="text-xl text-neutral-600 max-w-2xl mx-auto">
-              Experience the future of printing with our innovative platform designed for modern India.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature, index) => {
-              const Icon = feature.icon;
-              return (
-                <Card key={index} className="border-0 shadow-glass bg-white/80 backdrop-blur-lg hover:shadow-xl transition-all duration-300">
-                  <CardContent className="p-6 text-center space-y-4">
-                    <div className="w-16 h-16 bg-gradient-golden-soft rounded-full mx-auto flex items-center justify-center">
-                      <Icon className="w-8 h-8 text-golden-600" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-neutral-900">{feature.title}</h3>
-                    <p className="text-neutral-600">{feature.description}</p>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="py-20 bg-white/50 px-6">
-        <div className="container mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-neutral-900 mb-4">
-              Loved by Customers & Shop Owners
-            </h2>
-            <p className="text-xl text-neutral-600">
-              Join thousands who trust PrintEasy for their printing needs
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <Card key={index} className="border-0 shadow-glass bg-white/90 backdrop-blur-lg">
-                <CardContent className="p-6 space-y-4">
-                  <div className="flex items-center gap-1">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 text-golden-500 fill-current" />
-                    ))}
-                  </div>
-                  <p className="text-neutral-700 italic">"{testimonial.content}"</p>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-golden rounded-full flex items-center justify-center">
-                      <span className="text-white text-sm font-bold">{testimonial.avatar}</span>
-                    </div>
-                    <div>
-                      <div className="font-semibold text-neutral-900">{testimonial.name}</div>
-                      <div className="text-sm text-neutral-600">{testimonial.role}</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 px-6">
-        <div className="container mx-auto">
-          <Card className="border-0 shadow-2xl bg-gradient-golden text-white overflow-hidden relative">
-            <CardContent className="p-12 text-center relative z-10">
-              <h2 className="text-3xl lg:text-4xl font-bold mb-4">
-                Ready to Transform Your Printing Experience?
-              </h2>
-              <p className="text-xl mb-8 opacity-90">
-                Join thousands of satisfied customers and start printing smarter today.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button 
-                  size="lg"
-                  onClick={handleGetStarted}
-                  className="bg-white text-golden-600 hover:bg-neutral-50 text-lg px-8 py-6"
-                >
-                  Get Started Now
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-                <Button 
-                  size="lg"
-                  variant="outline"
-                  onClick={() => navigate('/shop/apply')}
-                  className="border-white text-white hover:bg-white/10 text-lg px-8 py-6"
-                >
-                  <Building className="w-5 h-5 mr-2" />
-                  Become a Partner
-                </Button>
               </div>
             </CardContent>
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32" />
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full translate-y-24 -translate-x-24" />
+          </Card>
+
+          <Card className="border-2 border-purple-200 shadow-xl bg-white hover:shadow-2xl transition-all duration-300">
+            <CardContent className="p-8">
+              <div className="text-center">
+                <div className="w-20 h-20 bg-purple-100 rounded-full mx-auto mb-6 flex items-center justify-center shadow-lg">
+                  <UserCheck className="w-10 h-10 text-purple-600" />
+                </div>
+                <h3 className="text-2xl font-bold text-neutral-900 mb-4">Walk-in Service</h3>
+                <p className="text-neutral-600 mb-6">
+                  Pre-book your walk-in appointment and get priority service at your chosen print shop.
+                </p>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-center gap-2 text-sm text-neutral-700">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span>Priority queue booking</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-2 text-sm text-neutral-700">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span>In-person consultation</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-2 text-sm text-neutral-700">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span>Immediate assistance</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
           </Card>
         </div>
-      </section>
 
-      {/* Footer */}
-      <footer className="bg-neutral-900 text-white py-12 px-6">
-        <div className="container mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-golden rounded-lg flex items-center justify-center">
-                  <span className="text-lg font-bold text-white">PE</span>
+        {/* Dashboard Previews */}
+        <div className="mb-16">
+          <h2 className="text-3xl font-bold text-center text-neutral-900 mb-12">
+            Powerful Dashboards for Everyone
+          </h2>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Customer Dashboard Preview */}
+            <Card className="border-2 border-blue-200 shadow-xl bg-white">
+              <div className="bg-gradient-to-r from-blue-50 to-blue-100/50 p-4 border-b border-blue-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center shadow-md">
+                    <Users className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-neutral-900">Customer Dashboard</h3>
+                    <p className="text-sm text-neutral-600">Track your orders</p>
+                  </div>
                 </div>
-                <span className="text-xl font-bold">PrintEasy</span>
               </div>
-              <p className="text-neutral-400">
-                Making professional printing accessible to everyone in India.
-              </p>
-              <div className="flex items-center gap-2">
-                <Globe className="w-4 h-4" />
-                <span className="text-sm text-neutral-400">Available across India</span>
+              <CardContent className="p-4">
+                <div className="space-y-4">
+                  {/* Mock order card */}
+                  <div className="p-3 bg-neutral-50 rounded-lg border border-neutral-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-semibold text-sm">#{mockOrder.id}</h4>
+                        <Badge className="text-xs bg-blue-100 text-blue-700">Files</Badge>
+                        <Badge className="text-xs bg-orange-100 text-orange-700">Processing</Badge>
+                      </div>
+                      <span className="text-xs text-neutral-500">2h ago</span>
+                    </div>
+                    <p className="text-xs text-neutral-700 mb-2">{mockOrder.description}</p>
+                    <div className="flex gap-1">
+                      <Button size="sm" variant="outline" className="text-xs h-6 px-2">
+                        <Phone className="w-3 h-3 mr-1" />Call
+                      </Button>
+                      <Button size="sm" variant="outline" className="text-xs h-6 px-2">
+                        <MessageSquare className="w-3 h-3 mr-1" />Chat
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="p-2 bg-green-50 rounded text-center">
+                      <p className="text-xs text-green-600 font-medium">Ready</p>
+                      <p className="text-lg font-bold text-green-800">2</p>
+                    </div>
+                    <div className="p-2 bg-orange-50 rounded text-center">
+                      <p className="text-xs text-orange-600 font-medium">Processing</p>
+                      <p className="text-lg font-bold text-orange-800">1</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Shop Dashboard Preview */}
+            <Card className="border-2 border-golden-200 shadow-xl bg-white">
+              <div className="bg-gradient-to-r from-golden-50 to-golden-100/50 p-4 border-b border-golden-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-golden-500 rounded-xl flex items-center justify-center shadow-md">
+                    <Building className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-neutral-900">Shop Dashboard</h3>
+                    <p className="text-sm text-neutral-600">Manage all orders</p>
+                  </div>
+                </div>
               </div>
-            </div>
+              <CardContent className="p-4">
+                <div className="space-y-4">
+                  {/* Mock stats */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="p-2 bg-blue-50 rounded text-center">
+                      <p className="text-xs text-blue-600 font-medium">Today</p>
+                      <p className="text-lg font-bold text-blue-800">{mockStats.todayOrders}</p>
+                    </div>
+                    <div className="p-2 bg-red-50 rounded text-center">
+                      <p className="text-xs text-red-600 font-medium">Urgent</p>
+                      <p className="text-lg font-bold text-red-800">{mockStats.urgentOrders}</p>
+                    </div>
+                  </div>
+                  
+                  {/* Mock order */}
+                  <div className="p-3 bg-red-50/50 rounded-lg border border-red-200">
+                    <div className="flex items-center justify-between mb-1">
+                      <h4 className="font-semibold text-sm">{mockOrder.customerName}</h4>
+                      <Badge className="text-xs bg-red-100 text-red-700">
+                        <Zap className="w-2 h-2 mr-1" />URGENT
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-neutral-700 mb-2">Business presentation - 50 pages</p>
+                    <div className="flex gap-1">
+                      <Button size="sm" className="text-xs h-6 px-2 bg-golden-500 hover:bg-golden-600 text-white">
+                        Mark Ready
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-            <div>
-              <h4 className="font-semibold mb-4">For Customers</h4>
-              <ul className="space-y-2 text-neutral-400">
-                <li><a href="#" className="hover:text-white transition-colors">How it Works</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Pricing</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Track Order</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Help Center</a></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-4">For Partners</h4>
-              <ul className="space-y-2 text-neutral-400">
-                <li><a href="#" className="hover:text-white transition-colors">Join as Shop</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Partner Benefits</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Success Stories</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Support</a></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-4">Company</h4>
-              <ul className="space-y-2 text-neutral-400">
-                <li><a href="#" className="hover:text-white transition-colors">About Us</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Terms of Service</a></li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="border-t border-neutral-800 mt-12 pt-8 text-center text-neutral-400">
-            <p>&copy; 2024 PrintEasy. All rights reserved. Made with ❤️ in India.</p>
+            {/* Admin Dashboard Preview */}
+            <Card className="border-2 border-purple-200 shadow-xl bg-white">
+              <div className="bg-gradient-to-r from-purple-50 to-purple-100/50 p-4 border-b border-purple-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-purple-500 rounded-xl flex items-center justify-center shadow-md">
+                    <TrendingUp className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-neutral-900">Admin Dashboard</h3>
+                    <p className="text-sm text-neutral-600">Platform overview</p>
+                  </div>
+                </div>
+              </div>
+              <CardContent className="p-4">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="p-2 bg-green-50 rounded text-center">
+                      <p className="text-xs text-green-600 font-medium">Revenue</p>
+                      <p className="text-sm font-bold text-green-800">₹5.2L</p>
+                    </div>
+                    <div className="p-2 bg-blue-50 rounded text-center">
+                      <p className="text-xs text-blue-600 font-medium">Orders</p>
+                      <p className="text-sm font-bold text-blue-800">1,234</p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between p-2 bg-neutral-50 rounded">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 bg-golden-100 rounded flex items-center justify-center">
+                          <Building className="w-3 h-3 text-golden-600" />
+                        </div>
+                        <span className="text-xs font-medium">Quick Print</span>
+                      </div>
+                      <span className="text-xs text-green-600 font-semibold">₹1.2L</span>
+                    </div>
+                    <div className="flex items-center justify-between p-2 bg-neutral-50 rounded">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 bg-blue-100 rounded flex items-center justify-center">
+                          <Building className="w-3 h-3 text-blue-600" />
+                        </div>
+                        <span className="text-xs font-medium">Campus Copy</span>
+                      </div>
+                      <span className="text-xs text-green-600 font-semibold">₹89k</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
-      </footer>
+
+        {/* Features */}
+        <div className="text-center">
+          <h2 className="text-3xl font-bold text-neutral-900 mb-8">Why Choose PrintEasy?</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-blue-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <Clock className="w-8 h-8 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-neutral-900 mb-2">24/7 Availability</h3>
+              <p className="text-neutral-600">Place orders anytime, anywhere. Our partner shops are ready to serve you round the clock.</p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <Zap className="w-8 h-8 text-green-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-neutral-900 mb-2">Lightning Fast</h3>
+              <p className="text-neutral-600">Quick turnaround times with real-time order tracking and instant notifications.</p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-purple-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <MapPin className="w-8 h-8 text-purple-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-neutral-900 mb-2">Nearby Shops</h3>
+              <p className="text-neutral-600">Find and connect with trusted print shops in your area with verified reviews.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="bg-neutral-900 text-white py-8">
+        <div className="container mx-auto px-6">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-2">
+              Print<span className="text-golden-500">Easy</span>
+            </h2>
+            <p className="text-neutral-400 mb-4">Your trusted printing partner, available 24/7</p>
+            <p className="text-sm text-neutral-500">© 2024 PrintEasy. All rights reserved.</p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

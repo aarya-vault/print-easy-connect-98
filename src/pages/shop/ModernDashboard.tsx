@@ -4,15 +4,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { 
   Upload, 
   UserCheck, 
   RefreshCw,
   Search
 } from 'lucide-react';
-import ImprovedOrderCard from '@/components/shop/ImprovedOrderCard';
+import RedesignedOrderCard from '@/components/shop/RedesignedOrderCard';
 import DashboardStats from '@/components/shop/DashboardStats';
-import UniversalSearch from '@/components/shop/UniversalSearch';
 import OrderDetailsModal from '@/components/shop/OrderDetailsModal';
 import OrderChat from '@/components/shop/OrderChat';
 
@@ -54,7 +54,7 @@ const ModernDashboard: React.FC = () => {
     {
       id: 'UF001',
       customerName: 'Rajesh Kumar',
-      customerPhone: '+91 98765 43210',
+      customerPhone: '9876543210',
       customerEmail: 'rajesh.kumar@email.com',
       orderType: 'uploaded-files',
       description: 'Business presentation slides - 50 pages, color printing, spiral binding',
@@ -70,7 +70,7 @@ const ModernDashboard: React.FC = () => {
     {
       id: 'UF002',
       customerName: 'Priya Sharma',
-      customerPhone: '+91 87654 32109',
+      customerPhone: '8765432109',
       customerEmail: 'priya.sharma@email.com',
       orderType: 'uploaded-files',
       description: 'Resume printing - 10 copies, premium paper',
@@ -86,7 +86,7 @@ const ModernDashboard: React.FC = () => {
     {
       id: 'UF003',
       customerName: 'Arjun Singh',
-      customerPhone: '+91 54321 09876',
+      customerPhone: '5432109876',
       customerEmail: 'arjun.singh@email.com',
       orderType: 'uploaded-files',
       description: 'Thesis printing - 120 pages, double-sided, hardbound',
@@ -99,59 +99,11 @@ const ModernDashboard: React.FC = () => {
       copies: 3,
       color: false
     },
-    {
-      id: 'UF004',
-      customerName: 'Meera Patel',
-      customerPhone: '+91 12345 67890',
-      customerEmail: 'meera.patel@email.com',
-      orderType: 'uploaded-files',
-      description: 'Project report - 80 pages, color charts',
-      status: 'confirmed',
-      isUrgent: false,
-      createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000),
-      files: [{ id: '4', name: 'project_report.pdf', type: 'application/pdf', size: 3200000, url: '#' }],
-      services: ['Color Printing', 'Spiral Binding'],
-      pages: 80,
-      copies: 1,
-      color: true
-    },
-    {
-      id: 'UF005',
-      customerName: 'Vikram Reddy',
-      customerPhone: '+91 11111 22222',
-      customerEmail: 'vikram.reddy@email.com',
-      orderType: 'uploaded-files',
-      description: 'Legal documents - 25 pages, official letterhead',
-      status: 'new',
-      isUrgent: false,
-      createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000),
-      files: [{ id: '5', name: 'legal_docs.pdf', type: 'application/pdf', size: 890000, url: '#' }],
-      services: ['Black & White Printing'],
-      pages: 25,
-      copies: 5,
-      color: false
-    },
-    {
-      id: 'UF006',
-      customerName: 'Anita Desai',
-      customerPhone: '+91 33333 44444',
-      customerEmail: 'anita.desai@email.com',
-      orderType: 'uploaded-files',
-      description: 'Wedding invitations - 200 copies, premium cardstock',
-      status: 'processing',
-      isUrgent: false,
-      createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000),
-      files: [{ id: '6', name: 'wedding_invite.pdf', type: 'application/pdf', size: 1200000, url: '#' }],
-      services: ['Color Printing', 'Premium Paper'],
-      pages: 2,
-      copies: 200,
-      color: true
-    },
     // WALK-IN ORDERS
     {
       id: 'WI001',
       customerName: 'Amit Patel',
-      customerPhone: '+91 76543 21098',
+      customerPhone: '7654321098',
       customerEmail: 'amit.patel@email.com',
       orderType: 'walk-in',
       description: 'College textbook scanning - 200 pages',
@@ -164,7 +116,7 @@ const ModernDashboard: React.FC = () => {
     {
       id: 'WI002',
       customerName: 'Sneha Reddy',
-      customerPhone: '+91 65432 10987',
+      customerPhone: '6543210987',
       customerEmail: 'sneha.reddy@email.com',
       orderType: 'walk-in',
       description: 'Wedding invitation cards - 100 copies, premium cardstock',
@@ -179,7 +131,7 @@ const ModernDashboard: React.FC = () => {
     {
       id: 'WI003',
       customerName: 'Vikram Joshi',
-      customerPhone: '+91 43210 98765',
+      customerPhone: '4321098765',
       customerEmail: 'vikram.joshi@email.com',
       orderType: 'walk-in',
       description: 'Office documents photocopying - 50 pages',
@@ -189,48 +141,6 @@ const ModernDashboard: React.FC = () => {
       services: ['Photocopying'],
       pages: 50,
       copies: 5
-    },
-    {
-      id: 'WI004',
-      customerName: 'Kavya Nair',
-      customerPhone: '+91 98765 12345',
-      customerEmail: 'kavya.nair@email.com',
-      orderType: 'walk-in',
-      description: 'Medical reports photocopying - 20 pages',
-      status: 'ready',
-      isUrgent: false,
-      createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000),
-      services: ['Photocopying'],
-      pages: 20,
-      copies: 2
-    },
-    {
-      id: 'WI005',
-      customerName: 'Rohit Gupta',
-      customerPhone: '+91 55555 66666',
-      customerEmail: 'rohit.gupta@email.com',
-      orderType: 'walk-in',
-      description: 'ID card lamination - 5 cards',
-      status: 'confirmed',
-      isUrgent: false,
-      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-      services: ['Lamination'],
-      pages: 5,
-      copies: 1
-    },
-    {
-      id: 'WI006',
-      customerName: 'Deepika Singh',
-      customerPhone: '+91 77777 88888',
-      customerEmail: 'deepika.singh@email.com',
-      orderType: 'walk-in',
-      description: 'Certificate binding - 10 certificates',
-      status: 'new',
-      isUrgent: false,
-      createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000),
-      services: ['Binding'],
-      pages: 10,
-      copies: 1
     }
   ]);
 
@@ -286,10 +196,6 @@ const ModernDashboard: React.FC = () => {
 
   const handleCall = useCallback((phone: string) => {
     window.open(`tel:${phone}`);
-  }, []);
-
-  const handleSearch = useCallback((query: string) => {
-    setSearchQuery(query);
   }, []);
 
   // Calculate stats
@@ -351,12 +257,24 @@ const ModernDashboard: React.FC = () => {
           totalOrders={orders.length}
         />
 
-        {/* Universal Search */}
-        <UniversalSearch onSearch={handleSearch} />
+        {/* Search */}
+        <Card className="border-2 border-neutral-200 shadow-md bg-white mb-6">
+          <CardContent className="p-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400" />
+              <Input
+                placeholder="Search orders by customer name, order ID, or phone number..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 h-12 border-2 border-neutral-200 focus:border-golden-400 rounded-xl bg-white shadow-sm"
+              />
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Main Box Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Box - Uploaded Files */}
+        {/* Main Layout - 2 Columns */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          {/* Left Column - Uploaded Files */}
           <Card className="border-2 border-blue-200 shadow-lg bg-white">
             <div className="bg-gradient-to-r from-blue-50 to-blue-100/50 p-4 border-b border-blue-100">
               <div className="flex items-center justify-between">
@@ -382,9 +300,9 @@ const ModernDashboard: React.FC = () => {
                   <p className="text-neutral-500">No uploaded file orders</p>
                 </div>
               ) : (
-                <div className="space-y-4 max-h-96 overflow-y-auto">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 max-h-[600px] overflow-y-auto">
                   {uploadedFilesOrders.map((order) => (
-                    <ImprovedOrderCard
+                    <RedesignedOrderCard
                       key={order.id}
                       order={order}
                       onToggleUrgency={toggleOrderUrgency}
@@ -399,7 +317,7 @@ const ModernDashboard: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Right Box - Walk-in Orders */}
+          {/* Right Column - Walk-in Orders */}
           <Card className="border-2 border-purple-200 shadow-lg bg-white">
             <div className="bg-gradient-to-r from-purple-50 to-purple-100/50 p-4 border-b border-purple-100">
               <div className="flex items-center justify-between">
@@ -425,9 +343,9 @@ const ModernDashboard: React.FC = () => {
                   <p className="text-neutral-500">No walk-in orders</p>
                 </div>
               ) : (
-                <div className="space-y-4 max-h-96 overflow-y-auto">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 max-h-[600px] overflow-y-auto">
                   {walkInOrders.map((order) => (
-                    <ImprovedOrderCard
+                    <RedesignedOrderCard
                       key={order.id}
                       order={order}
                       onToggleUrgency={toggleOrderUrgency}

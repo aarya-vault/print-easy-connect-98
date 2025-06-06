@@ -50,12 +50,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (phone: string) => {
+    // Validate phone number - must be exactly 10 digits
+    const phoneRegex = /^[0-9]{10}$/;
+    if (!phoneRegex.test(phone)) {
+      throw new Error('Phone number must be exactly 10 digits');
+    }
+
     setIsLoading(true);
     try {
       // Simulate API call for phone-based authentication
-      // In real implementation, this would call your backend
-      
-      // For now, create a mock user or find existing one
       const existingUsers = JSON.parse(localStorage.getItem('printeasy_all_users') || '[]');
       let userData = existingUsers.find((u: User) => u.phone === phone);
       
@@ -65,7 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           id: `user_${Date.now()}`,
           phone,
           role: 'customer' as UserRole,
-          name: `Customer ${phone.slice(-4)}`, // Generate a simple name
+          name: `Customer ${phone.slice(-4)}`,
         };
         existingUsers.push(userData);
         localStorage.setItem('printeasy_all_users', JSON.stringify(existingUsers));
@@ -84,9 +87,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginWithEmail = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Simulate API call for email/password authentication for shop owners and admins
-      // In real implementation, this would call your backend
-      
       // Mock shop owners and admin for demo
       const businessUsers = [
         {
