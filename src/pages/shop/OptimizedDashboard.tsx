@@ -153,62 +153,63 @@ const OptimizedDashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-neutral-50">
       <UniversalHeader 
         title="Shop Dashboard" 
         subtitle="Manage your orders efficiently"
         onRefresh={handleRefresh}
       />
       
-      <div className="p-6">
+      <div className="p-3 sm:p-6">
         <div className="max-w-7xl mx-auto">
-          {/* Search */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          {/* Search and Mobile Title */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-3">
+            <h2 className="text-lg font-semibold text-neutral-900 sm:hidden">Order Management</h2>
+            <div className="relative w-full sm:w-auto">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" />
               <Input
                 placeholder="Search orders..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-64"
+                className="pl-10 w-full sm:w-64"
               />
             </div>
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-3 sm:p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Total Orders</p>
-                    <p className="text-2xl font-bold">{stats.totalOrders}</p>
+                    <p className="text-xs sm:text-sm text-neutral-600">Total Orders</p>
+                    <p className="text-lg sm:text-xl font-bold">{stats.totalOrders}</p>
                   </div>
-                  <FileText className="w-6 h-6 text-blue-600" />
+                  <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
                 </div>
               </CardContent>
             </Card>
             
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-3 sm:p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Active Orders</p>
-                    <p className="text-2xl font-bold">{stats.activeOrders}</p>
+                    <p className="text-xs sm:text-sm text-neutral-600">Active Orders</p>
+                    <p className="text-lg sm:text-xl font-bold">{stats.activeOrders}</p>
                   </div>
-                  <Clock className="w-6 h-6 text-orange-600" />
+                  <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" />
                 </div>
               </CardContent>
             </Card>
             
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-3 sm:p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Urgent Orders</p>
-                    <p className="text-2xl font-bold">{stats.urgentOrders}</p>
+                    <p className="text-xs sm:text-sm text-neutral-600">Urgent Orders</p>
+                    <p className="text-lg sm:text-xl font-bold">{stats.urgentOrders}</p>
                   </div>
-                  <Zap className="w-6 h-6 text-red-600" />
+                  <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-red-600" />
                 </div>
               </CardContent>
             </Card>
@@ -216,56 +217,56 @@ const OptimizedDashboard: React.FC = () => {
 
           {/* Main Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3 mb-6">
-              <TabsTrigger value="orders">Active Orders ({activeOrders.length})</TabsTrigger>
-              <TabsTrigger value="completed">Completed ({completedOrders.length})</TabsTrigger>
-              <TabsTrigger value="qr-upload">QR & Upload</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3 mb-4 sm:mb-6 h-auto">
+              <TabsTrigger value="orders" className="text-xs sm:text-sm py-2">
+                Orders ({activeOrders.length})
+              </TabsTrigger>
+              <TabsTrigger value="completed" className="text-xs sm:text-sm py-2">
+                Completed ({completedOrders.length})
+              </TabsTrigger>
+              <TabsTrigger value="qr-upload" className="text-xs sm:text-sm py-2">
+                QR & Upload
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="orders">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                 {filteredOrders(activeOrders).map(order => (
                   <MinimalOrderCard
                     key={order.id}
                     order={order}
-                    onCall={handleCall}
-                    onChat={handleChat}
-                    onViewDetails={handleViewDetails}
                     onUpdateStatus={handleUpdateStatus}
-                    onToggleUrgency={handleToggleUrgency}
+                    onViewDetails={handleViewDetails}
                   />
                 ))}
               </div>
             </TabsContent>
 
             <TabsContent value="completed">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                 {filteredOrders(completedOrders).map(order => (
                   <MinimalOrderCard
                     key={order.id}
                     order={order}
-                    onCall={handleCall}
-                    onChat={handleChat}
-                    onViewDetails={handleViewDetails}
                     onUpdateStatus={handleUpdateStatus}
-                    onToggleUrgency={handleToggleUrgency}
+                    onViewDetails={handleViewDetails}
                   />
                 ))}
               </div>
             </TabsContent>
 
             <TabsContent value="qr-upload">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <QrCode className="w-5 h-5" />
+                  <CardHeader className="pb-3 sm:pb-4">
+                    <CardTitle className="flex items-center space-x-2 text-base sm:text-lg">
+                      <QrCode className="w-4 h-4 sm:w-5 sm:h-5" />
                       <span>Shop QR Code</span>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="bg-gray-100 h-48 rounded-lg flex items-center justify-center">
-                      <QrCode className="w-24 h-24 text-gray-400" />
+                  <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6 pt-0">
+                    <div className="bg-neutral-100 h-32 sm:h-48 rounded-lg flex items-center justify-center">
+                      <QrCode className="w-16 h-16 sm:w-24 sm:h-24 text-neutral-400" />
                     </div>
                     <Button 
                       onClick={() => setIsQRModalOpen(true)}
@@ -277,15 +278,15 @@ const OptimizedDashboard: React.FC = () => {
                 </Card>
 
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <ExternalLink className="w-5 h-5" />
+                  <CardHeader className="pb-3 sm:pb-4">
+                    <CardTitle className="flex items-center space-x-2 text-base sm:text-lg">
+                      <ExternalLink className="w-4 h-4 sm:w-5 sm:h-5" />
                       <span>Upload Page</span>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <p className="text-sm text-gray-600">Direct link to your shop's upload page</p>
-                    <div className="bg-gray-50 p-3 rounded border text-sm font-mono break-all">
+                  <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6 pt-0">
+                    <p className="text-sm text-neutral-600">Direct link to your shop's upload page</p>
+                    <div className="bg-neutral-50 p-2 sm:p-3 rounded border text-xs sm:text-sm font-mono break-all">
                       https://printeasy.com/shop/quick-print-solutions/upload
                     </div>
                     <div className="space-y-2">
