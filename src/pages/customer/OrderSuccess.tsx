@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,12 +11,35 @@ const OrderSuccess: React.FC = () => {
   const navigate = useNavigate();
 
   // Get order data from localStorage
-  const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
-  const order = orders.find((o: any) => o.id === orderId);
+  const [order, setOrder] = React.useState<any>(null);
+
+  useEffect(() => {
+    console.log('OrderSuccess - orderId:', orderId);
+    const orders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+    console.log('OrderSuccess - orders from localStorage:', orders);
+    
+    const foundOrder = orders.find((o: any) => o.id === orderId);
+    console.log('OrderSuccess - found order:', foundOrder);
+    
+    if (foundOrder) {
+      setOrder(foundOrder);
+    } else {
+      console.log('OrderSuccess - no order found, redirecting to dashboard');
+      navigate('/customer/dashboard');
+    }
+  }, [orderId, navigate]);
 
   if (!order) {
-    navigate('/customer/dashboard');
-    return null;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-100 flex items-center justify-center p-6">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto mb-4 flex items-center justify-center animate-spin">
+            <div className="w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full"></div>
+          </div>
+          <p className="text-gray-600">Loading order details...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -31,7 +54,7 @@ const OrderSuccess: React.FC = () => {
             Order Created Successfully!
           </h1>
           <p className="text-lg text-neutral-600">
-            Your walk-in order has been placed and the shop has been notified.
+            Your {order.orderType.replace('-', ' ')} order has been placed and the shop has been notified.
           </p>
         </div>
 
@@ -65,11 +88,11 @@ const OrderSuccess: React.FC = () => {
                 <div className="space-y-3">
                   <div>
                     <label className="text-sm font-medium text-neutral-600">Shop Name</label>
-                    <p className="text-neutral-900">{order.shopName}</p>
+                    <p className="text-neutral-900">{order.shopName || 'Quick Print Solutions'}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-neutral-600">Order Type</label>
-                    <p className="text-neutral-900 capitalize">{order.orderType} Order</p>
+                    <p className="text-neutral-900 capitalize">{order.orderType.replace('-', ' ')} Order</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-neutral-600">Created At</label>
@@ -78,6 +101,13 @@ const OrderSuccess: React.FC = () => {
                     </p>
                   </div>
                 </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-neutral-600">Description</label>
+                <p className="text-neutral-900 bg-neutral-50 p-3 rounded-lg mt-1">
+                  {order.description}
+                </p>
               </div>
 
               {order.specialInstructions && (
@@ -102,7 +132,9 @@ const OrderSuccess: React.FC = () => {
                   <Clock className="w-4 h-4 text-blue-600" />
                 </div>
                 <p className="text-neutral-700">
-                  Visit the shop with your documents and mention Order ID: <strong>#{order.id}</strong>
+                  {order.orderType === 'walk-in' 
+                    ? `Visit the shop with your documents and mention Order ID: #${order.id}`
+                    : `Your files are being processed. Check your dashboard for updates.`}
                 </p>
               </div>
               <div className="flex items-center gap-3">

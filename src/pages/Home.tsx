@@ -105,7 +105,7 @@ const Home: React.FC = () => {
         </div>
       </nav>
 
-      {/* Hero Section with Floating Animation */}
+      {/* Hero Section */}
       <section className="relative pt-24 pb-16 bg-gradient-to-br from-golden-50 via-white to-blue-50 overflow-hidden">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNGNUQ5MDUiIGZpbGwtb3BhY2l0eT0iMC4xIj48Y2lyY2xlIGN4PSIzMCIgY3k9IjMwIiByPSIxLjUiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-50"></div>
         
@@ -266,7 +266,10 @@ const Home: React.FC = () => {
                     ))}
                   </div>
 
-                  <Button className="w-full h-12 bg-blue-500 hover:bg-blue-600 text-white group-hover:shadow-lg transition-all duration-300">
+                  <Button 
+                    onClick={() => navigate('/customer/order/new')}
+                    className="w-full h-12 bg-blue-500 hover:bg-blue-600 text-white group-hover:shadow-lg transition-all duration-300"
+                  >
                     <Upload className="w-5 h-5 mr-2" />
                     Upload Files
                   </Button>
@@ -310,7 +313,10 @@ const Home: React.FC = () => {
                     ))}
                   </div>
 
-                  <Button className="w-full h-12 bg-purple-500 hover:bg-purple-600 text-white group-hover:shadow-lg transition-all duration-300">
+                  <Button 
+                    onClick={() => navigate('/customer/order/new')}
+                    className="w-full h-12 bg-purple-500 hover:bg-purple-600 text-white group-hover:shadow-lg transition-all duration-300"
+                  >
                     <UserCheck className="w-5 h-5 mr-2" />
                     Book Appointment
                   </Button>
@@ -401,20 +407,20 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Dashboard Preview Section */}
+      {/* Dashboard Preview Section - Only Customer and Shop Dashboard */}
       <section className="py-20 bg-white">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
             <Badge className="bg-purple-100 text-purple-700 border-purple-300 mb-4">Platform Overview</Badge>
             <h2 className="text-4xl md:text-5xl font-bold text-neutral-900 mb-6">
-              Powerful Dashboards for Everyone
+              Powerful Dashboards
             </h2>
             <p className="text-xl text-neutral-600 max-w-3xl mx-auto">
-              Tailored experiences for customers, shop owners, and administrators
+              Tailored experiences for customers and shop owners
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Customer Dashboard */}
             <Card className="border-2 border-blue-200 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
               <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 text-white">
@@ -481,43 +487,6 @@ const Home: React.FC = () => {
                     <Badge className="text-xs bg-red-100 text-red-700">URGENT</Badge>
                   </div>
                   <div className="text-xs text-neutral-600">Business cards - 100 qty</div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Admin Dashboard */}
-            <Card className="border-2 border-purple-200 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
-              <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-6 text-white">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                    <TrendingUp className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold">Admin Dashboard</h3>
-                    <p className="text-purple-100">Platform analytics & control</p>
-                  </div>
-                </div>
-              </div>
-              <CardContent className="p-6 space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-green-50 rounded-lg p-3 text-center border border-green-200">
-                    <div className="text-lg font-bold text-green-700">₹5.2L</div>
-                    <div className="text-xs text-green-600">Revenue</div>
-                  </div>
-                  <div className="bg-blue-50 rounded-lg p-3 text-center border border-blue-200">
-                    <div className="text-lg font-bold text-blue-700">1,234</div>
-                    <div className="text-xs text-blue-600">Orders</div>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between bg-neutral-50 rounded p-2 border border-neutral-200">
-                    <span className="text-xs">Quick Print</span>
-                    <span className="text-xs text-green-600 font-bold">₹1.2L</span>
-                  </div>
-                  <div className="flex items-center justify-between bg-neutral-50 rounded p-2 border border-neutral-200">
-                    <span className="text-xs">Campus Copy</span>
-                    <span className="text-xs text-green-600 font-bold">₹89k</span>
-                  </div>
                 </div>
               </CardContent>
             </Card>

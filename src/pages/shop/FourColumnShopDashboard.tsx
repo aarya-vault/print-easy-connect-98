@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -318,102 +319,66 @@ const FourColumnShopDashboard: React.FC = () => {
             </TabsList>
 
             <TabsContent value="orders">
-              {/* TRUE 4-COLUMN LAYOUT */}
+              {/* TRUE 4-COLUMN LAYOUT WITHOUT HEADERS */}
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
-                {/* Column 1: Upload Orders - Received & Started (Part 1) */}
-                <div className="space-y-3 sm:space-y-4">
-                  <div className="flex items-center space-x-2 mb-3">
-                    <Upload className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
-                    <h3 className="text-sm sm:text-base font-semibold text-gray-900">Upload Orders (1)</h3>
-                    <Badge variant="secondary" className="text-xs">
-                      {getColumnOrders(filteredOrders(uploadOrders.filter(o => activeOrders.includes(o))), 2, 0).length}
-                    </Badge>
-                  </div>
-                  <div className="space-y-3">
-                    {getColumnOrders(filteredOrders(uploadOrders.filter(o => activeOrders.includes(o))), 2, 0).map(order => (
-                      <CompactOrderCard
-                        key={order.id}
-                        order={order}
-                        onCall={handleCall}
-                        onChat={handleChat}
-                        onViewDetails={handleViewDetails}
-                        onUpdateStatus={handleUpdateStatus}
-                        onToggleUrgency={handleToggleUrgency}
-                      />
-                    ))}
-                  </div>
+                {/* Column 1: Upload Orders - Part 1 */}
+                <div className="space-y-3">
+                  {getColumnOrders(filteredOrders(uploadOrders.filter(o => activeOrders.includes(o))), 2, 0).map(order => (
+                    <CompactOrderCard
+                      key={order.id}
+                      order={order}
+                      onCall={handleCall}
+                      onChat={handleChat}
+                      onViewDetails={handleViewDetails}
+                      onUpdateStatus={handleUpdateStatus}
+                      onToggleUrgency={handleToggleUrgency}
+                    />
+                  ))}
                 </div>
 
-                {/* Column 2: Upload Orders - Received & Started (Part 2) */}
-                <div className="space-y-3 sm:space-y-4">
-                  <div className="flex items-center space-x-2 mb-3">
-                    <Upload className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
-                    <h3 className="text-sm sm:text-base font-semibold text-gray-900">Upload Orders (2)</h3>
-                    <Badge variant="secondary" className="text-xs">
-                      {getColumnOrders(filteredOrders(uploadOrders.filter(o => activeOrders.includes(o))), 2, 1).length}
-                    </Badge>
-                  </div>
-                  <div className="space-y-3">
-                    {getColumnOrders(filteredOrders(uploadOrders.filter(o => activeOrders.includes(o))), 2, 1).map(order => (
-                      <CompactOrderCard
-                        key={order.id}
-                        order={order}
-                        onCall={handleCall}
-                        onChat={handleChat}
-                        onViewDetails={handleViewDetails}
-                        onUpdateStatus={handleUpdateStatus}
-                        onToggleUrgency={handleToggleUrgency}
-                      />
-                    ))}
-                  </div>
+                {/* Column 2: Upload Orders - Part 2 */}
+                <div className="space-y-3">
+                  {getColumnOrders(filteredOrders(uploadOrders.filter(o => activeOrders.includes(o))), 2, 1).map(order => (
+                    <CompactOrderCard
+                      key={order.id}
+                      order={order}
+                      onCall={handleCall}
+                      onChat={handleChat}
+                      onViewDetails={handleViewDetails}
+                      onUpdateStatus={handleUpdateStatus}
+                      onToggleUrgency={handleToggleUrgency}
+                    />
+                  ))}
                 </div>
 
-                {/* Column 3: Walk-in Orders - Received & Started (Part 1) */}
-                <div className="space-y-3 sm:space-y-4">
-                  <div className="flex items-center space-x-2 mb-3">
-                    <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
-                    <h3 className="text-sm sm:text-base font-semibold text-gray-900">Walk-in Orders (1)</h3>
-                    <Badge variant="secondary" className="text-xs">
-                      {getColumnOrders(filteredOrders(walkInOrders.filter(o => activeOrders.includes(o))), 2, 0).length}
-                    </Badge>
-                  </div>
-                  <div className="space-y-3">
-                    {getColumnOrders(filteredOrders(walkInOrders.filter(o => activeOrders.includes(o))), 2, 0).map(order => (
-                      <CompactOrderCard
-                        key={order.id}
-                        order={order}
-                        onCall={handleCall}
-                        onChat={handleChat}
-                        onViewDetails={handleViewDetails}
-                        onUpdateStatus={handleUpdateStatus}
-                        onToggleUrgency={handleToggleUrgency}
-                      />
-                    ))}
-                  </div>
+                {/* Column 3: Walk-in Orders - Part 1 */}
+                <div className="space-y-3">
+                  {getColumnOrders(filteredOrders(walkInOrders.filter(o => activeOrders.includes(o))), 2, 0).map(order => (
+                    <CompactOrderCard
+                      key={order.id}
+                      order={order}
+                      onCall={handleCall}
+                      onChat={handleChat}
+                      onViewDetails={handleViewDetails}
+                      onUpdateStatus={handleUpdateStatus}
+                      onToggleUrgency={handleToggleUrgency}
+                    />
+                  ))}
                 </div>
 
-                {/* Column 4: Walk-in Orders - Received & Started (Part 2) */}
-                <div className="space-y-3 sm:space-y-4">
-                  <div className="flex items-center space-x-2 mb-3">
-                    <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
-                    <h3 className="text-sm sm:text-base font-semibold text-gray-900">Walk-in Orders (2)</h3>
-                    <Badge variant="secondary" className="text-xs">
-                      {getColumnOrders(filteredOrders(walkInOrders.filter(o => activeOrders.includes(o))), 2, 1).length}
-                    </Badge>
-                  </div>
-                  <div className="space-y-3">
-                    {getColumnOrders(filteredOrders(walkInOrders.filter(o => activeOrders.includes(o))), 2, 1).map(order => (
-                      <CompactOrderCard
-                        key={order.id}
-                        order={order}
-                        onCall={handleCall}
-                        onChat={handleChat}
-                        onViewDetails={handleViewDetails}
-                        onUpdateStatus={handleUpdateStatus}
-                        onToggleUrgency={handleToggleUrgency}
-                      />
-                    ))}
-                  </div>
+                {/* Column 4: Walk-in Orders - Part 2 */}
+                <div className="space-y-3">
+                  {getColumnOrders(filteredOrders(walkInOrders.filter(o => activeOrders.includes(o))), 2, 1).map(order => (
+                    <CompactOrderCard
+                      key={order.id}
+                      order={order}
+                      onCall={handleCall}
+                      onChat={handleChat}
+                      onViewDetails={handleViewDetails}
+                      onUpdateStatus={handleUpdateStatus}
+                      onToggleUrgency={handleToggleUrgency}
+                    />
+                  ))}
                 </div>
               </div>
             </TabsContent>
