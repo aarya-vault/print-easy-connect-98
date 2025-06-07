@@ -1,123 +1,83 @@
 
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
-import { Toaster } from 'sonner';
+import { SocketProvider } from '@/contexts/SocketContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import NameCollectionPopup from '@/components/auth/NameCollectionPopup';
-import { useAuth } from '@/contexts/AuthContext';
+import UniversalHeader from '@/components/layout/UniversalHeader';
 
 // Pages
 import Home from '@/pages/Home';
 import Login from '@/pages/Login';
-
-// Customer pages
 import CustomerDashboard from '@/pages/customer/Dashboard';
-import NewOrderFlow from '@/pages/customer/NewOrderFlow';
-import EnhancedOrderFlow from '@/pages/customer/EnhancedOrderFlow';
-import SimplifiedUpload from '@/pages/customer/SimplifiedUpload';
-import WalkInOrder from '@/pages/customer/WalkInOrder';
-import OrderSuccess from '@/pages/customer/OrderSuccess';
-
-// Shop pages
 import ShopDashboard from '@/pages/shop/Dashboard';
+import AdminDashboard from '@/pages/admin/Dashboard';
+import NotFound from '@/pages/NotFound';
 
-// Admin pages
-import AdminDashboard from '@/pages/admin/AdminDashboard';
-
-const AppContent: React.FC = () => {
-  const { user } = useAuth();
-  const [showNamePopup, setShowNamePopup] = React.useState(false);
-
-  React.useEffect(() => {
-    if (user && user.needsNameUpdate) {
-      setShowNamePopup(true);
-    } else {
-      setShowNamePopup(false);
-    }
-  }, [user]);
-
-  return (
-    <>
-      <div className="min-h-screen bg-background">
-        <Routes>
-          {/* Public routes */}
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-
-          {/* Customer routes */}
-          <Route path="/customer/dashboard" element={
-            <ProtectedRoute allowedRoles={['customer']}>
-              <CustomerDashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/customer/order/new" element={
-            <ProtectedRoute allowedRoles={['customer']}>
-              <EnhancedOrderFlow />
-            </ProtectedRoute>
-          } />
-          <Route path="/customer/order/enhanced" element={
-            <ProtectedRoute allowedRoles={['customer']}>
-              <EnhancedOrderFlow />
-            </ProtectedRoute>
-          } />
-          <Route path="/customer/shop/:shopSlug/order" element={
-            <ProtectedRoute allowedRoles={['customer']}>
-              <EnhancedOrderFlow />
-            </ProtectedRoute>
-          } />
-          <Route path="/customer/shop/:shopSlug/upload" element={
-            <ProtectedRoute allowedRoles={['customer']}>
-              <SimplifiedUpload />
-            </ProtectedRoute>
-          } />
-          <Route path="/customer/shop/:shopId/walkin" element={
-            <ProtectedRoute allowedRoles={['customer']}>
-              <WalkInOrder />
-            </ProtectedRoute>
-          } />
-          <Route path="/customer/order/success/:orderId" element={
-            <ProtectedRoute allowedRoles={['customer']}>
-              <OrderSuccess />
-            </ProtectedRoute>
-          } />
-
-          {/* Shop routes */}
-          <Route path="/shop/dashboard" element={
-            <ProtectedRoute allowedRoles={['shop_owner']}>
-              <ShopDashboard />
-            </ProtectedRoute>
-          } />
-
-          {/* Admin routes */}
-          <Route path="/admin/dashboard" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <AdminDashboard />
-            </ProtectedRoute>
-          } />
-
-          {/* Catch all route */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-        <Toaster position="top-right" richColors />
-      </div>
-
-      {/* Name Collection Popup */}
-      <NameCollectionPopup
-        isOpen={showNamePopup}
-        onClose={() => setShowNamePopup(false)}
-      />
-    </>
-  );
-};
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <AppContent />
-      </Router>
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <SocketProvider>
+          <Router>
+            <div className="min-h-screen bg-neutral-50">
+              <UniversalHeader />
+              <main className="pt-16">
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/login" element={<Login />} />
+                  
+                  {/* Customer Routes */}
+                  <Route 
+                    path="/customer/dashboard" 
+                    element={
+                      <ProtectedRoute allowedRoles={['customer']}>
+                        <CustomerDashboard />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  {/* Shop Routes */}
+                  <Route 
+                    path="/shop/dashboard" 
+                    element={
+                      <ProtectedRoute allowedRoles={['shop_owner']}>
+                        <ShopDashboard />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  {/* Admin Routes */}
+                  <Route 
+                    path="/admin/dashboard" 
+                    element={
+                      <ProtectedRoute allowedRoles={['admin']}>
+                        <AdminDashboard />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </main>
+              <Toaster />
+            </div>
+          </Router>
+        </SocketProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 

@@ -98,6 +98,64 @@ class ApiService {
     return response.data;
   }
 
+  // File methods
+  async uploadFiles(orderId: string, files: File[], onProgress?: (progress: number) => void) {
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append('files', file);
+    });
+
+    const response = await this.api.post(`/api/files/upload/${orderId}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      onUploadProgress: (progressEvent) => {
+        if (onProgress && progressEvent.total) {
+          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          onProgress(progress);
+        }
+      },
+    });
+    return response.data;
+  }
+
+  async getOrderFiles(orderId: string) {
+    const response = await this.api.get(`/api/files/order/${orderId}`);
+    return response.data;
+  }
+
+  async downloadFile(fileId: string) {
+    const response = await this.api.get(`/api/files/download/${fileId}`, {
+      responseType: 'blob',
+    });
+    return response;
+  }
+
+  async deleteFile(fileId: string) {
+    const response = await this.api.delete(`/api/files/${fileId}`);
+    return response.data;
+  }
+
+  // Chat methods
+  async getOrderMessages(orderId: string) {
+    const response = await this.api.get(`/api/chat/order/${orderId}`);
+    return response.data;
+  }
+
+  async sendMessage(orderId: string, message: string, recipientId: number) {
+    const response = await this.api.post('/api/chat/send', {
+      orderId,
+      message,
+      recipientId
+    });
+    return response.data;
+  }
+
+  async getUnreadMessageCount() {
+    const response = await this.api.get('/api/chat/unread-count');
+    return response.data;
+  }
+
   // Shop methods
   async getShops() {
     const response = await this.api.get('/api/shops');
