@@ -1,28 +1,17 @@
 
 import React from 'react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { 
+  Phone, 
+  Eye, 
   Clock,
-  CheckCircle,
-  Bell,
-  Package,
-  X,
-  Upload,
-  UserCheck
+  PlayCircle,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
-
-interface ShopOrder {
-  id: string;
-  customerName: string;
-  customerPhone: string;
-  orderType: 'walk-in' | 'uploaded-files';
-  status: 'new' | 'confirmed' | 'processing' | 'ready' | 'completed' | 'cancelled';
-  isUrgent: boolean;
-  createdAt: Date;
-  description: string;
-}
+import { ShopOrder } from '@/types/order';
 
 interface MinimalOrderCardProps {
   order: ShopOrder;
@@ -35,120 +24,106 @@ const MinimalOrderCard: React.FC<MinimalOrderCardProps> = ({
   onUpdateStatus,
   onViewDetails
 }) => {
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: ShopOrder['status']) => {
     switch (status) {
-      case 'new': return 'bg-amber-100 text-amber-800 border-amber-200';
-      case 'confirmed': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'processing': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'ready': return 'bg-green-100 text-green-800 border-green-200';
-      case 'completed': return 'bg-gray-100 text-gray-800 border-gray-200';
-      case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'received': return 'bg-blue-100 text-blue-800 border-blue-300';
+      case 'started': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+      case 'completed': return 'bg-green-100 text-green-800 border-green-300';
+      default: return 'bg-gray-100 text-gray-800 border-gray-300';
     }
   };
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status: ShopOrder['status']) => {
     switch (status) {
-      case 'new': return <Bell className="w-3 h-3" />;
-      case 'confirmed': return <CheckCircle className="w-3 h-3" />;
-      case 'processing': return <Clock className="w-3 h-3" />;
-      case 'ready': return <Package className="w-3 h-3" />;
-      case 'completed': return <CheckCircle className="w-3 h-3" />;
-      case 'cancelled': return <X className="w-3 h-3" />;
+      case 'received': return <Clock className="w-3 h-3" />;
+      case 'started': return <PlayCircle className="w-3 h-3" />;
+      case 'completed': return <CheckCircle2 className="w-3 h-3" />;
       default: return <Clock className="w-3 h-3" />;
     }
   };
 
-  const formatTimeAgo = (date: Date) => {
-    const now = new Date();
-    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-    
-    if (diffInMinutes < 1) return 'Now';
-    if (diffInMinutes < 60) return `${diffInMinutes}m`;
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) return `${diffInHours}h`;
-    const diffInDays = Math.floor(diffInHours / 24);
-    return `${diffInDays}d`;
-  };
-
-  const getNextStatus = () => {
-    switch (order.status) {
-      case 'new': return 'confirmed';
-      case 'confirmed': return 'processing';
-      case 'processing': return 'ready';
-      case 'ready': return 'completed';
+  const getNextStatus = (currentStatus: ShopOrder['status']): ShopOrder['status'] | null => {
+    switch (currentStatus) {
+      case 'received': return 'started';
+      case 'started': return 'completed';
+      case 'completed': return null;
       default: return null;
     }
   };
 
-  const getStatusAction = () => {
-    switch (order.status) {
-      case 'new': return 'Accept';
-      case 'confirmed': return 'Start';
-      case 'processing': return 'Ready';
-      case 'ready': return 'Complete';
-      default: return null;
-    }
-  };
-
-  const nextStatus = getNextStatus();
-  const statusAction = getStatusAction();
+  const nextStatus = getNextStatus(order.status);
 
   return (
-    <Card className={`border shadow-sm hover:shadow-md transition-all duration-200 ${
-      order.isUrgent ? 'border-red-200 bg-red-50/30' : 'border-gray-200 bg-white'
-    } ${order.status === 'cancelled' ? 'opacity-60' : ''}`}>
+    <Card className={`border-2 transition-all duration-200 hover:shadow-md ${
+      order.isUrgent ? 'border-red-200 bg-red-50/30' : 'border-neutral-200 bg-white'
+    }`}>
       <CardContent className="p-3">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <Badge className={`text-xs px-2 py-1 ${
-              order.orderType === 'uploaded-files' ? 'bg-blue-100 text-blue-800 border-blue-200' : 'bg-purple-100 text-purple-800 border-purple-200'
-            }`}>
-              {order.orderType === 'uploaded-files' ? (
-                <><Upload className="w-2 h-2 mr-1" />Files</>
-              ) : (
-                <><UserCheck className="w-2 h-2 mr-1" />Walk-in</>
-              )}
+        <div className="space-y-3">
+          {/* Header */}
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-sm truncate">{order.customerName}</h3>
+                {order.isUrgent && (
+                  <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                )}
+              </div>
+              <p className="text-xs text-neutral-600 truncate">ID: {order.id}</p>
+            </div>
+            <Badge className={`text-xs px-2 py-1 flex items-center gap-1 ${getStatusColor(order.status)}`}>
+              {getStatusIcon(order.status)}
+              {order.status}
             </Badge>
-            {order.isUrgent && (
-              <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div>
-            )}
           </div>
-          <span className="text-xs text-gray-500">{formatTimeAgo(order.createdAt)}</span>
-        </div>
 
-        {/* Customer Name */}
-        <h3 className="font-semibold text-sm text-gray-900 mb-1 truncate">
-          {order.customerName}
-        </h3>
+          {/* Description */}
+          <p className="text-xs text-neutral-600 line-clamp-2">{order.description}</p>
 
-        {/* Status */}
-        <Badge className={`text-xs mb-2 ${getStatusColor(order.status)}`}>
-          {getStatusIcon(order.status)}
-          <span className="ml-1 capitalize">{order.status}</span>
-        </Badge>
+          {/* Services */}
+          {order.services && order.services.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {order.services.slice(0, 2).map((service, index) => (
+                <span key={index} className="bg-neutral-100 text-neutral-700 px-2 py-1 rounded text-xs">
+                  {service}
+                </span>
+              ))}
+              {order.services.length > 2 && (
+                <span className="bg-neutral-100 text-neutral-700 px-2 py-1 rounded text-xs">
+                  +{order.services.length - 2}
+                </span>
+              )}
+            </div>
+          )}
 
-        {/* Action Buttons */}
-        <div className="space-y-1">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => onViewDetails(order.id)}
-            className="w-full text-xs h-7"
-          >
-            View Details
-          </Button>
-
-          {nextStatus && statusAction && order.status !== 'completed' && order.status !== 'cancelled' && (
+          {/* Actions */}
+          <div className="flex gap-2">
             <Button
               size="sm"
-              onClick={() => onUpdateStatus(order.id, nextStatus as ShopOrder['status'])}
-              className="w-full text-xs h-7 bg-gradient-to-r from-golden-500 to-golden-600 hover:from-golden-600 hover:to-golden-700 text-white border-0"
+              variant="outline"
+              onClick={() => onViewDetails(order.id)}
+              className="flex-1 h-8 text-xs"
             >
-              {statusAction}
+              <Eye className="w-3 h-3 mr-1" />
+              Details
             </Button>
-          )}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => window.open(`tel:${order.customerPhone}`)}
+              className="h-8 px-3"
+            >
+              <Phone className="w-3 h-3" />
+            </Button>
+            {nextStatus && (
+              <Button
+                size="sm"
+                onClick={() => onUpdateStatus(order.id, nextStatus)}
+                className="h-8 px-3 bg-blue-500 hover:bg-blue-600 text-white"
+              >
+                {nextStatus === 'started' ? 'Start' : 'Complete'}
+              </Button>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

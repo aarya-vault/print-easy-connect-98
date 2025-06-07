@@ -1,39 +1,28 @@
 
 import React from 'react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { 
   Phone, 
-  MessageSquare,
-  Eye,
-  Zap,
-  CheckCircle,
+  MessageCircle, 
+  Eye, 
   Clock,
-  Bell,
-  Package,
+  PlayCircle,
+  CheckCircle2,
+  AlertCircle,
+  Zap,
   Upload,
-  UserCheck,
-  ArrowRight
+  UserCheck
 } from 'lucide-react';
-
-interface Order {
-  id: string;
-  customerName: string;
-  customerPhone: string;
-  orderType: 'uploaded-files' | 'walk-in';
-  status: 'received' | 'started' | 'completed';
-  isUrgent: boolean;
-  description: string;
-  createdAt: Date;
-}
+import { ShopOrder } from '@/types/order';
 
 interface CompactOrderCardProps {
-  order: Order;
+  order: ShopOrder;
   onCall: (phone: string) => void;
   onChat: (orderId: string) => void;
   onViewDetails: (orderId: string) => void;
-  onUpdateStatus: (orderId: string, status: Order['status']) => void;
+  onUpdateStatus: (orderId: string, status: ShopOrder['status']) => void;
   onToggleUrgency: (orderId: string) => void;
 }
 
@@ -45,152 +34,137 @@ const CompactOrderCard: React.FC<CompactOrderCardProps> = ({
   onUpdateStatus,
   onToggleUrgency
 }) => {
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: ShopOrder['status']) => {
     switch (status) {
-      case 'received': return 'bg-amber-100 text-amber-800 border-amber-200';
-      case 'started': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'completed': return 'bg-green-100 text-green-800 border-green-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'received': return 'bg-blue-100 text-blue-800 border-blue-300';
+      case 'started': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+      case 'completed': return 'bg-green-100 text-green-800 border-green-300';
+      default: return 'bg-gray-100 text-gray-800 border-gray-300';
     }
   };
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status: ShopOrder['status']) => {
     switch (status) {
-      case 'received': return <Bell className="w-3 h-3" />;
-      case 'started': return <Clock className="w-3 h-3" />;
-      case 'completed': return <CheckCircle className="w-3 h-3" />;
+      case 'received': return <Clock className="w-3 h-3" />;
+      case 'started': return <PlayCircle className="w-3 h-3" />;
+      case 'completed': return <CheckCircle2 className="w-3 h-3" />;
       default: return <Clock className="w-3 h-3" />;
     }
   };
 
-  const formatTimeAgo = (date: Date) => {
-    const now = new Date();
-    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-    
-    if (diffInMinutes < 1) return 'Now';
-    if (diffInMinutes < 60) return `${diffInMinutes}m`;
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) return `${diffInHours}h`;
-    return `${Math.floor(diffInHours / 24)}d`;
-  };
-
-  const getNextStatus = () => {
-    switch (order.status) {
+  const getNextStatus = (currentStatus: ShopOrder['status']): ShopOrder['status'] | null => {
+    switch (currentStatus) {
       case 'received': return 'started';
       case 'started': return 'completed';
+      case 'completed': return null;
       default: return null;
     }
   };
 
-  const getStatusAction = () => {
-    switch (order.status) {
-      case 'received': return 'Start';
-      case 'started': return 'Complete';
-      default: return null;
-    }
-  };
-
-  const nextStatus = getNextStatus();
-  const statusAction = getStatusAction();
+  const nextStatus = getNextStatus(order.status);
+  const timeAgo = Math.floor((Date.now() - order.createdAt.getTime()) / (1000 * 60));
 
   return (
-    <Card className={`hover:shadow-md transition-all duration-200 ${
-      order.isUrgent ? 'border-red-300 bg-red-50/50' : 
-      order.orderType === 'uploaded-files' ? 'border-blue-200' : 'border-purple-200'
-    } ${order.status === 'completed' ? 'opacity-75' : ''}`}>
+    <Card className={`border transition-all duration-200 hover:shadow-md ${
+      order.isUrgent ? 'border-red-200 bg-red-50/30' : 'border-gray-200 bg-white'
+    }`}>
       <CardContent className="p-3 sm:p-4">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-bold text-sm sm:text-base text-gray-900 truncate">{order.customerName}</h3>
-              {order.isUrgent && (
-                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse flex-shrink-0"></div>
-              )}
+        <div className="space-y-2 sm:space-y-3">
+          {/* Header */}
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1 sm:gap-2">
+                {order.orderType === 'uploaded-files' ? (
+                  <Upload className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 flex-shrink-0" />
+                ) : (
+                  <UserCheck className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600 flex-shrink-0" />
+                )}
+                <h3 className="font-semibold text-xs sm:text-sm truncate">{order.customerName}</h3>
+                {order.isUrgent && (
+                  <button
+                    onClick={() => onToggleUrgency(order.id)}
+                    className="p-1 hover:bg-red-100 rounded"
+                  >
+                    <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 text-red-500 flex-shrink-0" />
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-2 text-xs text-gray-600">
+                <span>{order.id}</span>
+                <span>•</span>
+                <span>{timeAgo}m ago</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2 text-xs text-gray-600">
-              <span className="font-mono">#{order.id}</span>
-              <span>•</span>
-              <span>{formatTimeAgo(order.createdAt)}</span>
-            </div>
+            <Badge className={`text-xs px-1 sm:px-2 py-1 flex items-center gap-1 ${getStatusColor(order.status)}`}>
+              {getStatusIcon(order.status)}
+              <span className="hidden sm:inline">{order.status}</span>
+            </Badge>
           </div>
-          
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => onViewDetails(order.id)}
-            className="ml-2 h-8 w-8 p-0 flex-shrink-0"
-          >
-            <Eye className="w-3 h-3" />
-          </Button>
-        </div>
 
-        {/* Badges */}
-        <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-3">
-          <Badge className={`text-xs ${
-            order.orderType === 'uploaded-files' ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-purple-100 text-purple-700 border-purple-200'
-          }`}>
-            {order.orderType === 'uploaded-files' ? (
-              <><Upload className="w-2 h-2 sm:w-3 sm:h-3 mr-1" />Files</>
-            ) : (
-              <><UserCheck className="w-2 h-2 sm:w-3 sm:h-3 mr-1" />Walk-in</>
+          {/* Description */}
+          <p className="text-xs text-gray-600 line-clamp-2">{order.description}</p>
+
+          {/* Order details */}
+          <div className="flex flex-wrap gap-1 text-xs">
+            {order.pages && (
+              <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                {order.pages}p
+              </span>
             )}
-          </Badge>
-          <Badge className={`text-xs ${getStatusColor(order.status)}`}>
-            {getStatusIcon(order.status)}
-            <span className="ml-1 capitalize">{order.status}</span>
-          </Badge>
-        </div>
+            {order.copies && order.copies > 1 && (
+              <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                {order.copies}x
+              </span>
+            )}
+            {order.color && (
+              <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded">Color</span>
+            )}
+          </div>
 
-        {/* Description */}
-        <p className="text-xs sm:text-sm text-gray-700 mb-3 line-clamp-2 leading-relaxed">
-          {order.description}
-        </p>
-
-        {/* Action Buttons */}
-        <div className="space-y-2">
-          {/* Top row - Quick actions */}
-          <div className="grid grid-cols-3 gap-1 sm:gap-2">
+          {/* Actions */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 sm:gap-2">
             <Button
               size="sm"
               variant="outline"
               onClick={() => onCall(order.customerPhone)}
-              className="h-8 text-xs px-2 border-green-200 text-green-700 hover:bg-green-50"
+              className="h-7 sm:h-8 text-xs px-2"
             >
-              <Phone className="w-3 h-3" />
-              <span className="ml-1 hidden sm:inline">Call</span>
+              <Phone className="w-3 h-3 sm:mr-1" />
+              <span className="hidden sm:inline">Call</span>
             </Button>
             <Button
               size="sm"
               variant="outline"
               onClick={() => onChat(order.id)}
-              className="h-8 text-xs px-2 border-blue-200 text-blue-700 hover:bg-blue-50"
+              className="h-7 sm:h-8 text-xs px-2"
             >
-              <MessageSquare className="w-3 h-3" />
-              <span className="ml-1 hidden sm:inline">Chat</span>
+              <MessageCircle className="w-3 h-3 sm:mr-1" />
+              <span className="hidden sm:inline">Chat</span>
             </Button>
             <Button
               size="sm"
               variant="outline"
-              onClick={() => onToggleUrgency(order.id)}
-              className={`h-8 text-xs px-2 ${order.isUrgent ? 'bg-red-100 text-red-700 border-red-300 hover:bg-red-200' : 'border-orange-200 text-orange-700 hover:bg-orange-50'}`}
+              onClick={() => onViewDetails(order.id)}
+              className="h-7 sm:h-8 text-xs px-2"
             >
-              <Zap className="w-3 h-3" />
-              <span className="ml-1 hidden sm:inline">{order.isUrgent ? 'Urgent' : 'Normal'}</span>
+              <Eye className="w-3 h-3 sm:mr-1" />
+              <span className="hidden sm:inline">View</span>
             </Button>
+            {nextStatus && (
+              <Button
+                size="sm"
+                onClick={() => onUpdateStatus(order.id, nextStatus)}
+                className="h-7 sm:h-8 text-xs px-2 bg-blue-500 hover:bg-blue-600 text-white"
+              >
+                <span className="sm:hidden">
+                  {nextStatus === 'started' ? 'Start' : 'Done'}
+                </span>
+                <span className="hidden sm:inline">
+                  {nextStatus === 'started' ? 'Start' : 'Complete'}
+                </span>
+              </Button>
+            )}
           </div>
-
-          {/* Status action button */}
-          {nextStatus && statusAction && order.status !== 'completed' && (
-            <Button
-              size="sm"
-              onClick={() => onUpdateStatus(order.id, nextStatus as Order['status'])}
-              className="w-full h-8 text-xs bg-gradient-to-r from-golden-500 to-golden-600 hover:from-golden-600 hover:to-golden-700 text-white font-medium"
-            >
-              {statusAction}
-              <ArrowRight className="w-3 h-3 ml-1" />
-            </Button>
-          )}
         </div>
       </CardContent>
     </Card>
