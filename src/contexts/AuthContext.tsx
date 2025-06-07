@@ -1,16 +1,18 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import apiService from '@/services/api';
 
 export type UserRole = 'customer' | 'shop_owner' | 'admin';
 
 export interface User {
   id: string;
-  phone: string;
+  phone?: string;
+  email?: string;
   role: UserRole;
   name?: string;
-  email?: string;
-  shopId?: string; // For shop owners
-  needsNameUpdate?: boolean; // Flag for new users who need to provide name
+  shopId?: string;
+  shopName?: string;
+  needsNameUpdate?: boolean;
 }
 
 interface AuthContextType {
@@ -38,13 +40,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing session on app load
+    // Check for existing token on app load
+    const token = localStorage.getItem('printeasy_token');
     const storedUser = localStorage.getItem('printeasy_user');
-    if (storedUser) {
+    
+    if (token && storedUser) {
       try {
-        setUser(JSON.parse(storedUser));
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
+        
+        // Verify token is still valid by fetching profile
+        apiService.getProfile()
+          .then(response => {
+            if (response.success) {
+              setUser(response.user);
+              localStorage.setItem('printeasy_user', JSON.stringify(response.user));
+            }
+          })
+          .catch(() => {
+            // Token invalid, clear storage
+            localStorage.removeItem('printeasy_token');
+            localStorage.removeItem('printeasy_user');
+            setUser(null);
+          });
       } catch (error) {
         console.error('Error parsing stored user:', error);
+        localStorage.removeItem('printeasy_token');
         localStorage.removeItem('printeasy_user');
       }
     }
@@ -60,27 +81,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setIsLoading(true);
     try {
-      // Simulate API call for phone-based authentication
-      const existingUsers = JSON.parse(localStorage.getItem('printeasy_all_users') || '[]');
-      let userData = existingUsers.find((u: User) => u.phone === phone);
+      const response = await apiService.phoneLogin(phone);
       
-      if (!userData) {
-        // Create new customer account automatically
-        userData = {
-          id: `user_${Date.now()}`,
-          phone,
-          role: 'customer' as UserRole,
-          needsNameUpdate: true, // Flag for name collection popup
-        };
-        existingUsers.push(userData);
-        localStorage.setItem('printeasy_all_users', JSON.stringify(existingUsers));
+      if (response.success) {
+        const { token, user: userData } = response;
+        
+        localStorage.setItem('printeasy_token', token);
+        localStorage.setItem('printeasy_user', JSON.stringify(userData));
+        setUser(userData);
       }
-      
-      setUser(userData);
-      localStorage.setItem('printeasy_user', JSON.stringify(userData));
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
-      throw error;
+      throw new Error(error.response?.data?.error || 'Login failed');
     } finally {
       setIsLoading(false);
     }
@@ -89,62 +101,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginWithEmail = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Mock shop owners and admin for demo
-      const businessUsers = [
-        {
-          id: 'shop_1',
-          email: 'shop@example.com',
-          password: 'password',
-          role: 'shop_owner' as UserRole,
-          name: 'Print Shop Owner',
-          shopId: 'shop_1',
-          phone: '9876543210'
-        },
-        {
-          id: 'admin_1',
-          email: 'admin@printeasy.com',
-          password: 'admin123',
-          role: 'admin' as UserRole,
-          name: 'PrintEasy Admin',
-          phone: '9999999999'
-        }
-      ];
+      const response = await apiService.emailLogin(email, password);
       
-      const userData = businessUsers.find(u => u.email === email && u.password === password);
-      
-      if (!userData) {
-        throw new Error('Invalid credentials');
+      if (response.success) {
+        const { token, user: userData } = response;
+        
+        localStorage.setItem('printeasy_token', token);
+        localStorage.setItem('printeasy_user', JSON.stringify(userData));
+        setUser(userData);
       }
-      
-      // Remove password from stored user data
-      const { password: _, ...userWithoutPassword } = userData;
-      setUser(userWithoutPassword);
-      localStorage.setItem('printeasy_user', JSON.stringify(userWithoutPassword));
-    } catch (error) {
+    } catch (error: any) {
       console.error('Email login error:', error);
-      throw error;
+      throw new Error(error.response?.data?.error || 'Login failed');
     } finally {
       setIsLoading(false);
     }
   };
 
   const updateUserName = async (name: string) => {
-    if (user) {
-      const updatedUser = { ...user, name, needsNameUpdate: false };
-      setUser(updatedUser);
-      localStorage.setItem('printeasy_user', JSON.stringify(updatedUser));
+    if (!user) return;
+    
+    try {
+      const response = await apiService.updateProfile(name);
       
-      // Update in all users list too
-      const existingUsers = JSON.parse(localStorage.getItem('printeasy_all_users') || '[]');
-      const updatedUsers = existingUsers.map((u: User) => 
-        u.id === user.id ? updatedUser : u
-      );
-      localStorage.setItem('printeasy_all_users', JSON.stringify(updatedUsers));
+      if (response.success) {
+        const updatedUser = { ...user, ...response.user, needsNameUpdate: false };
+        setUser(updatedUser);
+        localStorage.setItem('printeasy_user', JSON.stringify(updatedUser));
+      }
+    } catch (error: any) {
+      console.error('Update name error:', error);
+      throw new Error(error.response?.data?.error || 'Update failed');
     }
   };
 
   const logout = () => {
     setUser(null);
+    localStorage.removeItem('printeasy_token');
     localStorage.removeItem('printeasy_user');
   };
 
