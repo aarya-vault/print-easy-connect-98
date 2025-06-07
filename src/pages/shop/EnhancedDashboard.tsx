@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -17,32 +16,7 @@ import {
 import MinimalOrderCard from '@/components/shop/MinimalOrderCard';
 import DashboardStats from '@/components/shop/DashboardStats';
 import OrderDetailsModal from '@/components/shop/OrderDetailsModal';
-
-interface ShopOrder {
-  id: string;
-  customerName: string;
-  customerPhone: string;
-  customerEmail: string;
-  orderType: 'walk-in' | 'uploaded-files';
-  description: string;
-  status: 'new' | 'confirmed' | 'processing' | 'ready' | 'completed' | 'cancelled';
-  isUrgent: boolean;
-  createdAt: Date;
-  files?: {
-    id: string;
-    name: string;
-    type: string;
-    size: number;
-    url: string;
-  }[];
-  instructions?: string;
-  services: string[];
-  pages?: number;
-  copies?: number;
-  paperType?: string;
-  binding?: string;
-  color?: boolean;
-}
+import { ShopOrder } from '@/types/order';
 
 const EnhancedDashboard: React.FC = () => {
   const { user, logout } = useAuth();
@@ -51,7 +25,7 @@ const EnhancedDashboard: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('active');
 
-  // Enhanced demo orders
+  // Enhanced demo orders with simplified statuses
   const [orders, setOrders] = useState<ShopOrder[]>([
     {
       id: 'UF001',
@@ -60,7 +34,7 @@ const EnhancedDashboard: React.FC = () => {
       customerEmail: 'rajesh.kumar@email.com',
       orderType: 'uploaded-files',
       description: 'Business presentation slides - 50 pages, color printing, spiral binding',
-      status: 'processing',
+      status: 'started',
       isUrgent: true,
       createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
       files: [{ id: '1', name: 'presentation_slides.pdf', type: 'application/pdf', size: 2560000, url: '#' }],
@@ -76,7 +50,7 @@ const EnhancedDashboard: React.FC = () => {
       customerEmail: 'priya.sharma@email.com',
       orderType: 'uploaded-files',
       description: 'Resume printing - 10 copies, premium paper',
-      status: 'new',
+      status: 'received',
       isUrgent: true,
       createdAt: new Date(Date.now() - 30 * 60 * 1000),
       files: [{ id: '2', name: 'resume_final.pdf', type: 'application/pdf', size: 156000, url: '#' }],
@@ -108,7 +82,7 @@ const EnhancedDashboard: React.FC = () => {
       customerEmail: 'amit.patel@email.com',
       orderType: 'walk-in',
       description: 'College textbook scanning - 200 pages',
-      status: 'confirmed',
+      status: 'received',
       isUrgent: false,
       createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000),
       services: ['Scanning'],
@@ -121,7 +95,7 @@ const EnhancedDashboard: React.FC = () => {
       customerEmail: 'sneha.reddy@email.com',
       orderType: 'walk-in',
       description: 'Wedding invitation cards - 100 copies, premium cardstock',
-      status: 'processing',
+      status: 'started',
       isUrgent: false,
       createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000),
       services: ['Color Printing', 'Premium Paper'],
@@ -136,7 +110,7 @@ const EnhancedDashboard: React.FC = () => {
       customerEmail: 'vikram.joshi@email.com',
       orderType: 'walk-in',
       description: 'Office documents photocopying - 50 pages',
-      status: 'cancelled',
+      status: 'completed',
       isUrgent: false,
       createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000),
       services: ['Photocopying'],
@@ -153,8 +127,8 @@ const EnhancedDashboard: React.FC = () => {
       order.customerPhone.includes(searchQuery);
 
     const matchesTab = activeTab === 'active' 
-      ? ['new', 'confirmed', 'processing', 'ready'].includes(order.status)
-      : ['completed', 'cancelled'].includes(order.status);
+      ? ['received', 'started'].includes(order.status)
+      : order.status === 'completed';
 
     return matchesSearch && matchesTab;
   });
@@ -188,9 +162,7 @@ const EnhancedDashboard: React.FC = () => {
   }, [orders]);
 
   // Calculate stats for active orders only
-  const activeOrders = orders.filter(order => 
-    ['new', 'confirmed', 'processing', 'ready'].includes(order.status)
-  );
+  const activeOrders = orders.filter(order => order.status !== 'completed');
   
   const todayOrders = activeOrders.filter(order => {
     const today = new Date();
@@ -199,7 +171,7 @@ const EnhancedDashboard: React.FC = () => {
 
   const urgentOrders = activeOrders.filter(order => order.isUrgent).length;
   const pendingOrders = activeOrders.filter(order => 
-    ['new', 'confirmed', 'processing'].includes(order.status)
+    ['received', 'started'].includes(order.status)
   ).length;
 
   return (

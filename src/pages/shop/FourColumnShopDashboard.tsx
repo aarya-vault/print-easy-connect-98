@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,25 +23,13 @@ import {
   Zap
 } from 'lucide-react';
 import { toast } from 'sonner';
-
-interface Order {
-  id: string;
-  customerName: string;
-  customerPhone: string;
-  customerEmail?: string;
-  orderType: 'uploaded-files' | 'walk-in';
-  status: 'received' | 'started' | 'completed';
-  isUrgent: boolean;
-  description: string;
-  createdAt: Date;
-  files?: any[];
-}
+import { ShopOrder } from '@/types/order';
 
 const FourColumnShopDashboard: React.FC = () => {
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<ShopOrder[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('orders');
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<ShopOrder | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
@@ -52,7 +39,7 @@ const FourColumnShopDashboard: React.FC = () => {
 
   // Mock data with simplified statuses
   useEffect(() => {
-    const mockOrders: Order[] = [
+    const mockOrders: ShopOrder[] = [
       {
         id: 'UF001',
         customerName: 'Rajesh Kumar',
@@ -63,7 +50,11 @@ const FourColumnShopDashboard: React.FC = () => {
         isUrgent: true,
         description: 'Business presentation slides - 50 pages, color printing, spiral binding. Need high quality output for important client meeting.',
         createdAt: new Date(Date.now() - 120 * 60000),
-        files: [{ id: '1', name: 'presentation.pdf', size: 2048000 }]
+        files: [{ id: '1', name: 'presentation.pdf', type: 'application/pdf', size: 2048000, url: '#' }],
+        services: ['Color Printing', 'Spiral Binding'],
+        pages: 50,
+        copies: 1,
+        color: true
       },
       {
         id: 'UF002',
@@ -75,7 +66,11 @@ const FourColumnShopDashboard: React.FC = () => {
         isUrgent: true,
         description: 'Resume printing - 10 copies, premium paper',
         createdAt: new Date(Date.now() - 90 * 60000),
-        files: [{ id: '2', name: 'resume.pdf', size: 1024000 }]
+        files: [{ id: '2', name: 'resume.pdf', type: 'application/pdf', size: 1024000, url: '#' }],
+        services: ['Black & White Printing'],
+        pages: 2,
+        copies: 10,
+        color: false
       },
       {
         id: 'UF003',
@@ -87,7 +82,11 @@ const FourColumnShopDashboard: React.FC = () => {
         isUrgent: false,
         description: 'Legal documents - 25 pages, black & white, double-sided',
         createdAt: new Date(Date.now() - 240 * 60000),
-        files: [{ id: '3', name: 'legal-docs.pdf', size: 3072000 }]
+        files: [{ id: '3', name: 'legal-docs.pdf', type: 'application/pdf', size: 3072000, url: '#' }],
+        services: ['Black & White Printing'],
+        pages: 25,
+        copies: 1,
+        color: false
       },
       {
         id: 'UF004',
@@ -99,7 +98,11 @@ const FourColumnShopDashboard: React.FC = () => {
         isUrgent: false,
         description: 'College assignments - 15 pages, color diagrams',
         createdAt: new Date(Date.now() - 30 * 60000),
-        files: [{ id: '4', name: 'assignment.docx', size: 1536000 }]
+        files: [{ id: '4', name: 'assignment.docx', type: 'application/docx', size: 1536000, url: '#' }],
+        services: ['Color Printing'],
+        pages: 15,
+        copies: 1,
+        color: true
       },
       {
         id: 'WI001',
@@ -110,7 +113,9 @@ const FourColumnShopDashboard: React.FC = () => {
         status: 'received',
         isUrgent: false,
         description: 'College textbook scanning - 200 pages. Student needs digital copy for online classes.',
-        createdAt: new Date(Date.now() - 60 * 60000)
+        createdAt: new Date(Date.now() - 60 * 60000),
+        services: ['Scanning'],
+        pages: 200
       },
       {
         id: 'WI002',
@@ -121,7 +126,11 @@ const FourColumnShopDashboard: React.FC = () => {
         status: 'started',
         isUrgent: false,
         description: 'Wedding invitation cards - 100 copies, premium cardstock with gold foil finishing',
-        createdAt: new Date(Date.now() - 30 * 60000)
+        createdAt: new Date(Date.now() - 30 * 60000),
+        services: ['Color Printing', 'Premium Paper'],
+        pages: 1,
+        copies: 100,
+        color: true
       },
       {
         id: 'WI003',
@@ -132,7 +141,10 @@ const FourColumnShopDashboard: React.FC = () => {
         status: 'completed',
         isUrgent: true,
         description: 'ID photos - passport size, 10 copies',
-        createdAt: new Date(Date.now() - 180 * 60000)
+        createdAt: new Date(Date.now() - 180 * 60000),
+        services: ['Photo Printing'],
+        pages: 1,
+        copies: 10
       },
       {
         id: 'WI004',
@@ -143,7 +155,11 @@ const FourColumnShopDashboard: React.FC = () => {
         status: 'received',
         isUrgent: true,
         description: 'Business cards - 500 copies, premium finish',
-        createdAt: new Date(Date.now() - 45 * 60000)
+        createdAt: new Date(Date.now() - 45 * 60000),
+        services: ['Color Printing', 'Premium Paper'],
+        pages: 1,
+        copies: 500,
+        color: true
       }
     ];
     setOrders(mockOrders);
@@ -156,7 +172,7 @@ const FourColumnShopDashboard: React.FC = () => {
   const activeOrders = orders.filter(order => order.status !== 'completed');
   const completedOrders = orders.filter(order => order.status === 'completed');
 
-  const filteredOrders = (orderList: Order[]) => 
+  const filteredOrders = (orderList: ShopOrder[]) => 
     orderList.filter(order =>
       order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -164,7 +180,7 @@ const FourColumnShopDashboard: React.FC = () => {
     ).sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()); // Oldest first
 
   // Split orders into columns for true 4-column layout
-  const getColumnOrders = (orderList: Order[], totalColumns: number, columnIndex: number) => {
+  const getColumnOrders = (orderList: ShopOrder[], totalColumns: number, columnIndex: number) => {
     const ordersPerColumn = Math.ceil(orderList.length / totalColumns);
     const startIndex = columnIndex * ordersPerColumn;
     const endIndex = Math.min(startIndex + ordersPerColumn, orderList.length);
@@ -194,7 +210,7 @@ const FourColumnShopDashboard: React.FC = () => {
     }
   };
 
-  const handleUpdateStatus = (orderId: string, newStatus: Order['status']) => {
+  const handleUpdateStatus = (orderId: string, newStatus: ShopOrder['status']) => {
     setOrders(prev => 
       prev.map(order => 
         order.id === orderId ? { ...order, status: newStatus } : order
