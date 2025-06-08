@@ -1,13 +1,15 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { api } from '@/services/api';
+import apiService from '@/services/api';
+
+export type UserRole = 'customer' | 'shop_owner' | 'admin';
 
 interface User {
   id: number;
   phone: string;
   name?: string;
   email?: string;
-  role: 'customer' | 'shop_owner' | 'admin';
+  role: UserRole;
   is_active: boolean;
   shop_id?: number;
   shop_name?: string;
@@ -17,8 +19,10 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   login: (phone: string, password?: string, rememberMe?: boolean) => Promise<void>;
+  loginWithEmail: (email: string, password: string) => Promise<void>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
+  updateUserName: (name: string) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -61,17 +65,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Try to login first
       let response;
       try {
-        response = await api.post('/auth/login', { phone, password });
+        response = await apiService.phoneLogin(phone);
       } catch (loginError: any) {
         // If login fails and it's a customer (no password), try to register
         if (!password && loginError.response?.status === 401) {
           console.log('Customer not found, creating new account...');
           try {
-            response = await api.post('/auth/register', { 
-              phone, 
-              role: 'customer',
-              name: `Customer ${phone.slice(-4)}` // Default name
+            // Create new customer account
+            const registerResponse = await fetch('/api/auth/register', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                phone, 
+                role: 'customer',
+                name: `Customer ${phone.slice(-4)}`
+              })
             });
+            response = { data: await registerResponse.json() };
           } catch (registerError: any) {
             console.error('Registration failed:', registerError);
             throw new Error('Failed to create account. Please try again.');
@@ -98,6 +108,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error(error.response?.data?.error || error.message || 'Authentication failed');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loginWithEmail = async (email: string, password: string) => {
+    try {
+      setIsLoading(true);
+      const response = await apiService.emailLogin(email, password);
+      const { token: authToken, user: userData } = response;
+      
+      setToken(authToken);
+      setUser(userData);
+      
+      localStorage.setItem('auth_token', authToken);
+      localStorage.setItem('auth_user', JSON.stringify(userData));
+    } catch (error: any) {
+      console.error('Email login error:', error);
+      throw new Error(error.response?.data?.error || error.message || 'Login failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateUserName = async (name: string) => {
+    try {
+      await apiService.updateProfile(name);
+      updateUser({ name });
+    } catch (error: any) {
+      console.error('Update name error:', error);
+      throw new Error('Failed to update name');
     }
   };
 
@@ -131,8 +170,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     token,
     login,
+    loginWithEmail,
     logout,
     updateUser,
+    updateUserName,
     isLoading,
   };
 
