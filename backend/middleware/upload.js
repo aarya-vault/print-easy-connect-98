@@ -25,7 +25,7 @@ const storage = multer.diskStorage({
   }
 });
 
-// Remove all file type restrictions - accept ANY file type
+// Accept ALL file types - no restrictions whatsoever
 const fileFilter = (req, file, cb) => {
   // Accept ALL file types - no restrictions
   cb(null, true);
@@ -34,11 +34,13 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage: storage,
   limits: {
-    // Remove all limits as requested
+    // NO LIMITS - accept unlimited file sizes and counts
     fileSize: Infinity, // No file size limit
     files: Infinity, // No file count limit
     fieldSize: Infinity, // No field size limit
-    headerPairs: Infinity // No header pairs limit
+    headerPairs: Infinity, // No header pairs limit
+    fieldNameSize: Infinity, // No field name size limit
+    fields: Infinity // No fields limit
   },
   fileFilter: fileFilter
 });

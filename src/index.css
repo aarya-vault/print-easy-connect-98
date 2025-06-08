@@ -17,7 +17,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 42 100% 50%;
+    --primary: 245 158 11%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
@@ -34,7 +34,7 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 42 100% 50%;
+    --ring: 245 158 11%;
 
     --radius: 0.5rem;
 
@@ -45,7 +45,7 @@
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 42 100% 50%;
+    --sidebar-ring: 245 158 11%;
   }
 
   .dark {
@@ -58,7 +58,7 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 42 100% 50%;
+    --primary: 245 158 11%;
     --primary-foreground: 222.2 47.4% 11.2%;
 
     --secondary: 217.2 32.6% 17.5%;
@@ -75,15 +75,15 @@
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 42 100% 50%;
+    --ring: 245 158 11%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary: 245 158 11%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 42 100% 50%;
+    --sidebar-ring: 245 158 11%;
   }
 }
 
@@ -102,77 +102,65 @@
   }
 }
 
-/* Enhanced Custom Styles */
+/* Premium Golden Theme Components */
 @layer components {
-  /* Premium Glassmorphism Effects */
-  .glass-morphism {
-    @apply bg-white/10 backdrop-blur-xl border border-white/20;
+  /* Smooth Transitions - No Bad Animations */
+  .smooth-transition {
+    @apply transition-all duration-300 ease-in-out;
   }
 
-  .glass-morphism-dark {
-    @apply bg-black/10 backdrop-blur-xl border border-white/10;
+  /* Golden Theme Buttons */
+  .btn-golden {
+    @apply bg-gradient-to-r from-golden-500 to-golden-600 hover:from-golden-600 hover:to-golden-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl smooth-transition;
   }
 
-  /* Advanced Button Styles */
-  .btn-premium {
-    @apply relative overflow-hidden bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold py-4 px-8 rounded-2xl shadow-2xl transition-all duration-500 hover:scale-105 hover:-translate-y-1;
+  .btn-golden-outline {
+    @apply border-2 border-golden-500 text-golden-600 hover:bg-golden-50 hover:border-golden-600 rounded-xl smooth-transition;
   }
 
-  .btn-premium::before {
-    content: '';
-    @apply absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 transition-opacity duration-300;
-    transform: translateX(-100%);
+  /* Golden Cards */
+  .card-golden {
+    @apply bg-white border border-golden-200 rounded-2xl shadow-lg hover:shadow-xl smooth-transition;
   }
 
-  .btn-premium:hover::before {
-    @apply opacity-100;
-    animation: shimmer 0.8s ease-out;
+  .card-golden-premium {
+    @apply bg-gradient-to-br from-golden-50 to-white border border-golden-200 rounded-2xl shadow-xl hover:shadow-2xl smooth-transition;
   }
 
-  /* Interactive Elements */
-  .interactive-card {
-    @apply transition-all duration-500 hover:scale-105 hover:-translate-y-2 hover:shadow-2xl;
+  /* Mobile Optimizations */
+  .mobile-padding {
+    @apply px-4 md:px-6 lg:px-8;
   }
 
-  .interactive-card:hover {
-    transform: perspective(1000px) rotateX(5deg) rotateY(5deg) translateY(-10px);
+  .mobile-text {
+    @apply text-sm md:text-base lg:text-lg;
   }
 
-  /* Text Effects */
-  .text-gradient-primary {
-    @apply bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent;
+  .mobile-heading {
+    @apply text-2xl md:text-4xl lg:text-6xl;
   }
 
-  .text-gradient-golden {
-    @apply bg-gradient-to-r from-golden-500 via-orange-500 to-golden-600 bg-clip-text text-transparent;
+  /* Floating Action Button */
+  .fab {
+    @apply fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-r from-golden-500 to-golden-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 smooth-transition z-50;
   }
 
-  .text-shadow {
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  /* Golden Gradients */
+  .gradient-golden {
+    background: linear-gradient(135deg, #F59E0B 0%, #EAB308 50%, #F59E0B 100%);
   }
 
-  .text-shadow-lg {
-    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  .gradient-golden-text {
+    @apply bg-gradient-to-r from-golden-600 via-golden-500 to-golden-700 bg-clip-text text-transparent;
   }
 
-  /* Loading States */
-  .skeleton {
-    @apply animate-pulse bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 bg-[length:200%_100%];
-    animation: shimmer 1.5s infinite;
+  /* Premium Shadows */
+  .shadow-golden {
+    box-shadow: 0 10px 40px rgba(245, 158, 11, 0.3);
   }
 
-  .loading-dots::after {
-    content: '';
-    animation: loading-dots 1.5s infinite;
-  }
-
-  /* Scroll Animations */
-  .scroll-fade-in {
-    @apply opacity-0 translate-y-8 transition-all duration-700;
-  }
-
-  .scroll-fade-in.visible {
-    @apply opacity-100 translate-y-0;
+  .shadow-golden-lg {
+    box-shadow: 0 20px 60px rgba(245, 158, 11, 0.4);
   }
 
   /* Custom Scrollbar */
@@ -181,110 +169,111 @@
   }
 
   .custom-scrollbar::-webkit-scrollbar-track {
-    @apply bg-slate-100 rounded-full;
+    @apply bg-golden-100 rounded-full;
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-gradient-to-b from-blue-500 to-purple-600 rounded-full;
+    @apply bg-gradient-to-b from-golden-500 to-golden-600 rounded-full;
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    @apply from-blue-600 to-purple-700;
+    @apply from-golden-600 to-golden-700;
+  }
+
+  /* Mobile Slider */
+  .mobile-slider {
+    @apply flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .mobile-slider::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-slider-item {
+    @apply snap-start flex-shrink-0;
+  }
+
+  /* Responsive Grid */
+  .responsive-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
+  }
+
+  .responsive-grid-2 {
+    @apply grid grid-cols-1 lg:grid-cols-2 gap-8;
+  }
+
+  /* Premium Loading States */
+  .loading-shimmer {
+    @apply animate-pulse bg-gradient-to-r from-golden-100 via-golden-200 to-golden-100;
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  /* Touch Friendly */
+  .touch-friendly {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Focus States for Accessibility */
+  .focus-golden:focus-visible {
+    @apply outline-2 outline-offset-2 outline-golden-500;
   }
 }
 
-/* Advanced Keyframes */
-@keyframes loading-dots {
-  0%, 20% { content: '.'; }
-  40% { content: '..'; }
-  60%, 100% { content: '...'; }
+/* Minimal Keyframes - Only Essential Animations */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
-@keyframes glow-pulse {
-  0%, 100% {
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
-  }
-  50% {
-    box-shadow: 0 0 40px rgba(59, 130, 246, 0.8), 0 0 60px rgba(147, 51, 234, 0.3);
-  }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes float-rotate {
-  0%, 100% {
-    transform: translateY(0px) rotate(0deg);
-  }
-  33% {
-    transform: translateY(-10px) rotate(120deg);
-  }
-  66% {
-    transform: translateY(5px) rotate(240deg);
-  }
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
-@keyframes typewriter {
-  from { width: 0; }
-  to { width: 100%; }
+/* Utility Animations - Subtle and Professional */
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out;
 }
 
-@keyframes blink {
-  50% { border-color: transparent; }
+.animate-slide-up {
+  animation: slideUp 0.5s ease-out;
 }
 
-/* Special Effects */
-.parallax-bg {
-  background-attachment: fixed;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: cover;
-}
-
-.perspective-card {
-  perspective: 1000px;
-}
-
-.perspective-card:hover .card-inner {
-  transform: rotateY(10deg) rotateX(5deg);
-}
-
-.card-inner {
-  @apply transition-transform duration-500;
-  transform-style: preserve-3d;
-}
-
-/* Responsive Utilities */
+/* Mobile Responsive Utilities */
 @media (max-width: 768px) {
-  .mobile-padding {
-    @apply px-4;
+  .mobile-full-width {
+    @apply w-full;
   }
   
-  .mobile-text-scale {
-    @apply text-sm;
+  .mobile-stack {
+    @apply flex-col;
   }
-}
 
-/* Performance Optimizations */
-.will-change-transform {
-  will-change: transform;
-}
+  .mobile-center {
+    @apply text-center;
+  }
 
-.will-change-opacity {
-  will-change: opacity;
-}
+  .mobile-hide {
+    @apply hidden;
+  }
 
-.gpu-accelerated {
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  perspective: 1000px;
+  .mobile-show {
+    @apply block;
+  }
 }
 
 /* Print Styles */
 @media print {
   .no-print {
     display: none !important;
-  }
-  
-  .print-only {
-    display: block !important;
   }
 }
 
@@ -304,16 +293,11 @@
   }
 }
 
-/* Focus Styles for Accessibility */
-.focus-visible:focus-visible {
-  @apply outline-2 outline-offset-2 outline-blue-600;
-}
-
 /* Custom Selection */
 ::selection {
-  @apply bg-blue-200 text-blue-900;
+  @apply bg-golden-200 text-golden-900;
 }
 
 ::-moz-selection {
-  @apply bg-blue-200 text-blue-900;
+  @apply bg-golden-200 text-golden-900;
 }

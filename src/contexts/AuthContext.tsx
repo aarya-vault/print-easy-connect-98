@@ -1,29 +1,25 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import apiService from '@/services/api';
+import { api } from '@/services/api';
 
-export type UserRole = 'customer' | 'shop_owner' | 'admin';
-
-export interface User {
-  id: string;
-  phone?: string;
-  email?: string;
-  role: UserRole;
+interface User {
+  id: number;
+  phone: string;
   name?: string;
-  shopId?: string;
-  shopName?: string;
-  needsNameUpdate?: boolean;
+  email?: string;
+  role: 'customer' | 'shop_owner' | 'admin';
+  is_active: boolean;
+  shop_id?: number;
+  shop_name?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  isLoading: boolean;
-  login: (phone: string) => Promise<void>;
-  loginWithEmail: (email: string, password: string) => Promise<void>;
+  login: (phone: string, password?: string, rememberMe?: boolean) => Promise<void>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
-  updateUserName: (name: string) => Promise<void>;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -42,130 +38,102 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing token on app load
-    const storedToken = localStorage.getItem('printeasy_token');
-    const storedUser = localStorage.getItem('printeasy_user');
+    const storedToken = localStorage.getItem('auth_token');
+    const storedUser = localStorage.getItem('auth_user');
     
     if (storedToken && storedUser) {
       try {
-        const userData = JSON.parse(storedUser);
-        setUser(userData);
         setToken(storedToken);
-        
-        // Verify token is still valid by fetching profile
-        apiService.getProfile()
-          .then(response => {
-            if (response.success) {
-              setUser(response.user);
-              localStorage.setItem('printeasy_user', JSON.stringify(response.user));
-            }
-          })
-          .catch(() => {
-            // Token invalid, clear storage
-            localStorage.removeItem('printeasy_token');
-            localStorage.removeItem('printeasy_user');
-            setUser(null);
-            setToken(null);
-          });
+        setUser(JSON.parse(storedUser));
       } catch (error) {
-        console.error('Error parsing stored user:', error);
-        localStorage.removeItem('printeasy_token');
-        localStorage.removeItem('printeasy_user');
-        setToken(null);
+        console.error('Error parsing stored user data:', error);
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_user');
       }
     }
     setIsLoading(false);
   }, []);
 
-  const login = async (phone: string) => {
-    // Validate phone number - must be exactly 10 digits
-    const phoneRegex = /^[0-9]{10}$/;
-    if (!phoneRegex.test(phone)) {
-      throw new Error('Phone number must be exactly 10 digits');
-    }
-
-    setIsLoading(true);
+  const login = async (phone: string, password?: string, rememberMe: boolean = false) => {
     try {
-      const response = await apiService.phoneLogin(phone);
+      setIsLoading(true);
       
-      if (response.success) {
-        const { token: authToken, user: userData } = response;
-        
-        localStorage.setItem('printeasy_token', authToken);
-        localStorage.setItem('printeasy_user', JSON.stringify(userData));
-        setUser(userData);
-        setToken(authToken);
+      // Try to login first
+      let response;
+      try {
+        response = await api.post('/auth/login', { phone, password });
+      } catch (loginError: any) {
+        // If login fails and it's a customer (no password), try to register
+        if (!password && loginError.response?.status === 401) {
+          console.log('Customer not found, creating new account...');
+          try {
+            response = await api.post('/auth/register', { 
+              phone, 
+              role: 'customer',
+              name: `Customer ${phone.slice(-4)}` // Default name
+            });
+          } catch (registerError: any) {
+            console.error('Registration failed:', registerError);
+            throw new Error('Failed to create account. Please try again.');
+          }
+        } else {
+          throw loginError;
+        }
+      }
+
+      const { token: authToken, user: userData } = response.data;
+      
+      setToken(authToken);
+      setUser(userData);
+      
+      if (rememberMe) {
+        localStorage.setItem('auth_token', authToken);
+        localStorage.setItem('auth_user', JSON.stringify(userData));
+      } else {
+        sessionStorage.setItem('auth_token', authToken);
+        sessionStorage.setItem('auth_user', JSON.stringify(userData));
       }
     } catch (error: any) {
-      console.error('Login error:', error);
-      throw new Error(error.response?.data?.error || 'Login failed');
+      console.error('Authentication error:', error);
+      throw new Error(error.response?.data?.error || error.message || 'Authentication failed');
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const loginWithEmail = async (email: string, password: string) => {
-    setIsLoading(true);
-    try {
-      const response = await apiService.emailLogin(email, password);
-      
-      if (response.success) {
-        const { token: authToken, user: userData } = response;
-        
-        localStorage.setItem('printeasy_token', authToken);
-        localStorage.setItem('printeasy_user', JSON.stringify(userData));
-        setUser(userData);
-        setToken(authToken);
-      }
-    } catch (error: any) {
-      console.error('Email login error:', error);
-      throw new Error(error.response?.data?.error || 'Login failed');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const updateUserName = async (name: string) => {
-    if (!user) return;
-    
-    try {
-      const response = await apiService.updateProfile(name);
-      
-      if (response.success) {
-        const updatedUser = { ...user, ...response.user, needsNameUpdate: false };
-        setUser(updatedUser);
-        localStorage.setItem('printeasy_user', JSON.stringify(updatedUser));
-      }
-    } catch (error: any) {
-      console.error('Update name error:', error);
-      throw new Error(error.response?.data?.error || 'Update failed');
     }
   };
 
   const logout = () => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem('printeasy_token');
-    localStorage.removeItem('printeasy_user');
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_user');
+    sessionStorage.removeItem('auth_token');
+    sessionStorage.removeItem('auth_user');
   };
 
   const updateUser = (userData: Partial<User>) => {
     if (user) {
       const updatedUser = { ...user, ...userData };
       setUser(updatedUser);
-      localStorage.setItem('printeasy_user', JSON.stringify(updatedUser));
+      
+      // Update stored user data
+      const storedToken = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+      if (storedToken) {
+        if (localStorage.getItem('auth_token')) {
+          localStorage.setItem('auth_user', JSON.stringify(updatedUser));
+        } else {
+          sessionStorage.setItem('auth_user', JSON.stringify(updatedUser));
+        }
+      }
     }
   };
 
   const value: AuthContextType = {
     user,
     token,
-    isLoading,
     login,
-    loginWithEmail,
     logout,
     updateUser,
-    updateUserName,
+    isLoading,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
