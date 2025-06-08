@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -256,7 +255,7 @@ const Home: React.FC = () => {
                           Quick Print Shop, Connaught Place
                         </div>
                         <Button size="sm" className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300">
-                          <Navigation className="w-4 h-4 mr-2" />
+                          <MapPin className="w-4 h-4 mr-2" />
                           Get Directions
                         </Button>
                       </div>
