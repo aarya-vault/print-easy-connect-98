@@ -143,7 +143,7 @@ const RealTimeChat: React.FC<RealTimeChatProps> = ({
   };
 
   const isMyMessage = (message: Message) => {
-    return user && message.sender_id === user.id;
+    return user && message.sender_id === parseInt(user.id);
   };
 
   if (!isOpen) return null;

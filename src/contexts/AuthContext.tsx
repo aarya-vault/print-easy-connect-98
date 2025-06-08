@@ -17,6 +17,7 @@ export interface User {
 
 interface AuthContextType {
   user: User | null;
+  token: string | null;
   isLoading: boolean;
   login: (phone: string) => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<void>;
@@ -37,17 +38,19 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Check for existing token on app load
-    const token = localStorage.getItem('printeasy_token');
+    const storedToken = localStorage.getItem('printeasy_token');
     const storedUser = localStorage.getItem('printeasy_user');
     
-    if (token && storedUser) {
+    if (storedToken && storedUser) {
       try {
         const userData = JSON.parse(storedUser);
         setUser(userData);
+        setToken(storedToken);
         
         // Verify token is still valid by fetching profile
         apiService.getProfile()
@@ -62,11 +65,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             localStorage.removeItem('printeasy_token');
             localStorage.removeItem('printeasy_user');
             setUser(null);
+            setToken(null);
           });
       } catch (error) {
         console.error('Error parsing stored user:', error);
         localStorage.removeItem('printeasy_token');
         localStorage.removeItem('printeasy_user');
+        setToken(null);
       }
     }
     setIsLoading(false);
@@ -84,11 +89,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await apiService.phoneLogin(phone);
       
       if (response.success) {
-        const { token, user: userData } = response;
+        const { token: authToken, user: userData } = response;
         
-        localStorage.setItem('printeasy_token', token);
+        localStorage.setItem('printeasy_token', authToken);
         localStorage.setItem('printeasy_user', JSON.stringify(userData));
         setUser(userData);
+        setToken(authToken);
       }
     } catch (error: any) {
       console.error('Login error:', error);
@@ -104,11 +110,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await apiService.emailLogin(email, password);
       
       if (response.success) {
-        const { token, user: userData } = response;
+        const { token: authToken, user: userData } = response;
         
-        localStorage.setItem('printeasy_token', token);
+        localStorage.setItem('printeasy_token', authToken);
         localStorage.setItem('printeasy_user', JSON.stringify(userData));
         setUser(userData);
+        setToken(authToken);
       }
     } catch (error: any) {
       console.error('Email login error:', error);
@@ -137,6 +144,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = () => {
     setUser(null);
+    setToken(null);
     localStorage.removeItem('printeasy_token');
     localStorage.removeItem('printeasy_user');
   };
@@ -151,6 +159,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const value: AuthContextType = {
     user,
+    token,
     isLoading,
     login,
     loginWithEmail,

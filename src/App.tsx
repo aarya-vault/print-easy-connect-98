@@ -33,45 +33,57 @@ function App() {
         <SocketProvider>
           <Router>
             <div className="min-h-screen bg-neutral-50">
-              <UniversalHeader />
-              <main className="pt-16">
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/login" element={<Login />} />
-                  
-                  {/* Customer Routes */}
-                  <Route 
-                    path="/customer/dashboard" 
-                    element={
-                      <ProtectedRoute allowedRoles={['customer']}>
-                        <CustomerDashboard />
-                      </ProtectedRoute>
-                    } 
-                  />
-                  
-                  {/* Shop Routes */}
-                  <Route 
-                    path="/shop/dashboard" 
-                    element={
-                      <ProtectedRoute allowedRoles={['shop_owner']}>
-                        <ShopDashboard />
-                      </ProtectedRoute>
-                    } 
-                  />
-                  
-                  {/* Admin Routes */}
-                  <Route 
-                    path="/admin/dashboard" 
-                    element={
-                      <ProtectedRoute allowedRoles={['admin']}>
-                        <AdminDashboard />
-                      </ProtectedRoute>
-                    } 
-                  />
-                  
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </main>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/login" element={<Login />} />
+                
+                {/* Customer Routes */}
+                <Route 
+                  path="/customer/dashboard" 
+                  element={
+                    <ProtectedRoute allowedRoles={['customer']}>
+                      <div>
+                        <UniversalHeader title="Customer Dashboard" subtitle="Manage your orders" />
+                        <main className="pt-16">
+                          <CustomerDashboard />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
+                  } 
+                />
+                
+                {/* Shop Routes */}
+                <Route 
+                  path="/shop/dashboard" 
+                  element={
+                    <ProtectedRoute allowedRoles={['shop_owner']}>
+                      <div>
+                        <UniversalHeader title="Shop Dashboard" subtitle="Manage your print orders" />
+                        <main className="pt-16">
+                          <ShopDashboard />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
+                  } 
+                />
+                
+                {/* Admin Routes */}
+                <Route 
+                  path="/admin/dashboard" 
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <div>
+                        <UniversalHeader title="Admin Dashboard" subtitle="Platform management" />
+                        <main className="pt-16">
+                          <AdminDashboard />
+                        </main>
+                      </div>
+                    </ProtectedRoute>
+                  } 
+                />
+                
+                <Route path="*" element={<NotFound />} />
+              </Routes>
               <Toaster />
             </div>
           </Router>
