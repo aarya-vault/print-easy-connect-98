@@ -1,8 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
+import io, { Socket } from 'socket.io-client';
 import { useAuth } from './AuthContext';
-import { toast } from 'sonner';
 
 interface SocketContextType {
   socket: Socket | null;
@@ -16,13 +15,17 @@ const SocketContext = createContext<SocketContextType | undefined>(undefined);
 
 export const useSocket = () => {
   const context = useContext(SocketContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useSocket must be used within a SocketProvider');
   }
   return context;
 };
 
-export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+interface SocketProviderProps {
+  children: React.ReactNode;
+}
+
+export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const { user, token } = useAuth();
@@ -32,7 +35,8 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:3001', {
         auth: {
           token: token
-        }
+        },
+        transports: ['websocket', 'polling']
       });
 
       newSocket.on('connect', () => {
@@ -50,40 +54,12 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setIsConnected(false);
       });
 
-      // Listen for new messages
-      newSocket.on('new_message', (data) => {
-        toast.info(`New message from ${data.senderName}`, {
-          description: data.message.message.substring(0, 50) + '...'
-        });
-      });
-
-      // Listen for order updates
-      newSocket.on('order_updated', (order) => {
-        toast.success('Order updated', {
-          description: `Order ${order.id} status changed to ${order.status}`
-        });
-      });
-
-      // Listen for new orders (shop owners)
-      newSocket.on('new_order', (order) => {
-        if (user.role === 'shop_owner') {
-          toast.info('New order received!', {
-            description: `Order ${order.id} from ${order.customer_name}`
-          });
-        }
-      });
-
-      // Listen for notifications
-      newSocket.on('notification', (notification) => {
-        toast.info(notification.title, {
-          description: notification.message
-        });
-      });
-
       setSocket(newSocket);
 
       return () => {
-        newSocket.close();
+        newSocket.disconnect();
+        setSocket(null);
+        setIsConnected(false);
       };
     }
   }, [user, token]);
@@ -110,16 +86,16 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
+  const value: SocketContextType = {
+    socket,
+    isConnected,
+    sendMessage,
+    joinOrderRoom,
+    leaveOrderRoom,
+  };
+
   return (
-    <SocketContext.Provider
-      value={{
-        socket,
-        isConnected,
-        sendMessage,
-        joinOrderRoom,
-        leaveOrderRoom
-      }}
-    >
+    <SocketContext.Provider value={value}>
       {children}
     </SocketContext.Provider>
   );

@@ -9,7 +9,7 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Configure multer for file uploads
+// Configure multer for file uploads with NO LIMITS
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadPath = path.join(uploadsDir, 'orders');
@@ -25,29 +25,20 @@ const storage = multer.diskStorage({
   }
 });
 
+// Remove all file type restrictions - accept ANY file type
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = [
-    'application/pdf',
-    'image/jpeg',
-    'image/png',
-    'image/jpg',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'text/plain'
-  ];
-  
-  if (allowedTypes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error('Invalid file type. Only PDF, images, and documents are allowed.'), false);
-  }
+  // Accept ALL file types - no restrictions
+  cb(null, true);
 };
 
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
-    files: 5 // Maximum 5 files per upload
+    // Remove all limits as requested
+    fileSize: Infinity, // No file size limit
+    files: Infinity, // No file count limit
+    fieldSize: Infinity, // No field size limit
+    headerPairs: Infinity // No header pairs limit
   },
   fileFilter: fileFilter
 });
