@@ -22,7 +22,8 @@ const server = http.createServer(app);
 // Security middleware with relaxed settings for development
 app.use(helmet({
   crossOriginEmbedderPolicy: false,
-  contentSecurityPolicy: false
+  contentSecurityPolicy: false,
+  crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
 // Very permissive CORS for development - allows all origins
@@ -46,7 +47,11 @@ const limiter = rateLimit({
   max: 2000, // Very high limit for development
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: (req) => {
+    // Skip rate limiting for health checks and development
+    return req.path === '/health' || process.env.NODE_ENV === 'development';
+  }
 });
 app.use('/api', limiter);
 
@@ -66,7 +71,8 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     memory: process.memoryUsage(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    version: '1.0.0'
   });
 });
 
@@ -76,13 +82,15 @@ app.get('/', (req, res) => {
     message: 'PrintEasy API Server',
     version: '1.0.0',
     status: 'running',
-    endpoints: [
-      '/api/auth',
-      '/api/orders', 
-      '/api/shops',
-      '/api/files',
-      '/api/chat'
-    ]
+    documentation: 'Import postman-collection.json for complete API testing',
+    endpoints: {
+      auth: '/api/auth',
+      orders: '/api/orders', 
+      shops: '/api/shops',
+      files: '/api/files',
+      chat: '/api/chat',
+      health: '/health'
+    }
   });
 });
 
@@ -98,7 +106,8 @@ app.use('*', (req, res) => {
   res.status(404).json({ 
     error: 'Route not found',
     path: req.originalUrl,
-    method: req.method
+    method: req.method,
+    suggestion: 'Check the API documentation or import the Postman collection'
   });
 });
 
@@ -148,7 +157,9 @@ async function startServer() {
       console.log(`🌐 CORS: Enabled for all origins`);
       console.log(`📁 File uploads: Unlimited size and type`);
       console.log(`💬 Chat system: Enabled`);
-      console.log(`📱 Phone login: Enabled\n`);
+      console.log(`📱 Phone login: Enabled`);
+      console.log(`📋 Postman collection: backend/postman-collection.json`);
+      console.log(`🔍 Health check: http://${HOST}:${PORT}/health\n`);
     });
 
   } catch (error) {

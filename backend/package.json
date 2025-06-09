@@ -2,19 +2,35 @@
 {
   "name": "printeasy-backend",
   "version": "1.0.0",
-  "description": "PrintEasy Backend API - Connecting customers with local print shops",
+  "description": "PrintEasy Backend API - Connecting customers with local print shops through digital ordering and file management",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
     "db:seed": "node seeders/20240101000001-demo-data.js",
-    "db:reset": "node -e \"require('./models').sequelize.sync({force: true}).then(() => process.exit())\"",
-    "test": "echo \"No tests specified\" && exit 0",
-    "postman": "echo \"Import backend/postman-collection.json into Postman for API testing\""
+    "db:reset": "node -e \"require('./models').sequelize.sync({force: true}).then(() => {console.log('Database reset complete'); process.exit()})\"",
+    "test": "echo \"API testing available via Postman collection - import postman-collection.json\"",
+    "health": "curl http://localhost:3001/health",
+    "logs": "tail -f logs/app.log",
+    "postman": "echo \"Import backend/postman-collection.json into Postman for complete API testing\""
   },
-  "keywords": ["printing", "api", "nodejs", "express", "sequelize", "phone-login", "file-upload"],
+  "keywords": [
+    "printing",
+    "api",
+    "nodejs", 
+    "express",
+    "sequelize",
+    "postgresql",
+    "phone-login",
+    "file-upload",
+    "real-time-chat",
+    "order-management"
+  ],
   "author": "PrintEasy Team",
   "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "express": "^4.18.2",
     "sequelize": "^6.35.0",
@@ -33,7 +49,12 @@
   "devDependencies": {
     "nodemon": "^3.0.2"
   },
-  "engines": {
-    "node": ">=18.0.0"
-  }
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/printeasy/backend.git"
+  },
+  "bugs": {
+    "url": "https://github.com/printeasy/backend/issues"
+  },
+  "homepage": "https://github.com/printeasy/backend#readme"
 }

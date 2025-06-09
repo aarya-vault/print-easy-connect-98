@@ -2,7 +2,17 @@
 const { Sequelize } = require('sequelize');
 const config = require('../config/database')[process.env.NODE_ENV || 'development'];
 
-const sequelize = new Sequelize(config.database, config.username, config.password, config);
+// Create Sequelize instance with enhanced configuration
+const sequelize = new Sequelize(config.database, config.username, config.password, {
+  ...config,
+  logging: process.env.NODE_ENV === 'development' ? console.log : false,
+  pool: {
+    max: 10,
+    min: 0,
+    acquire: 30000,
+    idle: 10000
+  }
+});
 
 // Import models
 const User = require('./User')(sequelize);
@@ -29,12 +39,33 @@ File.belongsTo(Order, { foreignKey: 'order_id', as: 'order' });
 Message.belongsTo(User, { foreignKey: 'sender_id', as: 'sender' });
 Message.belongsTo(Order, { foreignKey: 'order_id', as: 'order' });
 
-// Sync database
-sequelize.sync({ alter: true }).then(() => {
-  console.log('Database & tables synced!');
-}).catch(err => {
-  console.error('Database sync error:', err);
-});
+// Test database connection
+async function testConnection() {
+  try {
+    await sequelize.authenticate();
+    console.log('✓ Database connection has been established successfully.');
+  } catch (error) {
+    console.error('❌ Unable to connect to the database:', error);
+    throw error;
+  }
+}
+
+// Sync database with error handling
+async function syncDatabase() {
+  try {
+    await sequelize.sync({ alter: true });
+    console.log('✓ Database synchronized successfully.');
+  } catch (error) {
+    console.error('❌ Database sync error:', error);
+    throw error;
+  }
+}
+
+// Initialize database (called from app.js)
+async function initializeDatabase() {
+  await testConnection();
+  await syncDatabase();
+}
 
 module.exports = {
   sequelize,
@@ -42,5 +73,6 @@ module.exports = {
   Shop,
   Order,
   File,
-  Message
+  Message,
+  initializeDatabase
 };
