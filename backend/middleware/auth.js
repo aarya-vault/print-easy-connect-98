@@ -1,44 +1,41 @@
 
 const jwt = require('jsonwebtoken');
-const db = require('../config/database');
+const { User } = require('../models');
 
 const authenticateToken = async (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-
-  if (!token) {
-    return res.status(401).json({ error: 'Access token required' });
-  }
-
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
-    // Verify user still exists in database
-    const userQuery = `
-      SELECT u.*, s.id as shop_id, s.name as shop_name 
-      FROM users u 
-      LEFT JOIN shops s ON u.id = s.owner_id 
-      WHERE u.id = $1 AND u.is_active = true
-    `;
-    const userResult = await db.query(userQuery, [decoded.userId]);
-    
-    if (userResult.rows.length === 0) {
-      return res.status(401).json({ error: 'User not found or inactive' });
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({ error: 'Access token required' });
     }
 
-    req.user = userResult.rows[0];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    const user = await User.findByPk(decoded.userId);
+
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    req.user = user;
     next();
   } catch (error) {
-    console.error('Auth middleware error:', error);
+    console.error('Authentication error:', error);
     return res.status(403).json({ error: 'Invalid or expired token' });
   }
 };
 
 const authorizeRoles = (...roles) => {
   return (req, res, next) => {
-    if (!req.user || !roles.includes(req.user.role)) {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    if (!roles.includes(req.user.role) && req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Insufficient permissions' });
     }
+
     next();
   };
 };

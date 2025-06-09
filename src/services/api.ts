@@ -1,183 +1,168 @@
 
-import axios, { AxiosInstance, AxiosError } from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = 'http://localhost:3001/api';
 
 class ApiService {
-  private api: AxiosInstance;
+  private async makeRequest(endpoint: string, options: RequestInit = {}) {
+    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+    
+    const defaultHeaders: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
 
-  constructor() {
-    this.api = axios.create({
-      baseURL: API_BASE_URL,
+    if (token) {
+      defaultHeaders.Authorization = `Bearer ${token}`;
+    }
+
+    const config: RequestInit = {
+      ...options,
       headers: {
-        'Content-Type': 'application/json',
+        ...defaultHeaders,
+        ...options.headers,
       },
-    });
+    };
 
-    // Request interceptor to add auth token
-    this.api.interceptors.request.use(
-      (config) => {
-        const token = localStorage.getItem('printeasy_token');
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-      },
-      (error) => Promise.reject(error)
-    );
-
-    // Response interceptor to handle auth errors
-    this.api.interceptors.response.use(
-      (response) => response,
-      (error: AxiosError) => {
-        if (error.response?.status === 401) {
-          localStorage.removeItem('printeasy_token');
-          localStorage.removeItem('printeasy_user');
-          window.location.href = '/login';
-        }
-        return Promise.reject(error);
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Network error' }));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
       }
-    );
+
+      return await response.json();
+    } catch (error) {
+      console.error('API request failed:', error);
+      throw error;
+    }
   }
 
-  // Authentication methods
+  // Auth methods
   async phoneLogin(phone: string) {
-    const response = await this.api.post('/api/auth/phone-login', { phone });
-    return response.data;
+    return this.makeRequest('/auth/phone-login', {
+      method: 'POST',
+      body: JSON.stringify({ phone }),
+    });
   }
 
   async emailLogin(email: string, password: string) {
-    const response = await this.api.post('/api/auth/email-login', { email, password });
-    return response.data;
-  }
-
-  async updateProfile(name: string) {
-    const response = await this.api.patch('/api/auth/update-profile', { name });
-    return response.data;
-  }
-
-  async getProfile() {
-    const response = await this.api.get('/api/auth/profile');
-    return response.data;
-  }
-
-  // Order methods
-  async getShopOrders() {
-    const response = await this.api.get('/api/orders/shop');
-    return response.data;
-  }
-
-  async getCustomerOrders() {
-    const response = await this.api.get('/api/orders/customer');
-    return response.data;
-  }
-
-  async createOrder(orderData: {
-    shopId: number;
-    orderType: 'walk-in' | 'uploaded-files';
-    description: string;
-    instructions?: string;
-    services?: string[];
-    pages?: number;
-    copies?: number;
-    paperType?: string;
-    binding?: string;
-    color?: boolean;
-  }) {
-    const response = await this.api.post('/api/orders', orderData);
-    return response.data;
-  }
-
-  async updateOrderStatus(orderId: string, status: string) {
-    const response = await this.api.patch(`/api/orders/${orderId}/status`, { status });
-    return response.data;
-  }
-
-  async toggleOrderUrgency(orderId: string) {
-    const response = await this.api.patch(`/api/orders/${orderId}/urgency`);
-    return response.data;
-  }
-
-  // File methods
-  async uploadFiles(orderId: string, files: File[], onProgress?: (progress: number) => void) {
-    const formData = new FormData();
-    files.forEach(file => {
-      formData.append('files', file);
-    });
-
-    const response = await this.api.post(`/api/files/upload/${orderId}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-      onUploadProgress: (progressEvent) => {
-        if (onProgress && progressEvent.total) {
-          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          onProgress(progress);
-        }
-      },
-    });
-    return response.data;
-  }
-
-  async getOrderFiles(orderId: string) {
-    const response = await this.api.get(`/api/files/order/${orderId}`);
-    return response.data;
-  }
-
-  async downloadFile(fileId: string) {
-    const response = await this.api.get(`/api/files/download/${fileId}`, {
-      responseType: 'blob',
+    const response = await this.makeRequest('/auth/email-login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
     });
     return response;
   }
 
-  async deleteFile(fileId: string) {
-    const response = await this.api.delete(`/api/files/${fileId}`);
-    return response.data;
-  }
-
-  // Chat methods
-  async getOrderMessages(orderId: string) {
-    const response = await this.api.get(`/api/chat/order/${orderId}`);
-    return response.data;
-  }
-
-  async sendMessage(orderId: string, message: string, recipientId: number) {
-    const response = await this.api.post('/api/chat/send', {
-      orderId,
-      message,
-      recipientId
+  async updateProfile(name: string) {
+    return this.makeRequest('/auth/update-profile', {
+      method: 'PATCH',
+      body: JSON.stringify({ name }),
     });
-    return response.data;
   }
 
-  async getUnreadMessageCount() {
-    const response = await this.api.get('/api/chat/unread-count');
-    return response.data;
+  async getCurrentUser() {
+    return this.makeRequest('/auth/me');
   }
 
   // Shop methods
   async getShops() {
-    const response = await this.api.get('/api/shops');
-    return response.data;
+    return this.makeRequest('/shops');
   }
 
-  async getShop(identifier: string) {
-    const response = await this.api.get(`/api/shops/${identifier}`);
-    return response.data;
+  async getShop(shopId: string) {
+    return this.makeRequest(`/shops/${shopId}`);
   }
 
-  async updateShop(shopId: number, shopData: {
-    name?: string;
-    address?: string;
-    phone?: string;
-    opening_time?: string;
-    closing_time?: string;
-  }) {
-    const response = await this.api.put(`/api/shops/${shopId}`, shopData);
-    return response.data;
+  // Order methods
+  async createOrder(orderData: FormData) {
+    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+    
+    const response = await fetch(`${API_BASE_URL}/orders`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: orderData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Network error' }));
+      throw new Error(errorData.error || `HTTP ${response.status}`);
+    }
+
+    return await response.json();
+  }
+
+  async getCustomerOrders() {
+    return this.makeRequest('/orders/customer');
+  }
+
+  async getShopOrders() {
+    return this.makeRequest('/orders/shop');
+  }
+
+  async updateOrderStatus(orderId: string, status: string) {
+    return this.makeRequest(`/orders/${orderId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  async toggleOrderUrgency(orderId: string) {
+    return this.makeRequest(`/orders/${orderId}/urgency`, {
+      method: 'PATCH',
+    });
+  }
+
+  // File methods
+  async uploadFiles(orderId: string, files: FileList) {
+    const formData = new FormData();
+    Array.from(files).forEach(file => {
+      formData.append('files', file);
+    });
+
+    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+    
+    const response = await fetch(`${API_BASE_URL}/files/upload/${orderId}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Network error' }));
+      throw new Error(errorData.error || `HTTP ${response.status}`);
+    }
+
+    return await response.json();
+  }
+
+  async getOrderFiles(orderId: string) {
+    return this.makeRequest(`/files/order/${orderId}`);
+  }
+
+  async downloadFile(fileId: string) {
+    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+    
+    const response = await fetch(`${API_BASE_URL}/files/download/${fileId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to download file');
+    }
+
+    return response.blob();
+  }
+
+  async deleteFile(fileId: string) {
+    return this.makeRequest(`/files/${fileId}`, {
+      method: 'DELETE',
+    });
   }
 }
 
-export const apiService = new ApiService();
-export default apiService;
+export default new ApiService();
