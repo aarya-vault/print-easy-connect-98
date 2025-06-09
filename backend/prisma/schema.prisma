@@ -1,0 +1,210 @@
+
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               Int      @id @default(autoincrement())
+  phone            String?  @unique
+  email            String?  @unique
+  name             String?
+  passwordHash     String?  @map("password_hash")
+  role             Role     @default(CUSTOMER)
+  isActive         Boolean  @default(true) @map("is_active")
+  emailVerified    Boolean  @default(false) @map("email_verified")
+  phoneVerified    Boolean  @default(false) @map("phone_verified")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  ownedShops       Shop[]           @relation("ShopOwner")
+  orders           Order[]          @relation("CustomerOrders")
+  sentMessages     ChatMessage[]    @relation("MessageSender")
+  receivedMessages ChatMessage[]    @relation("MessageRecipient")
+  uploadedFiles    OrderFile[]      @relation("FileUploader")
+  notifications    Notification[]
+  sessions         UserSession[]
+
+  @@map("users")
+}
+
+model Shop {
+  id                   Int      @id @default(autoincrement())
+  ownerId              Int      @map("owner_id")
+  name                 String
+  slug                 String   @unique
+  address              String
+  phone                String
+  email                String?
+  openingTime          String   @default("09:00:00") @map("opening_time")
+  closingTime          String   @default("18:00:00") @map("closing_time")
+  rating               Decimal  @default(0.00) @db.Decimal(3, 2)
+  totalReviews         Int      @default(0) @map("total_reviews")
+  isActive             Boolean  @default(true) @map("is_active")
+  offlineModuleEnabled Boolean  @default(true) @map("offline_module_enabled")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  owner        User           @relation("ShopOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  orders       Order[]
+  settings     ShopSetting[]
+  notifications Notification[]
+
+  @@map("shops")
+}
+
+model Order {
+  id                  String      @id
+  shopId              Int         @map("shop_id")
+  customerId          Int         @map("customer_id")
+  orderType           OrderType   @map("order_type")
+  description         String
+  instructions        String?
+  services            Json        @default("[]")
+  status              OrderStatus @default(NEW)
+  isUrgent            Boolean     @default(false) @map("is_urgent")
+  pages               Int?
+  copies              Int         @default(1)
+  paperType           String?     @map("paper_type")
+  binding             String?
+  color               Boolean     @default(false)
+  estimatedCompletion DateTime?   @map("estimated_completion")
+  actualCompletion    DateTime?   @map("actual_completion")
+  totalAmount         Decimal?    @map("total_amount") @db.Decimal(10, 2)
+  createdAt           DateTime    @default(now()) @map("created_at")
+  updatedAt           DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  shop           Shop                @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  customer       User                @relation("CustomerOrders", fields: [customerId], references: [id], onDelete: Cascade)
+  files          OrderFile[]
+  statusHistory  OrderStatusHistory[]
+  chatMessages   ChatMessage[]
+
+  @@map("orders")
+}
+
+model OrderFile {
+  id           Int      @id @default(autoincrement())
+  orderId      String   @map("order_id")
+  originalName String   @map("original_name")
+  filePath     String   @map("file_path")
+  mimeType     String   @map("mime_type")
+  fileSize     BigInt   @map("file_size")
+  uploadedBy   Int?     @map("uploaded_by")
+  uploadedAt   DateTime @default(now()) @map("uploaded_at")
+
+  // Relations
+  order    Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  uploader User? @relation("FileUploader", fields: [uploadedBy], references: [id])
+
+  @@map("order_files")
+}
+
+model OrderStatusHistory {
+  id        Int      @id @default(autoincrement())
+  orderId   String   @map("order_id")
+  oldStatus String?  @map("old_status")
+  newStatus String   @map("new_status")
+  changedBy String   @map("changed_by")
+  notes     String?
+  changedAt DateTime @default(now()) @map("changed_at")
+
+  // Relations
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("order_status_history")
+}
+
+model ChatMessage {
+  id          Int      @id @default(autoincrement())
+  orderId     String   @map("order_id")
+  senderId    Int      @map("sender_id")
+  recipientId Int      @map("recipient_id")
+  message     String
+  isRead      Boolean  @default(false) @map("is_read")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  order     Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  sender    User  @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient User  @relation("MessageRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@map("chat_messages")
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int?     @map("user_id")
+  shopId    Int?     @map("shop_id")
+  title     String
+  message   String
+  type      String   @default("info")
+  isRead    Boolean  @default(false) @map("is_read")
+  orderId   String?  @map("order_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shop Shop? @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model ShopSetting {
+  id           Int      @id @default(autoincrement())
+  shopId       Int      @map("shop_id")
+  settingKey   String   @map("setting_key")
+  settingValue String?  @map("setting_value")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([shopId, settingKey])
+  @@map("shop_settings")
+}
+
+model UserSession {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @map("user_id")
+  tokenHash  String   @map("token_hash")
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  lastUsed   DateTime @default(now()) @map("last_used")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_sessions")
+}
+
+enum Role {
+  CUSTOMER  @map("customer")
+  SHOP_OWNER @map("shop_owner")
+  ADMIN     @map("admin")
+}
+
+enum OrderType {
+  WALK_IN        @map("walk-in")
+  UPLOADED_FILES @map("uploaded-files")
+}
+
+enum OrderStatus {
+  NEW        @map("new")
+  CONFIRMED  @map("confirmed")
+  PROCESSING @map("processing")
+  READY      @map("ready")
+  COMPLETED  @map("completed")
+  CANCELLED  @map("cancelled")
+}
