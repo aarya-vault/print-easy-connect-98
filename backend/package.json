@@ -8,9 +8,11 @@
     "start": "node app.js",
     "dev": "nodemon app.js",
     "db:seed": "node seeders/20240101000001-demo-data.js",
-    "test": "echo \"No tests specified\" && exit 0"
+    "db:reset": "node -e \"require('./models').sequelize.sync({force: true}).then(() => process.exit())\"",
+    "test": "echo \"No tests specified\" && exit 0",
+    "postman": "echo \"Import backend/postman-collection.json into Postman for API testing\""
   },
-  "keywords": ["printing", "api", "nodejs", "express", "sequelize"],
+  "keywords": ["printing", "api", "nodejs", "express", "sequelize", "phone-login", "file-upload"],
   "author": "PrintEasy Team",
   "license": "MIT",
   "dependencies": {
