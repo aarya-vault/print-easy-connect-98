@@ -1,0 +1,401 @@
+
+{
+  "info": {
+    "name": "PrintEasy API Collection",
+    "description": "Complete API collection for PrintEasy platform - phone login, file uploads, orders, and chat",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001/api",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Customer Phone Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"9876543210\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/phone-login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "phone-login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Shop Owner Email Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"shop@example.com\",\n  \"password\": \"password\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/email-login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "email-login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Name\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/update-profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "update-profile"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Shops",
+      "item": [
+        {
+          "name": "Get All Shops",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/shops",
+              "host": ["{{baseUrl}}"],
+              "path": ["shops"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Shop by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/shops/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["shops", "1"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Create Order with Files",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "shopId",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "orderType",
+                  "value": "uploaded-files",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Print my documents",
+                  "type": "text"
+                },
+                {
+                  "key": "customerName",
+                  "value": "John Doe",
+                  "type": "text"
+                },
+                {
+                  "key": "customerPhone",
+                  "value": "9876543210",
+                  "type": "text"
+                },
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Customer Orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/orders/customer",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders", "customer"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Shop Orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/orders/shop",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders", "shop"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Order Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"started\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/orders/UF000001/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders", "UF000001", "status"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Toggle Order Urgency",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/orders/UF000001/urgency",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders", "UF000001", "urgency"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Files",
+      "item": [
+        {
+          "name": "Upload Files to Order",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/files/upload/UF000001",
+              "host": ["{{baseUrl}}"],
+              "path": ["files", "upload", "UF000001"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Order Files",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/files/order/UF000001",
+              "host": ["{{baseUrl}}"],
+              "path": ["files", "order", "UF000001"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Download File",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/files/download/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["files", "download", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete File",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/files/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["files", "1"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Chat",
+      "item": [
+        {
+          "name": "Get Order Messages",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/chat/order/UF000001",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat", "order", "UF000001"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"UF000001\",\n  \"message\": \"When will my order be ready?\",\n  \"recipientId\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/chat/send",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat", "send"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Unread Message Count",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/chat/unread-count",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat", "unread-count"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          ""
+        ],
+        "type": "text/javascript"
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "exec": [
+          ""
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ]
+}
