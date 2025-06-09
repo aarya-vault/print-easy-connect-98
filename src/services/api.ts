@@ -163,6 +163,28 @@ class ApiService {
       method: 'DELETE',
     });
   }
+
+  // Chat methods
+  async getOrderMessages(orderId: string) {
+    const response = await this.makeRequest(`/chat/order/${orderId}`);
+    return response.messages || [];
+  }
+
+  async sendMessage(orderId: string, message: string, recipientId: number) {
+    return this.makeRequest('/chat/send', {
+      method: 'POST',
+      body: JSON.stringify({
+        orderId,
+        message,
+        recipientId
+      }),
+    });
+  }
+
+  async getUnreadMessageCount() {
+    const response = await this.makeRequest('/chat/unread-count');
+    return response.unreadCount || 0;
+  }
 }
 
 export default new ApiService();
