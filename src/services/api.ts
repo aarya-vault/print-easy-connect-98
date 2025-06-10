@@ -22,7 +22,7 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => {
     console.log('API Response:', response.data);
-    return response; // Return full response, not just data
+    return response;
   },
   (error) => {
     console.error('API Error:', error.response?.data || error.message);
@@ -71,7 +71,9 @@ const apiService = {
   // Admin
   getAdminStats: (): Promise<any> => api.get('/admin/stats').then(res => res.data),
   getAllUsers: (params?: any): Promise<any> => api.get('/admin/users', { params }).then(res => res.data),
+  getAdminUsers: (params?: any): Promise<any> => api.get('/admin/users', { params }).then(res => res.data),
   getAllShops: (): Promise<any> => api.get('/admin/shops').then(res => res.data),
+  getAdminShops: (): Promise<any> => api.get('/admin/shops').then(res => res.data),
   createShop: (shopData: any): Promise<any> => api.post('/admin/shops', shopData).then(res => res.data),
   updateUserStatus: (userId: number, isActive: boolean): Promise<any> => 
     api.patch(`/admin/users/${userId}/status`, { isActive }).then(res => res.data),

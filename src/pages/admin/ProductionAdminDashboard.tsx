@@ -42,6 +42,16 @@ interface Shop {
   created_at: string;
 }
 
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+  is_active: boolean;
+  created_at: string;
+}
+
 const ProductionAdminDashboard: React.FC = () => {
   const { logout } = useAuth();
   const navigate = useNavigate();
@@ -70,8 +80,8 @@ const ProductionAdminDashboard: React.FC = () => {
   });
 
   const stats = statsData?.stats || {};
-  const users = usersData?.users || [];
-  const shops = shopsData?.shops || [];
+  const users: User[] = usersData?.users || [];
+  const shops: Shop[] = shopsData?.shops || [];
 
   const handleRefresh = () => {
     refetchStats();
@@ -252,7 +262,7 @@ const ProductionAdminDashboard: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {users.map((user: any) => (
+                        {users.map((user: User) => (
                           <tr key={user.id} className="hover:bg-gray-50">
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div>
