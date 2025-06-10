@@ -13,9 +13,7 @@ import {
   Upload, 
   UserCheck, 
   Phone, 
-  MessageCircle, 
   Eye,
-  Printer,
   FileText
 } from 'lucide-react';
 
@@ -25,21 +23,21 @@ interface OrderFile {
   type: string;
   size: number;
   url: string;
+  original_name?: string;
 }
 
 interface ShopOrder {
   id: string;
-  customerName: string;
-  customerPhone: string;
-  customerEmail: string;
-  orderType: 'walk-in' | 'uploaded-files';
+  customer_name: string;
+  customer_phone: string;
+  customer_email?: string;
+  order_type: 'walk-in' | 'uploaded-files';
   description: string;
-  status: 'new' | 'confirmed' | 'processing' | 'ready' | 'completed' | 'cancelled';
-  isUrgent: boolean;
-  createdAt: Date;
+  status: 'received' | 'started' | 'completed';
+  is_urgent: boolean;
+  created_at: string;
   files?: OrderFile[];
   instructions?: string;
-  services: string[];
   pages?: number;
   copies?: number;
   paperType?: string;
@@ -64,31 +62,26 @@ const OrderCard: React.FC<OrderCardProps> = ({
 }) => {
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'new': return 'bg-golden-100 text-golden-800 border-golden-300';
-      case 'confirmed': return 'bg-blue-100 text-blue-800 border-blue-300';
-      case 'processing': return 'bg-orange-100 text-orange-800 border-orange-300';
-      case 'ready': return 'bg-green-100 text-green-800 border-green-300';
-      case 'completed': return 'bg-neutral-100 text-neutral-800 border-neutral-300';
-      case 'cancelled': return 'bg-red-100 text-red-800 border-red-300';
+      case 'received': return 'bg-golden-100 text-golden-800 border-golden-300';
+      case 'started': return 'bg-orange-100 text-orange-800 border-orange-300';
+      case 'completed': return 'bg-green-100 text-green-800 border-green-300';
       default: return 'bg-neutral-100 text-neutral-800 border-neutral-300';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'new': return <Bell className="w-3 h-3" />;
-      case 'confirmed': return <CheckCircle className="w-3 h-3" />;
-      case 'processing': return <Clock className="w-3 h-3" />;
-      case 'ready': return <Package className="w-3 h-3" />;
+      case 'received': return <Bell className="w-3 h-3" />;
+      case 'started': return <Clock className="w-3 h-3" />;
       case 'completed': return <CheckCircle className="w-3 h-3" />;
-      case 'cancelled': return <X className="w-3 h-3" />;
       default: return <Clock className="w-3 h-3" />;
     }
   };
 
-  const formatTimeAgo = (date: Date) => {
+  const formatTimeAgo = (date: string) => {
     const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    const orderDate = new Date(date);
+    const diffInHours = Math.floor((now.getTime() - orderDate.getTime()) / (1000 * 60 * 60));
     
     if (diffInHours < 1) return 'Just now';
     if (diffInHours < 24) return `${diffInHours}h ago`;
@@ -98,20 +91,16 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
   const getNextStatus = () => {
     switch (order.status) {
-      case 'new': return 'confirmed';
-      case 'confirmed': return 'processing';
-      case 'processing': return 'ready';
-      case 'ready': return 'completed';
+      case 'received': return 'started';
+      case 'started': return 'completed';
       default: return null;
     }
   };
 
   const getStatusAction = () => {
     switch (order.status) {
-      case 'new': return 'Confirm';
-      case 'confirmed': return 'Start';
-      case 'processing': return 'Ready';
-      case 'ready': return 'Complete';
+      case 'received': return 'Start';
+      case 'started': return 'Complete';
       default: return null;
     }
   };
@@ -121,111 +110,114 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
   return (
     <Card className={`border-2 shadow-sm hover:shadow-md transition-all duration-200 ${
-      order.isUrgent ? 'border-red-300 bg-red-50/30' : 
-      order.orderType === 'uploaded-files' ? 'border-blue-200 bg-blue-50/10' : 'border-purple-200 bg-purple-50/10'
-    } ${order.status === 'cancelled' ? 'opacity-60' : ''}`}>
+      order.is_urgent ? 'border-red-300 bg-red-50/30' : 
+      order.order_type === 'uploaded-files' ? 'border-blue-200 bg-blue-50/10' : 'border-purple-200 bg-purple-50/10'
+    }`}>
       <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-4">
-          {/* Left side - Customer info and order details */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
-              <h3 className="font-bold text-lg text-neutral-900 truncate">{order.customerName}</h3>
-              {order.isUrgent && (
-                <Badge className="bg-red-100 text-red-800 border-red-300 text-xs px-2 py-0.5">
-                  <Zap className="w-3 h-3 mr-1" />
-                  URGENT
-                </Badge>
-              )}
-            </div>
-            
-            <div className="flex items-center gap-3 mb-2 text-sm">
-              <span className="font-medium text-neutral-600">#{order.id}</span>
-              <Badge className={`text-xs px-2 py-0.5 ${
-                order.orderType === 'uploaded-files' ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-purple-100 text-purple-700 border-purple-300'
-              }`}>
-                {order.orderType === 'uploaded-files' ? (
-                  <><Upload className="w-3 h-3 mr-1" />FILES</>
-                ) : (
-                  <><UserCheck className="w-3 h-3 mr-1" />WALK-IN</>
-                )}
-              </Badge>
-              <Badge className={`text-xs px-2 py-0.5 ${getStatusColor(order.status)}`}>
-                {getStatusIcon(order.status)}
-                <span className="ml-1 capitalize">{order.status}</span>
-              </Badge>
-              <span className="text-neutral-500 text-xs">{formatTimeAgo(order.createdAt)}</span>
-            </div>
-
-            <p className="text-sm text-neutral-700 mb-3 line-clamp-2">{order.description}</p>
-
-            <div className="flex items-center gap-4 text-xs text-neutral-600">
-              <span>{order.customerPhone}</span>
-              {order.pages && <span>{order.pages} pages</span>}
-              {order.copies && <span>{order.copies} copies</span>}
-              {order.files && <span>{order.files.length} files</span>}
-            </div>
-
-            {/* Files preview for uploaded-files orders */}
-            {order.orderType === 'uploaded-files' && order.files && order.files.length > 0 && (
-              <div className="mt-3 flex items-center gap-2">
-                <div className="flex items-center gap-1 text-xs text-neutral-600">
-                  <FileText className="w-3 h-3" />
-                  <span>{order.files[0].name}</span>
-                  {order.files.length > 1 && (
-                    <span className="text-neutral-500">+{order.files.length - 1} more</span>
-                  )}
-                </div>
-                {onPrintFile && (
-                  <Button 
-                    size="sm"
-                    variant="outline"
-                    onClick={() => onPrintFile(order.files![0])}
-                    className="h-6 px-2 text-xs"
-                  >
-                    <Printer className="w-3 h-3 mr-1" />
-                    Print
-                  </Button>
+        <div className="space-y-3">
+          {/* Header */}
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <p className="font-semibold text-sm">#{order.id}</p>
+                {order.is_urgent && (
+                  <Badge variant="destructive" className="text-xs">Urgent</Badge>
                 )}
               </div>
+              <Badge variant="outline" className="text-xs capitalize">
+                {order.order_type === 'uploaded-files' ? (
+                  <><Upload className="w-3 h-3 mr-1" />Files</>
+                ) : (
+                  <><UserCheck className="w-3 h-3 mr-1" />Walk-in</>
+                )}
+              </Badge>
+            </div>
+            <Badge className={`text-xs px-2 py-0.5 ${getStatusColor(order.status)}`}>
+              {getStatusIcon(order.status)}
+              <span className="ml-1 capitalize">{order.status}</span>
+            </Badge>
+          </div>
+
+          {/* Customer Info */}
+          <div>
+            <p className="font-medium text-sm">{order.customer_name}</p>
+            <p className="text-xs text-neutral-600">{order.customer_phone}</p>
+          </div>
+
+          {/* Description */}
+          <p className="text-sm text-neutral-700 line-clamp-2">
+            {order.description}
+          </p>
+
+          {/* Order specs */}
+          <div className="flex flex-wrap gap-1 text-xs">
+            {order.pages && (
+              <span className="bg-neutral-100 text-neutral-700 px-2 py-1 rounded">
+                {order.pages} pages
+              </span>
+            )}
+            {order.copies && order.copies > 1 && (
+              <span className="bg-neutral-100 text-neutral-700 px-2 py-1 rounded">
+                {order.copies} copies
+              </span>
+            )}
+            {order.color && (
+              <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded">Color</span>
             )}
           </div>
 
-          {/* Right side - Actions */}
-          <div className="flex flex-col gap-2 min-w-[140px]">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onViewDetails(order.id)}
-              className="text-xs h-7"
-            >
-              <Eye className="w-3 h-3 mr-1" />
-              View Details
-            </Button>
+          {/* Files preview for uploaded-files orders */}
+          {order.order_type === 'uploaded-files' && order.files && order.files.length > 0 && (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 text-xs text-neutral-600">
+                <FileText className="w-3 h-3" />
+                <span>{order.files[0].original_name || order.files[0].name}</span>
+                {order.files.length > 1 && (
+                  <span className="text-neutral-500">+{order.files.length - 1} more</span>
+                )}
+              </div>
+            </div>
+          )}
 
-            <div className="flex gap-1">
+          {/* Time */}
+          <p className="text-xs text-neutral-500">
+            {formatTimeAgo(order.created_at)}
+          </p>
+
+          {/* Actions */}
+          <div className="space-y-2">
+            <div className="flex gap-2">
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => window.open(`tel:${order.customerPhone}`)}
-                className="flex-1 text-xs h-7 px-2"
+                onClick={() => window.open(`tel:${order.customer_phone}`)}
+                className="flex-1 text-xs h-7"
               >
                 <Phone className="w-3 h-3" />
               </Button>
               <Button
                 size="sm"
                 variant="outline"
+                onClick={() => onViewDetails(order.id)}
+                className="flex-1 text-xs h-7"
+              >
+                <Eye className="w-3 h-3" />
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
                 onClick={() => onToggleUrgency(order.id)}
-                className={`flex-1 text-xs h-7 px-2 ${order.isUrgent ? 'bg-red-100 text-red-700 border-red-300' : ''}`}
+                className={`flex-1 text-xs h-7 ${order.is_urgent ? 'bg-red-100 text-red-700 border-red-300' : ''}`}
               >
                 <Zap className="w-3 h-3" />
               </Button>
             </div>
 
-            {nextStatus && statusAction && order.status !== 'completed' && order.status !== 'cancelled' && (
+            {nextStatus && statusAction && order.status !== 'completed' && (
               <Button
                 size="sm"
                 onClick={() => onUpdateStatus(order.id, nextStatus as ShopOrder['status'])}
-                className="text-xs h-7 bg-gradient-golden hover:shadow-golden text-white"
+                className="w-full text-xs h-7 bg-gradient-to-r from-golden-500 to-golden-600 hover:from-golden-600 hover:to-golden-700 text-white"
               >
                 {statusAction}
               </Button>
