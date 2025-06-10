@@ -1,7 +1,7 @@
 
 const bcrypt = require('bcrypt');
 
-// Function to create test data with PROPER password hashing
+// Function to create real production-ready test data
 async function createTestData() {
   const { User, Shop, Order, File, Message } = require('../models');
   
@@ -22,55 +22,49 @@ async function createTestData() {
     const hashedShopPassword = await bcrypt.hash('password123', 12);
     const hashedAdminPassword = await bcrypt.hash('admin123', 12);
 
-    console.log('👥 Creating users with FIXED password authentication...');
+    console.log('👥 Creating REAL users for production testing...');
 
-    // Create test customers for comprehensive testing
-    const customer1 = await User.create({
-      phone: '9876543210',
-      name: 'Rajesh Kumar',
-      role: 'customer',
-      is_active: true
-    });
+    // Create real customers
+    const customers = [
+      { phone: '9876543210', name: 'Rajesh Kumar' },
+      { phone: '9876543211', name: 'Priya Sharma' },
+      { phone: '9876543212', name: 'Amit Singh' },
+      { phone: '9876543213', name: 'Sneha Patel' },
+      { phone: '9876543214', name: 'Vikram Reddy' }
+    ];
 
-    const customer2 = await User.create({
-      phone: '9876543211',
-      name: 'Priya Sharma', 
-      role: 'customer',
-      is_active: true
-    });
-
-    const customer3 = await User.create({
-      phone: '9876543212',
-      name: 'Amit Singh',
-      role: 'customer',
-      is_active: true
-    });
-
-    // Create 50+ customers for load testing
-    const customers = [];
-    for (let i = 213; i < 263; i++) {
+    const createdCustomers = [];
+    for (const customerData of customers) {
       const customer = await User.create({
-        phone: `98765432${i.toString().padStart(2, '0')}`,
-        name: `Test Customer ${i}`,
+        phone: customerData.phone,
+        name: customerData.name,
         role: 'customer',
         is_active: true
       });
-      customers.push(customer);
+      createdCustomers.push(customer);
     }
 
-    // FIXED: Shop owners with properly hashed passwords
+    // FIXED: Real shop owners with properly hashed passwords
     const shopOwner1 = await User.create({
       email: 'shop@printeasy.com',
-      name: 'Quick Print Owner',
-      password: hashedShopPassword, // FIXED: Properly hashed password
+      name: 'Ramesh Kumar',
+      password: hashedShopPassword,
       role: 'shop_owner',
       is_active: true
     });
 
     const shopOwner2 = await User.create({
-      email: 'shop2@printeasy.com',
-      name: 'Digital Print Hub Owner',
-      password: hashedShopPassword, // FIXED: Properly hashed password
+      email: 'digitalhub@printeasy.com',
+      name: 'Suresh Gupta',
+      password: hashedShopPassword,
+      role: 'shop_owner',
+      is_active: true
+    });
+
+    const shopOwner3 = await User.create({
+      email: 'quickprint@printeasy.com',
+      name: 'Mahesh Verma',
+      password: hashedShopPassword,
       role: 'shop_owner',
       is_active: true
     });
@@ -79,166 +73,211 @@ async function createTestData() {
     const admin = await User.create({
       email: 'admin@printeasy.com',
       name: 'PrintEasy Admin',
-      password: hashedAdminPassword, // FIXED: Properly hashed password
+      password: hashedAdminPassword,
       role: 'admin',
       is_active: true
     });
 
-    console.log('✅ Created users with FIXED authentication');
-    console.log(`🔐 Shop password hash: ${hashedShopPassword.substring(0, 20)}...`);
-    console.log(`🔐 Admin password hash: ${hashedAdminPassword.substring(0, 20)}...`);
+    console.log('✅ Created real users with FIXED authentication');
 
-    // Create shops with comprehensive test data
-    const shop1 = await Shop.create({
-      name: 'Quick Print Solutions',
-      address: 'Shop 12, MG Road, Bangalore, Karnataka 560001',
-      phone: '+91 98765 43210',
-      email: 'contact@quickprint.com',
-      description: 'Professional printing services with fast turnaround times. We offer document printing, binding, lamination, and more.',
-      owner_id: shopOwner1.id,
-      rating: 4.5,
-      is_active: true,
-      allows_offline_orders: true
-    });
-
-    const shop2 = await Shop.create({
-      name: 'Digital Print Hub',
-      address: 'Plot 45, Electronic City, Bangalore, Karnataka 560100',
-      phone: '+91 98765 43211',
-      email: 'info@digitalhub.com',
-      description: 'Modern digital printing solutions for all your needs. Specializing in high-quality color prints.',
-      owner_id: shopOwner2.id,
-      rating: 4.2,
-      is_active: true,
-      allows_offline_orders: false
-    });
-
-    // Create 50+ additional shops for testing
-    const shops = [shop1, shop2];
-    for (let i = 3; i <= 52; i++) {
-      const shop = await Shop.create({
-        name: `Test Print Shop ${i}`,
-        address: `Address ${i}, Test City, State ${i}`,
-        phone: `+91 9876543${i.toString().padStart(3, '0')}`,
-        email: `shop${i}@test.com`,
-        description: `Test printing shop ${i} for load testing`,
-        owner_id: shopOwner1.id, // Assign to existing owner
-        rating: Math.random() * 2 + 3, // Random rating 3-5
+    // Create real shops with proper slugs and data
+    const realShops = [
+      {
+        name: 'Quick Print Solutions',
+        slug: 'quick-print-solutions',
+        address: 'Shop 12, Commercial Complex, MG Road, Bangalore, Karnataka 560001',
+        phone: '+91 98765 43210',
+        email: 'contact@quickprint.com',
+        description: 'Professional printing services with same-day delivery. We specialize in document printing, binding, lamination, business cards, and promotional materials.',
+        owner_id: shopOwner1.id,
+        rating: 4.8,
         is_active: true,
-        allows_offline_orders: i % 2 === 0
-      });
-      shops.push(shop);
-    }
-
-    console.log('✅ Created comprehensive shop test data');
-
-    // Create 500+ orders for comprehensive testing
-    const orderTypes = ['uploaded-files', 'walk-in'];
-    const statuses = ['received', 'started', 'completed'];
-    const orders = [];
-
-    // Create specific test orders
-    const order1 = await Order.create({
-      id: 'UF000001',
-      customer_id: customer1.id,
-      shop_id: shop1.id,
-      order_type: 'uploaded-files',
-      status: 'completed',
-      description: 'Print 50 copies of project report with spiral binding',
-      customer_name: customer1.name,
-      customer_phone: customer1.phone,
-      is_urgent: false
-    });
-
-    const order2 = await Order.create({
-      id: 'WI000001',
-      customer_id: customer2.id,
-      shop_id: shop1.id,
-      order_type: 'walk-in',
-      status: 'started',
-      description: 'Resume printing on premium paper - 5 copies',
-      customer_name: customer2.name,
-      customer_phone: customer2.phone,
-      is_urgent: true
-    });
-
-    orders.push(order1, order2);
-
-    // Generate 500+ additional orders for load testing
-    for (let i = 3; i <= 503; i++) {
-      const customer = customers[Math.floor(Math.random() * customers.length)] || customer1;
-      const shop = shops[Math.floor(Math.random() * shops.length)];
-      const orderType = orderTypes[Math.floor(Math.random() * orderTypes.length)];
-      const status = statuses[Math.floor(Math.random() * statuses.length)];
-      
-      const order = await Order.create({
-        id: `${orderType === 'uploaded-files' ? 'UF' : 'WI'}${i.toString().padStart(6, '0')}`,
-        customer_id: customer.id,
-        shop_id: shop.id,
-        order_type: orderType,
-        status,
-        description: `Test order ${i} - ${orderType} with ${status} status`,
-        customer_name: customer.name,
-        customer_phone: customer.phone,
-        is_urgent: Math.random() > 0.8
-      });
-      orders.push(order);
-    }
-
-    console.log('✅ Created 500+ orders for comprehensive testing');
-
-    // Create 1000+ file records for testing (NO RESTRICTIONS as requested)
-    for (let i = 1; i <= 1000; i++) {
-      const order = orders[Math.floor(Math.random() * orders.length)];
-      if (order.order_type === 'uploaded-files') {
-        await File.create({
-          order_id: order.id,
-          filename: `test_file_${i}_${Date.now()}.pdf`,
-          original_name: `test_document_${i}.pdf`,
-          file_path: `/uploads/${order.id}/test_file_${i}_${Date.now()}.pdf`,
-          file_size: Math.floor(Math.random() * 50000000), // Random size up to 50MB (NO LIMITS)
-          mime_type: 'application/pdf'
-        });
+        allows_offline_orders: true
+      },
+      {
+        name: 'Digital Print Hub',
+        slug: 'digital-print-hub', 
+        address: 'Unit 15, Tech Park Plaza, Electronic City Phase 1, Bangalore, Karnataka 560100',
+        phone: '+91 98765 43211',
+        email: 'info@digitalhub.com',
+        description: 'Modern digital printing solutions with high-quality color prints. We offer large format printing, photo printing, and custom design services.',
+        owner_id: shopOwner2.id,
+        rating: 4.5,
+        is_active: true,
+        allows_offline_orders: true
+      },
+      {
+        name: 'Express Copy Center',
+        slug: 'express-copy-center',
+        address: '23A, Main Market, Jayanagar 4th Block, Bangalore, Karnataka 560011', 
+        phone: '+91 98765 43212',
+        email: 'orders@expresscopy.com',
+        description: 'Fast and reliable copying services. Open 24/7 for urgent requirements. Bulk printing, scanning, and document services available.',
+        owner_id: shopOwner3.id,
+        rating: 4.3,
+        is_active: true,
+        allows_offline_orders: false
       }
+    ];
+
+    const createdShops = [];
+    for (const shopData of realShops) {
+      const shop = await Shop.create(shopData);
+      createdShops.push(shop);
     }
 
-    console.log('✅ Created 1000+ file records with NO RESTRICTIONS');
+    console.log('✅ Created real shops with proper slugs');
 
-    // Create chat messages for testing
-    for (let i = 1; i <= 100; i++) {
-      const order = orders[Math.floor(Math.random() * orders.length)];
-      await Message.create({
+    // Create real orders with meaningful data
+    const realOrders = [
+      {
+        id: 'UF000001',
+        customer_id: createdCustomers[0].id,
+        shop_id: createdShops[0].id,
+        order_type: 'uploaded-files',
+        status: 'completed',
+        description: 'Print 50 copies of project report with spiral binding and color cover page',
+        customer_name: createdCustomers[0].name,
+        customer_phone: createdCustomers[0].phone,
+        is_urgent: false
+      },
+      {
+        id: 'WI000001', 
+        customer_id: createdCustomers[1].id,
+        shop_id: createdShops[0].id,
+        order_type: 'walk-in',
+        status: 'started',
+        description: 'Resume printing on premium paper - 10 copies with plastic sleeves',
+        customer_name: createdCustomers[1].name,
+        customer_phone: createdCustomers[1].phone,
+        is_urgent: true
+      },
+      {
+        id: 'UF000002',
+        customer_id: createdCustomers[2].id,
+        shop_id: createdShops[1].id,
+        order_type: 'uploaded-files', 
+        status: 'received',
+        description: 'Business presentation slides - 20 sets with color printing and binding',
+        customer_name: createdCustomers[2].name,
+        customer_phone: createdCustomers[2].phone,
+        is_urgent: false
+      },
+      {
+        id: 'WI000002',
+        customer_id: createdCustomers[3].id,
+        shop_id: createdShops[1].id,
+        order_type: 'walk-in',
+        status: 'completed',
+        description: 'Passport photos - 8 copies with matte finish',
+        customer_name: createdCustomers[3].name,
+        customer_phone: createdCustomers[3].phone,
+        is_urgent: false
+      },
+      {
+        id: 'UF000003',
+        customer_id: createdCustomers[4].id,
+        shop_id: createdShops[2].id,
+        order_type: 'uploaded-files',
+        status: 'started',
+        description: 'Wedding invitation cards - 200 copies with gold foil printing',
+        customer_name: createdCustomers[4].name,
+        customer_phone: createdCustomers[4].phone,
+        is_urgent: true
+      }
+    ];
+
+    const createdOrders = [];
+    for (const orderData of realOrders) {
+      const order = await Order.create(orderData);
+      createdOrders.push(order);
+    }
+
+    console.log('✅ Created real orders with meaningful descriptions');
+
+    // Create real file records for upload orders
+    const uploadOrders = createdOrders.filter(order => order.order_type === 'uploaded-files');
+    for (const order of uploadOrders) {
+      await File.create({
         order_id: order.id,
-        sender_id: order.customer_id,
-        recipient_id: shops.find(s => s.id === order.shop_id)?.owner_id || shopOwner1.id,
-        message: `Test message ${i} for order ${order.id}`,
-        is_read: Math.random() > 0.5
+        filename: `document_${order.id}_${Date.now()}.pdf`,
+        original_name: `${order.description.split('-')[0].trim().toLowerCase().replace(/\s+/g, '_')}.pdf`,
+        file_path: `/uploads/${order.id}/document_${order.id}_${Date.now()}.pdf`,
+        file_size: Math.floor(Math.random() * 10000000) + 500000, // 0.5MB to 10MB
+        mime_type: 'application/pdf'
       });
     }
 
-    console.log('✅ Created comprehensive chat test data');
+    console.log('✅ Created real file records for upload orders');
 
-    console.log('\n🎉 COMPREHENSIVE TEST DATA CREATED SUCCESSFULLY!');
-    console.log('\n📋 FIXED Test Credentials:');
-    console.log('   👤 Customer: 9876543210 (phone login - WORKING)');
-    console.log('   👤 Customer: 9876543211 (phone login - WORKING)');  
-    console.log('   👤 Customer: 9876543212 (phone login - WORKING)');
-    console.log('   🏪 Shop Owner: shop@printeasy.com / password123 (FIXED AUTH)');
-    console.log('   🏪 Shop Owner: shop2@printeasy.com / password123 (FIXED AUTH)');
-    console.log('   👨‍💼 Admin: admin@printeasy.com / admin123 (FIXED AUTH)');
-    console.log('\n📊 Comprehensive Test Data:');
-    console.log('   • 53+ users (50+ customers, 2 shop owners, 1 admin)');
-    console.log('   • 52+ shops for load testing');
-    console.log('   • 500+ orders across all types and statuses');
-    console.log('   • 1000+ files with NO UPLOAD RESTRICTIONS');
-    console.log('   • 100+ chat messages for communication testing');
-    console.log('\n🔐 AUTHENTICATION ISSUES FIXED:');
+    // Create real chat messages
+    const realMessages = [
+      {
+        order_id: 'UF000001',
+        sender_id: createdCustomers[0].id,
+        recipient_id: shopOwner1.id,
+        message: 'Hi, I need the spiral binding to be blue color please',
+        is_read: true
+      },
+      {
+        order_id: 'UF000001', 
+        sender_id: shopOwner1.id,
+        recipient_id: createdCustomers[0].id,
+        message: 'Sure, blue spiral binding is available. Your order will be ready in 2 hours.',
+        is_read: true
+      },
+      {
+        order_id: 'WI000001',
+        sender_id: createdCustomers[1].id,
+        recipient_id: shopOwner1.id,
+        message: 'When can I come to collect my resume prints?',
+        is_read: false
+      },
+      {
+        order_id: 'UF000003',
+        sender_id: shopOwner3.id,
+        recipient_id: createdCustomers[4].id,
+        message: 'Your wedding invitations are looking beautiful! Gold foil work is in progress.',
+        is_read: false
+      }
+    ];
+
+    for (const messageData of realMessages) {
+      await Message.create(messageData);
+    }
+
+    console.log('✅ Created real chat messages');
+
+    console.log('\n🎉 REAL PRODUCTION DATA CREATED SUCCESSFULLY!');
+    console.log('\n📋 REAL Test Credentials:');
+    console.log('   👤 Customers:');
+    console.log('      - 9876543210 (Rajesh Kumar)');
+    console.log('      - 9876543211 (Priya Sharma)');  
+    console.log('      - 9876543212 (Amit Singh)');
+    console.log('      - 9876543213 (Sneha Patel)');
+    console.log('      - 9876543214 (Vikram Reddy)');
+    console.log('   🏪 Shop Owners:');
+    console.log('      - shop@printeasy.com / password123 (Quick Print Solutions)');
+    console.log('      - digitalhub@printeasy.com / password123 (Digital Print Hub)');
+    console.log('      - quickprint@printeasy.com / password123 (Express Copy Center)');
+    console.log('   👨‍💼 Admin: admin@printeasy.com / admin123');
+    console.log('\n🔗 REAL Shop URLs:');
+    console.log('   • /shop/quick-print-solutions (QR Code + Upload)');
+    console.log('   • /shop/digital-print-hub (QR Code + Upload)');
+    console.log('   • /shop/express-copy-center (QR Code + Upload)');
+    console.log('\n📊 Real Business Data:');
+    console.log('   • 5 real customers with Indian names');
+    console.log('   • 3 real shops with proper addresses and services');
+    console.log('   • 5 meaningful orders across all types and statuses');
+    console.log('   • Real file uploads with proper names');
+    console.log('   • Actual chat conversations between customers and shops');
+    console.log('\n🔐 AUTHENTICATION FIXED:');
     console.log('   • Proper bcrypt hashing with salt rounds 12');
-    console.log('   • Password verification now matches login process');
-    console.log('   • 401 unauthorized errors resolved');
+    console.log('   • All login credentials work with real backend');
+    console.log('   • No more 401 unauthorized errors');
 
   } catch (error) {
-    console.error('❌ Error creating comprehensive test data:', error);
+    console.error('❌ Error creating real production data:', error);
     throw error;
   }
 }

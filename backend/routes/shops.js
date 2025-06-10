@@ -2,16 +2,44 @@
 const express = require('express');
 const { Shop, User, Order } = require('../models');
 const { authenticateToken } = require('../middleware/auth');
+const { Op } = require('sequelize');
 
 const router = express.Router();
 
-// Get all shops
+// Get all shops with optional filtering
 router.get('/', async (req, res) => {
   try {
+    const { city, services, rating, sort = 'rating', limit = 20 } = req.query;
+    
+    const whereClause = { is_active: true };
+    
+    if (city) {
+      whereClause.address = { [Op.iLike]: `%${city}%` };
+    }
+    
+    const orderClause = [];
+    switch (sort) {
+      case 'rating':
+        orderClause.push(['rating', 'DESC']);
+        break;
+      case 'name':
+        orderClause.push(['name', 'ASC']);
+        break;
+      default:
+        orderClause.push(['created_at', 'DESC']);
+    }
+
     const shops = await Shop.findAll({
-      where: { is_active: true },
-      include: [{ model: User, as: 'owner', attributes: ['name', 'phone', 'email'] }],
-      order: [['rating', 'DESC'], ['name', 'ASC']]
+      where: whereClause,
+      order: orderClause,
+      limit: parseInt(limit),
+      include: [
+        {
+          model: User,
+          as: 'owner',
+          attributes: ['name', 'phone']
+        }
+      ]
     });
 
     res.json({
@@ -29,70 +57,36 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Get visited shops for customer (for reorder logic)
-router.get('/visited', authenticateToken, async (req, res) => {
+// ADDED: Get shop by slug for public access
+router.get('/slug/:slug', async (req, res) => {
   try {
-    if (req.user.role !== 'customer') {
-      return res.status(403).json({
-        success: false,
-        error: 'Access denied',
-        message: 'Only customers can access visited shops'
-      });
-    }
+    const { slug } = req.params;
+    console.log('🔍 Looking for shop with slug:', slug);
 
-    // Find shops where customer has placed orders
-    const visitedShops = await Shop.findAll({
+    const shop = await Shop.findOne({
+      where: { 
+        slug: slug,
+        is_active: true 
+      },
       include: [
-        {
-          model: Order,
-          as: 'orders',
-          where: { customer_id: req.user.id },
-          attributes: [], // Don't return order details, just use for filtering
-          required: true // Inner join - only shops with orders
-        },
         {
           model: User,
           as: 'owner',
-          attributes: ['name', 'phone', 'email']
+          attributes: ['id', 'name', 'phone', 'email']
         }
-      ],
-      where: { is_active: true },
-      order: [['rating', 'DESC'], ['name', 'ASC']],
-      distinct: true // Remove duplicates
-    });
-
-    console.log(`✅ Found ${visitedShops.length} visited shops for customer ${req.user.id}`);
-
-    res.json({
-      success: true,
-      shops: visitedShops,
-      message: visitedShops.length === 0 ? 'No previous orders found. You can order from any shop.' : `Found ${visitedShops.length} shops you've ordered from before.`
-    });
-
-  } catch (error) {
-    console.error('Get visited shops error:', error);
-    res.status(500).json({ 
-      success: false,
-      error: 'Failed to get visited shops',
-      message: 'Unable to retrieve your order history'
-    });
-  }
-});
-
-// Get shop by ID
-router.get('/:shopId', async (req, res) => {
-  try {
-    const shop = await Shop.findByPk(req.params.shopId, {
-      include: [{ model: User, as: 'owner', attributes: ['name', 'phone', 'email'] }]
+      ]
     });
 
     if (!shop) {
-      return res.status(404).json({ 
+      console.log('❌ Shop not found for slug:', slug);
+      return res.status(404).json({
         success: false,
         error: 'Shop not found',
-        message: 'The requested shop does not exist'
+        message: 'The requested shop does not exist or is inactive'
       });
     }
+
+    console.log('✅ Shop found:', shop.name);
 
     res.json({
       success: true,
@@ -100,11 +94,46 @@ router.get('/:shopId', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get shop error:', error);
+    console.error('Get shop by slug error:', error);
     res.status(500).json({ 
       success: false,
       error: 'Failed to get shop',
       message: 'Unable to retrieve shop information'
+    });
+  }
+});
+
+// Get visited shops for a customer
+router.get('/visited', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Get shops where user has placed orders
+    const visitedShops = await Shop.findAll({
+      include: [
+        {
+          model: Order,
+          as: 'orders',
+          where: { customer_id: userId },
+          attributes: [],
+          required: true
+        }
+      ],
+      group: ['Shop.id'],
+      order: [['name', 'ASC']]
+    });
+
+    res.json({
+      success: true,
+      shops: visitedShops
+    });
+
+  } catch (error) {
+    console.error('Get visited shops error:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to get visited shops',
+      message: 'Unable to retrieve your shop history'
     });
   }
 });

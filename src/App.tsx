@@ -6,7 +6,6 @@ import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { SocketProvider } from '@/contexts/SocketContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import UniversalHeader from '@/components/layout/UniversalHeader';
 
 // Pages
 import Home from '@/pages/Home';
@@ -21,6 +20,7 @@ import NewOrder from '@/pages/customer/NewOrder';
 
 // Shop Pages
 import ShopDashboard from '@/pages/shop/Dashboard';
+import ShopUploadPage from '@/pages/shop/UploadPage';
 
 // Admin Pages
 import AdminDashboard from '@/pages/admin/Dashboard';
@@ -48,7 +48,11 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
                 
-                {/* Protected Routes with Shared Components */}
+                {/* Shop Upload Pages - Public but shop-specific */}
+                <Route path="/shop/:shopSlug/upload" element={<ShopUploadPage />} />
+                <Route path="/shop/:shopSlug" element={<ShopUploadPage />} />
+                
+                {/* Protected Routes */}
                 <Route 
                   path="/notifications" 
                   element={
@@ -66,17 +70,12 @@ function App() {
                   } 
                 />
                 
-                {/* Customer Routes - FIXED PATHS */}
+                {/* Customer Routes */}
                 <Route 
                   path="/customer/dashboard" 
                   element={
                     <ProtectedRoute allowedRoles={['customer']}>
-                      <div>
-                        <UniversalHeader title="Customer Dashboard" subtitle="Manage your orders" />
-                        <main className="pt-16">
-                          <CustomerDashboard />
-                        </main>
-                      </div>
+                      <CustomerDashboard />
                     </ProtectedRoute>
                   } 
                 />
@@ -84,12 +83,7 @@ function App() {
                   path="/customer/order/new" 
                   element={
                     <ProtectedRoute allowedRoles={['customer']}>
-                      <div>
-                        <UniversalHeader title="New Order" subtitle="Place a new print order" />
-                        <main className="pt-16">
-                          <NewOrder />
-                        </main>
-                      </div>
+                      <NewOrder />
                     </ProtectedRoute>
                   } 
                 />
@@ -99,27 +93,17 @@ function App() {
                   path="/shop/dashboard" 
                   element={
                     <ProtectedRoute allowedRoles={['shop_owner']}>
-                      <div>
-                        <UniversalHeader title="Shop Dashboard" subtitle="Manage your print orders" />
-                        <main className="pt-16">
-                          <ShopDashboard />
-                        </main>
-                      </div>
+                      <ShopDashboard />
                     </ProtectedRoute>
                   } 
                 />
                 
-                {/* Admin Routes - FIXED AND ADDED */}
+                {/* Admin Routes */}
                 <Route 
                   path="/admin/dashboard" 
                   element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                      <div>
-                        <UniversalHeader title="Admin Dashboard" subtitle="Platform management" />
-                        <main className="pt-16">
-                          <AdminDashboard />
-                        </main>
-                      </div>
+                      <AdminDashboard />
                     </ProtectedRoute>
                   } 
                 />
@@ -127,12 +111,7 @@ function App() {
                   path="/admin/add-shop" 
                   element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                      <div>
-                        <UniversalHeader title="Add New Shop" subtitle="Create a new print shop" />
-                        <main className="pt-16">
-                          <AddShop />
-                        </main>
-                      </div>
+                      <AddShop />
                     </ProtectedRoute>
                   } 
                 />

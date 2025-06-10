@@ -10,23 +10,48 @@ interface QRCodeModalProps {
   isOpen: boolean;
   onClose: () => void;
   shopName: string;
+  shopSlug?: string;
 }
 
 const QRCodeModal: React.FC<QRCodeModalProps> = ({
   isOpen,
   onClose,
-  shopName
+  shopName,
+  shopSlug
 }) => {
-  const uploadUrl = `https://printeasy.com/shop/${shopName.toLowerCase().replace(/\s+/g, '-')}/upload`;
+  // Generate proper URLs
+  const baseUrl = window.location.origin;
+  const shopSlugForUrl = shopSlug || shopName.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
+  const uploadUrl = `${baseUrl}/shop/${shopSlugForUrl}`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(uploadUrl)}`;
   
-  const handleDownloadQR = () => {
-    // Simulate QR download
-    toast.success('QR Code downloaded successfully');
+  const handleDownloadQR = async () => {
+    try {
+      const response = await fetch(qrCodeUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${shopSlugForUrl}-qr-code.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success('QR Code downloaded successfully');
+    } catch (error) {
+      console.error('Download failed:', error);
+      toast.error('Failed to download QR code');
+    }
   };
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(uploadUrl);
-    toast.success('Upload link copied to clipboard');
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(uploadUrl);
+      toast.success('Upload link copied to clipboard');
+    } catch (error) {
+      console.error('Copy failed:', error);
+      toast.error('Failed to copy link');
+    }
   };
 
   const handleOpenUploadPage = () => {
@@ -46,9 +71,29 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({
             <CardContent className="p-4 sm:p-6 text-center">
               <h3 className="font-semibold text-base sm:text-lg mb-4">QR Code for {shopName}</h3>
               
-              {/* QR Code Placeholder */}
-              <div className="bg-gray-100 h-48 sm:h-64 rounded-lg flex items-center justify-center mb-4">
-                <QrCode className="w-24 h-24 sm:w-32 sm:h-32 text-gray-400" />
+              {/* Real QR Code */}
+              <div className="bg-white p-4 rounded-lg border-2 border-neutral-200 inline-block mb-4">
+                <img 
+                  src={qrCodeUrl}
+                  alt={`QR Code for ${shopName}`}
+                  className="w-48 h-48 sm:w-64 sm:h-64"
+                  onError={(e) => {
+                    // Fallback if QR service fails
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    const parent = target.parentElement;
+                    if (parent) {
+                      parent.innerHTML = `
+                        <div class="w-48 h-48 sm:w-64 sm:h-64 bg-gray-100 rounded-lg flex items-center justify-center">
+                          <div class="text-center">
+                            <div class="text-6xl mb-2">📱</div>
+                            <p class="text-sm text-gray-600">QR Code Preview</p>
+                          </div>
+                        </div>
+                      `;
+                    }
+                  }}
+                />
               </div>
               
               <p className="text-sm text-gray-600 mb-4">
@@ -92,6 +137,10 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({
                   Open Upload Page
                 </Button>
               </div>
+              
+              <p className="text-xs text-gray-500 mt-3">
+                Share this link with customers or print the QR code for easy access
+              </p>
             </CardContent>
           </Card>
         </div>

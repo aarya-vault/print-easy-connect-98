@@ -1,8 +1,9 @@
-
 const express = require('express');
 const { User, Shop, Order } = require('../models');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
+const { validateShopCreation } = require('../middleware/requestValidator');
 const bcrypt = require('bcrypt');
+const { Op } = require('sequelize');
 
 const router = express.Router();
 
@@ -81,28 +82,21 @@ router.get('/shops', authenticateToken, authorizeRoles('admin'), async (req, res
   }
 });
 
-// Create new shop
-router.post('/shops', authenticateToken, authorizeRoles('admin'), async (req, res) => {
+// FIXED: Create new shop endpoint with proper validation
+router.post('/shops', authenticateToken, authorizeRoles('admin'), validateShopCreation, async (req, res) => {
   try {
     const {
       name,
       address,
       phone,
       email,
-      description,
+      description = '',
       ownerEmail,
       ownerName,
       ownerPassword
     } = req.body;
 
-    // Validate required fields
-    if (!name || !address || !phone || !email || !ownerEmail || !ownerName || !ownerPassword) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required fields',
-        message: 'All shop and owner details are required'
-      });
-    }
+    console.log('📝 Creating new shop:', { name, ownerEmail });
 
     // Check if owner email already exists
     const existingUser = await User.findOne({ where: { email: ownerEmail } });
@@ -114,8 +108,18 @@ router.post('/shops', authenticateToken, authorizeRoles('admin'), async (req, re
       });
     }
 
+    // Check if shop name already exists
+    const existingShop = await Shop.findOne({ where: { name } });
+    if (existingShop) {
+      return res.status(400).json({
+        success: false,
+        error: 'Shop name already exists',
+        message: 'Please use a different shop name'
+      });
+    }
+
     // Hash password for new owner
-    const hashedPassword = await bcrypt.hash(ownerPassword, 10);
+    const hashedPassword = await bcrypt.hash(ownerPassword, 12);
 
     // Create shop owner
     const owner = await User.create({
@@ -126,6 +130,15 @@ router.post('/shops', authenticateToken, authorizeRoles('admin'), async (req, re
       is_active: true
     });
 
+    console.log('✅ Shop owner created:', owner.id);
+
+    // Generate shop slug from name
+    const slug = name.toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim();
+
     // Create shop
     const shop = await Shop.create({
       name,
@@ -134,10 +147,13 @@ router.post('/shops', authenticateToken, authorizeRoles('admin'), async (req, re
       email,
       description,
       owner_id: owner.id,
+      slug: slug,
       rating: 0,
       is_active: true,
       allows_offline_orders: true
     });
+
+    console.log('✅ Shop created:', shop.id);
 
     // Get complete shop data
     const completeShop = await Shop.findByPk(shop.id, {
@@ -157,11 +173,11 @@ router.post('/shops', authenticateToken, authorizeRoles('admin'), async (req, re
     });
 
   } catch (error) {
-    console.error('Create shop error:', error);
+    console.error('❌ Create shop error:', error);
     res.status(500).json({ 
       success: false,
       error: 'Failed to create shop',
-      message: 'Unable to create new shop'
+      message: error.message || 'Unable to create new shop'
     });
   }
 });

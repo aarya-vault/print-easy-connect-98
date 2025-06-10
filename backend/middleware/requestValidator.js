@@ -5,20 +5,22 @@ const { body, validationResult } = require('express-validator');
 const validateRequest = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    console.log('❌ Validation errors:', errors.array());
     return res.status(400).json({
       success: false,
       error: 'Validation failed',
+      message: errors.array()[0].msg,
       details: errors.array()
     });
   }
   next();
 };
 
-// Phone login validation
+// FIXED: Phone login validation - accept 10 digits without country code
 const validatePhoneLogin = [
   body('phone')
-    .isMobilePhone('en-IN')
-    .withMessage('Please provide a valid Indian phone number')
+    .isNumeric()
+    .withMessage('Phone number must contain only digits')
     .isLength({ min: 10, max: 10 })
     .withMessage('Phone number must be exactly 10 digits'),
   validateRequest
@@ -50,8 +52,9 @@ const validateOrderCreation = [
     .withMessage('Customer name must be between 2 and 255 characters'),
   body('customerPhone')
     .optional()
-    .isMobilePhone('en-IN')
-    .withMessage('Please provide a valid phone number'),
+    .isNumeric()
+    .isLength({ min: 10, max: 10 })
+    .withMessage('Please provide a valid 10-digit phone number'),
   body('description')
     .optional()
     .isLength({ max: 1000 })
@@ -67,10 +70,37 @@ const validateProfileUpdate = [
   validateRequest
 ];
 
+// Shop creation validation
+const validateShopCreation = [
+  body('name')
+    .isLength({ min: 2, max: 255 })
+    .withMessage('Shop name must be between 2 and 255 characters'),
+  body('address')
+    .isLength({ min: 10, max: 500 })
+    .withMessage('Address must be between 10 and 500 characters'),
+  body('phone')
+    .isLength({ min: 10 })
+    .withMessage('Phone number is required'),
+  body('email')
+    .isEmail()
+    .withMessage('Valid email is required'),
+  body('ownerName')
+    .isLength({ min: 2, max: 255 })
+    .withMessage('Owner name must be between 2 and 255 characters'),
+  body('ownerEmail')
+    .isEmail()
+    .withMessage('Valid owner email is required'),
+  body('ownerPassword')
+    .isLength({ min: 6 })
+    .withMessage('Owner password must be at least 6 characters long'),
+  validateRequest
+];
+
 module.exports = {
   validatePhoneLogin,
   validateEmailLogin,
   validateOrderCreation,
   validateProfileUpdate,
+  validateShopCreation,
   validateRequest
 };
