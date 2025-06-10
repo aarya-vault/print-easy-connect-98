@@ -10,7 +10,7 @@ module.exports = (sequelize) => {
     },
     order_id: {
       type: DataTypes.STRING(20),
-      allowNull: true,
+      allowNull: false,
       references: {
         model: 'orders',
         key: 'id'
@@ -18,26 +18,26 @@ module.exports = (sequelize) => {
     },
     filename: {
       type: DataTypes.STRING(255),
-      allowNull: true
+      allowNull: false
     },
     original_name: {
       type: DataTypes.STRING(255),
-      allowNull: true
+      allowNull: false
     },
     file_path: {
       type: DataTypes.TEXT,
-      allowNull: true
+      allowNull: false
     },
     file_size: {
       type: DataTypes.BIGINT,
-      allowNull: true
+      allowNull: false
     },
     mime_type: {
       type: DataTypes.STRING(100),
-      allowNull: true
+      allowNull: false
     }
   }, {
-    tableName: 'order_files',
+    tableName: 'files',
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at'

@@ -1,18 +1,21 @@
 
 {
   "name": "printeasy-backend",
-  "version": "1.0.0",
-  "description": "PrintEasy Backend API - Connecting customers with local print shops through digital ordering and file management",
+  "version": "2.0.0",
+  "description": "PrintEasy Backend API v2.0 - Connecting customers with local print shops through digital ordering and file management",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
-    "db:seed": "node seeders/20240101000001-demo-data.js",
+    "db:seed": "node seeders/comprehensive-test-data.js",
     "db:reset": "node -e \"require('./models').sequelize.sync({force: true}).then(() => {console.log('Database reset complete'); process.exit()})\"",
+    "db:setup": "npm run db:reset && npm run db:seed",
     "test": "echo \"API testing available via Postman collection - import postman-collection.json\"",
-    "health": "curl http://localhost:3001/health",
-    "logs": "tail -f logs/app.log",
-    "postman": "echo \"Import backend/postman-collection.json into Postman for complete API testing\""
+    "health": "curl http://localhost:3001/health || echo 'Server not running'",
+    "logs": "tail -f logs/app.log 2>/dev/null || echo 'No log file found'",
+    "postman": "echo \"Import backend/postman-collection.json into Postman for complete API testing\"",
+    "validate": "node -e \"console.log('✅ Package.json is valid')\"",
+    "production": "NODE_ENV=production node app.js"
   },
   "keywords": [
     "printing",
@@ -24,12 +27,16 @@
     "phone-login",
     "file-upload",
     "real-time-chat",
-    "order-management"
+    "order-management",
+    "role-based-auth",
+    "cors-enabled",
+    "postman-ready"
   ],
-  "author": "PrintEasy Team",
+  "author": "PrintEasy Development Team",
   "license": "MIT",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -44,6 +51,7 @@
     "morgan": "^1.10.0",
     "compression": "^1.7.4",
     "express-rate-limit": "^7.1.5",
+    "express-validator": "^7.0.1",
     "dotenv": "^16.3.1"
   },
   "devDependencies": {

@@ -6,7 +6,7 @@ export type UserRole = 'customer' | 'shop_owner' | 'admin';
 
 interface User {
   id: number;
-  phone: string;
+  phone?: string;
   name?: string;
   email?: string;
   role: UserRole;
@@ -18,7 +18,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (phone: string, password?: string, rememberMe?: boolean) => Promise<void>;
+  login: (phone: string) => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<void>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
@@ -42,70 +42,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('auth_token');
-    const storedUser = localStorage.getItem('auth_user');
-    
-    if (storedToken && storedUser) {
+    const initializeAuth = async () => {
       try {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
+        const storedToken = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+        const storedUser = localStorage.getItem('auth_user') || sessionStorage.getItem('auth_user');
+        
+        if (storedToken && storedUser) {
+          const userData = JSON.parse(storedUser);
+          setToken(storedToken);
+          setUser(userData);
+          
+          // Verify token is still valid
+          try {
+            await apiService.getCurrentUser();
+          } catch (error) {
+            console.warn('Stored token invalid, clearing auth state');
+            logout();
+          }
+        }
       } catch (error) {
-        console.error('Error parsing stored user data:', error);
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('auth_user');
+        console.error('Error initializing auth:', error);
+        logout();
+      } finally {
+        setIsLoading(false);
       }
-    }
-    setIsLoading(false);
+    };
+
+    initializeAuth();
   }, []);
 
-  const login = async (phone: string, password?: string, rememberMe: boolean = false) => {
+  const login = async (phone: string) => {
     try {
       setIsLoading(true);
-      
-      // Try to login first
-      let response;
-      try {
-        response = await apiService.phoneLogin(phone);
-      } catch (loginError: any) {
-        // If login fails and it's a customer (no password), try to register
-        if (!password && loginError.response?.status === 401) {
-          console.log('Customer not found, creating new account...');
-          try {
-            // Create new customer account
-            const registerResponse = await fetch('/api/auth/register', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ 
-                phone, 
-                role: 'customer',
-                name: `Customer ${phone.slice(-4)}`
-              })
-            });
-            response = { data: await registerResponse.json() };
-          } catch (registerError: any) {
-            console.error('Registration failed:', registerError);
-            throw new Error('Failed to create account. Please try again.');
-          }
-        } else {
-          throw loginError;
-        }
-      }
-
-      const { token: authToken, user: userData } = response.data;
+      const response = await apiService.phoneLogin(phone);
+      const { token: authToken, user: userData } = response;
       
       setToken(authToken);
       setUser(userData);
       
-      if (rememberMe) {
-        localStorage.setItem('auth_token', authToken);
-        localStorage.setItem('auth_user', JSON.stringify(userData));
-      } else {
-        sessionStorage.setItem('auth_token', authToken);
-        sessionStorage.setItem('auth_user', JSON.stringify(userData));
-      }
+      // Store in localStorage for persistence
+      localStorage.setItem('auth_token', authToken);
+      localStorage.setItem('auth_user', JSON.stringify(userData));
+      
     } catch (error: any) {
-      console.error('Authentication error:', error);
-      throw new Error(error.response?.data?.error || error.message || 'Authentication failed');
+      console.error('Phone login error:', error);
+      throw new Error(error.response?.data?.message || error.message || 'Phone login failed');
     } finally {
       setIsLoading(false);
     }
@@ -120,11 +101,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setToken(authToken);
       setUser(userData);
       
+      // Store in localStorage for persistence
       localStorage.setItem('auth_token', authToken);
       localStorage.setItem('auth_user', JSON.stringify(userData));
+      
     } catch (error: any) {
       console.error('Email login error:', error);
-      throw new Error(error.response?.data?.error || error.message || 'Login failed');
+      throw new Error(error.response?.data?.message || error.message || 'Email login failed');
     } finally {
       setIsLoading(false);
     }

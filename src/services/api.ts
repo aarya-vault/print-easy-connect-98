@@ -1,5 +1,5 @@
 
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 class ApiService {
   private async makeRequest(endpoint: string, options: RequestInit = {}) {
@@ -25,13 +25,25 @@ class ApiService {
       const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
       
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Network error' }));
-        throw new Error(errorData.error || `HTTP ${response.status}`);
+        const errorData = await response.json().catch(() => ({ 
+          success: false,
+          error: 'Network error',
+          message: `HTTP ${response.status} - ${response.statusText}`
+        }));
+        
+        const error = new Error(errorData.message || errorData.error || `HTTP ${response.status}`);
+        (error as any).response = { data: errorData, status: response.status };
+        throw error;
       }
 
-      return await response.json();
+      const data = await response.json();
+      return data;
     } catch (error) {
-      console.error('API request failed:', error);
+      console.error('API request failed:', {
+        endpoint,
+        error: error instanceof Error ? error.message : error,
+        stack: error instanceof Error ? error.stack : undefined
+      });
       throw error;
     }
   }
@@ -45,11 +57,10 @@ class ApiService {
   }
 
   async emailLogin(email: string, password: string) {
-    const response = await this.makeRequest('/auth/email-login', {
+    return this.makeRequest('/auth/email-login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
-    return response;
   }
 
   async updateProfile(name: string) {
@@ -61,6 +72,12 @@ class ApiService {
 
   async getCurrentUser() {
     return this.makeRequest('/auth/me');
+  }
+
+  async logout() {
+    return this.makeRequest('/auth/logout', {
+      method: 'POST',
+    });
   }
 
   // Shop methods
@@ -85,8 +102,13 @@ class ApiService {
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Network error' }));
-      throw new Error(errorData.error || `HTTP ${response.status}`);
+      const errorData = await response.json().catch(() => ({ 
+        error: 'Network error',
+        message: `HTTP ${response.status} - ${response.statusText}`
+      }));
+      const error = new Error(errorData.message || errorData.error || `HTTP ${response.status}`);
+      (error as any).response = { data: errorData, status: response.status };
+      throw error;
     }
 
     return await response.json();
@@ -131,8 +153,13 @@ class ApiService {
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Network error' }));
-      throw new Error(errorData.error || `HTTP ${response.status}`);
+      const errorData = await response.json().catch(() => ({ 
+        error: 'Upload failed',
+        message: `HTTP ${response.status} - ${response.statusText}`
+      }));
+      const error = new Error(errorData.message || errorData.error || 'Upload failed');
+      (error as any).response = { data: errorData, status: response.status };
+      throw error;
     }
 
     return await response.json();
