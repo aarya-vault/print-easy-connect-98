@@ -1,263 +1,262 @@
 
 const express = require('express');
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+const jwt = require('jwt-simple');
 const { User, Shop } = require('../models');
 const { authenticateToken } = require('../middleware/auth');
-const { 
-  validatePhoneLogin, 
-  validateEmailLogin, 
-  validateProfileUpdate 
-} = require('../middleware/requestValidator');
 
 const router = express.Router();
 
-// Generate JWT token
-const generateToken = (user) => {
-  return jwt.sign(
-    { 
-      userId: user.id, 
-      phone: user.phone, 
-      email: user.email,
-      role: user.role 
-    },
-    process.env.JWT_SECRET || 'your-secret-key',
-    { expiresIn: '7d' }
-  );
-};
-
-// FIXED: Enhanced CORS handling for authentication
-router.use((req, res, next) => {
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-    res.header('Access-Control-Max-Age', '3600');
-    return res.status(200).end();
-  }
-  next();
-});
-
-// Phone Login (auto-registration for customers)
-router.post('/phone-login', validatePhoneLogin, async (req, res) => {
+// Phone-based login with minimal validation
+router.post('/phone-login', async (req, res) => {
   try {
     const { phone } = req.body;
-    console.log(`📱 Phone login attempt for: ${phone}`);
 
-    // Find or create customer
-    let user = await User.findOne({ where: { phone } });
+    console.log('📱 Phone login attempt:', phone);
+
+    // Basic phone validation - just check if it exists and has at least 10 digits
+    if (!phone || phone.length < 10) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please provide a valid phone number'
+      });
+    }
+
+    // Clean phone number (remove spaces, dashes, etc.)
+    const cleanPhone = phone.replace(/\D/g, '');
+    
+    // Find or create user
+    let user = await User.findOne({ where: { phone: cleanPhone } });
+    let isNewUser = false;
 
     if (!user) {
-      // Auto-register new customer
+      // Create new customer
       user = await User.create({
-        phone,
-        name: `Customer ${phone.slice(-4)}`,
+        phone: cleanPhone,
+        name: `Customer ${cleanPhone.slice(-4)}`,
         role: 'customer',
         is_active: true
       });
-      console.log(`✅ New customer auto-registered: ${phone}`);
-    }
-
-    if (!user.is_active) {
-      return res.status(403).json({ 
-        success: false,
-        error: 'Account deactivated',
-        message: 'Please contact support to reactivate your account'
-      });
+      isNewUser = true;
+      console.log('✅ New customer created:', user.id);
+    } else {
+      console.log('✅ Existing customer found:', user.id);
     }
 
     // Generate JWT token
-    const token = generateToken(user);
+    const token = jwt.encode({
+      userId: user.id,
+      role: user.role,
+      exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) // 7 days
+    }, process.env.JWT_SECRET || 'your-secret-key');
 
-    console.log(`✅ Phone login successful for: ${phone}`);
+    // Get shop info if user is shop owner
+    let shopInfo = null;
+    if (user.role === 'shop_owner') {
+      const shop = await Shop.findOne({ where: { owner_id: user.id } });
+      if (shop) {
+        shopInfo = {
+          shop_id: shop.id,
+          shop_name: shop.name
+        };
+      }
+    }
 
     res.json({
       success: true,
-      message: user.name.includes('Customer') ? 'Welcome to PrintEasy!' : 'Welcome back!',
       token,
       user: {
         id: user.id,
         phone: user.phone,
         name: user.name,
+        email: user.email,
         role: user.role,
-        is_active: user.is_active
-      }
+        is_active: user.is_active,
+        ...shopInfo
+      },
+      isNewUser
     });
 
   } catch (error) {
     console.error('❌ Phone login error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
       error: 'Login failed',
-      message: 'Unable to process login request'
+      message: error.message
     });
   }
 });
 
-// FIXED: Email Login with proper password comparison
-router.post('/email-login', validateEmailLogin, async (req, res) => {
+// Email-based login
+router.post('/email-login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log(`📧 Email login attempt for: ${email}`);
 
-    const user = await User.findOne({ 
-      where: { email },
-      include: [{ model: Shop, as: 'ownedShops' }]
-    });
-
-    if (!user || !user.password) {
-      console.log(`❌ User not found or no password set for: ${email}`);
-      return res.status(401).json({ 
+    if (!email || !password) {
+      return res.status(400).json({
         success: false,
-        error: 'Invalid credentials',
-        message: 'Email or password is incorrect'
+        error: 'Email and password are required'
+      });
+    }
+
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid email or password'
+      });
+    }
+
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid email or password'
       });
     }
 
     if (!user.is_active) {
-      console.log(`❌ Account deactivated for: ${email}`);
-      return res.status(403).json({ 
+      return res.status(401).json({
         success: false,
-        error: 'Account deactivated',
-        message: 'Please contact support to reactivate your account'
+        error: 'Account is deactivated'
       });
     }
 
-    console.log(`🔐 Verifying password for user: ${email}`);
-    console.log(`🔐 Stored hash length: ${user.password.length}`);
-    console.log(`🔐 Hash starts with: ${user.password.substring(0, 7)}`);
-    
-    // FIXED: Proper bcrypt comparison with error handling
-    let validPassword = false;
-    try {
-      validPassword = await bcrypt.compare(password, user.password);
-      console.log(`🔐 Password validation result: ${validPassword}`);
-    } catch (bcryptError) {
-      console.error(`❌ Bcrypt comparison error for ${email}:`, bcryptError);
-      return res.status(401).json({ 
-        success: false,
-        error: 'Authentication error',
-        message: 'Login failed due to authentication error'
-      });
-    }
-    
-    if (!validPassword) {
-      console.log(`❌ Invalid password for: ${email}`);
-      return res.status(401).json({ 
-        success: false,
-        error: 'Invalid credentials',
-        message: 'Email or password is incorrect'
-      });
-    }
+    // Generate JWT token
+    const token = jwt.encode({
+      userId: user.id,
+      role: user.role,
+      exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) // 7 days
+    }, process.env.JWT_SECRET || 'your-secret-key');
 
-    const token = generateToken(user);
-
-    console.log(`✅ Email login successful for: ${email}`);
+    // Get shop info if user is shop owner
+    let shopInfo = null;
+    if (user.role === 'shop_owner') {
+      const shop = await Shop.findOne({ where: { owner_id: user.id } });
+      if (shop) {
+        shopInfo = {
+          shop_id: shop.id,
+          shop_name: shop.name
+        };
+      }
+    }
 
     res.json({
       success: true,
-      message: `Welcome back, ${user.name}!`,
       token,
       user: {
         id: user.id,
-        email: user.email,
+        phone: user.phone,
         name: user.name,
+        email: user.email,
         role: user.role,
         is_active: user.is_active,
-        shop_id: user.ownedShops?.[0]?.id,
-        shop_name: user.ownedShops?.[0]?.name
+        ...shopInfo
       }
     });
 
   } catch (error) {
-    console.error('❌ Email login error:', error);
-    res.status(500).json({ 
+    console.error('Email login error:', error);
+    res.status(500).json({
       success: false,
-      error: 'Login failed',
-      message: 'Unable to process login request'
+      error: 'Login failed'
     });
   }
 });
 
-// Update Profile
-router.patch('/update-profile', authenticateToken, validateProfileUpdate, async (req, res) => {
+// Get current user
+router.get('/me', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id, {
+      attributes: { exclude: ['password'] }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    // Get shop info if user is shop owner
+    let shopInfo = null;
+    if (user.role === 'shop_owner') {
+      const shop = await Shop.findOne({ where: { owner_id: user.id } });
+      if (shop) {
+        shopInfo = {
+          shop_id: shop.id,
+          shop_name: shop.name
+        };
+      }
+    }
+
+    res.json({
+      success: true,
+      user: {
+        id: user.id,
+        phone: user.phone,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        is_active: user.is_active,
+        ...shopInfo
+      }
+    });
+
+  } catch (error) {
+    console.error('Get current user error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get user'
+    });
+  }
+});
+
+// Update user profile
+router.patch('/update-profile', authenticateToken, async (req, res) => {
   try {
     const { name } = req.body;
-    
+
+    if (!name || name.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Name is required'
+      });
+    }
+
     await User.update(
-      { name },
+      { name: name.trim() },
       { where: { id: req.user.id } }
     );
 
     res.json({
       success: true,
-      message: 'Profile updated successfully',
-      user: {
-        ...req.user.dataValues,
-        name
-      }
+      message: 'Profile updated successfully'
     });
 
   } catch (error) {
     console.error('Update profile error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      error: 'Update failed',
-      message: 'Unable to update profile'
+      error: 'Failed to update profile'
     });
   }
 });
 
-// Get current user with enhanced data
-router.get('/me', authenticateToken, async (req, res) => {
+// Logout
+router.post('/logout', authenticateToken, async (req, res) => {
   try {
-    const user = await User.findByPk(req.user.id, {
-      include: [{ model: Shop, as: 'ownedShops' }],
-      attributes: { exclude: ['password'] }
-    });
-
-    if (!user) {
-      return res.status(404).json({ 
-        success: false,
-        error: 'User not found',
-        message: 'User account no longer exists'
-      });
-    }
-
     res.json({
       success: true,
-      user: {
-        id: user.id,
-        phone: user.phone,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        is_active: user.is_active,
-        shop_id: user.ownedShops?.[0]?.id,
-        shop_name: user.ownedShops?.[0]?.name,
-        created_at: user.created_at,
-        updated_at: user.updated_at
-      }
+      message: 'Logged out successfully'
     });
-
   } catch (error) {
-    console.error('Get user error:', error);
-    res.status(500).json({ 
+    console.error('Logout error:', error);
+    res.status(500).json({
       success: false,
-      error: 'Failed to get user',
-      message: 'Unable to retrieve user information'
+      error: 'Failed to logout'
     });
   }
-});
-
-// Logout (client-side token removal)
-router.post('/logout', authenticateToken, (req, res) => {
-  res.json({
-    success: true,
-    message: 'Logged out successfully',
-    note: 'Please remove the token from client storage'
-  });
 });
 
 module.exports = router;

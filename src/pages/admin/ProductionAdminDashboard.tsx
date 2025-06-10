@@ -1,39 +1,39 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from 'sonner';
+import { Input } from '@/components/ui/input';
 import { 
   Users, 
   Store, 
-  FileText, 
-  TrendingUp, 
-  Search, 
-  Plus, 
-  Edit, 
-  Trash2,
-  Eye,
-  Filter,
-  MoreHorizontal,
+  Package, 
   Activity,
-  BarChart3
+  RefreshCw,
+  Search,
+  Plus,
+  Eye,
+  Settings,
+  ToggleLeft,
+  ToggleRight,
+  Trash2,
+  LogOut
 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 import apiService from '@/services/api';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import RealTimeAnalytics from '@/components/admin/RealTimeAnalytics';
 
 interface User {
   id: number;
   name: string;
   email: string;
-  phone?: string;
-  role: 'customer' | 'shop_owner' | 'admin';
+  phone: string;
+  role: string;
   is_active: boolean;
-  created_at: Date;
+  created_at: string;
 }
 
 interface Shop {
@@ -43,324 +43,344 @@ interface Shop {
   phone: string;
   email: string;
   is_active: boolean;
-  owner?: {
-    id: number;
+  owner: {
     name: string;
     email: string;
   };
-  created_at: Date;
-}
-
-interface DashboardStats {
-  totalUsers: number;
-  totalShops: number;
-  totalOrders: number;
-  activeUsers: number;
+  created_at: string;
 }
 
 const ProductionAdminDashboard: React.FC = () => {
-  const { user } = useAuth();
-  const [stats, setStats] = useState<DashboardStats>({
-    totalUsers: 0,
-    totalShops: 0,
-    totalOrders: 0,
-    activeUsers: 0
-  });
-  const [users, setUsers] = useState<User[]>([]);
-  const [shops, setShops] = useState<Shop[]>([]);
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<'analytics' | 'users' | 'shops'>('analytics');
   const [searchTerm, setSearchTerm] = useState('');
-  const [userFilter, setUserFilter] = useState('all');
-  const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('analytics');
 
-  useEffect(() => {
-    loadDashboardData();
-    
-    // Set up auto-refresh for real-time data every 2 minutes
-    const interval = setInterval(loadDashboardData, 120000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const loadDashboardData = async () => {
-    setIsLoading(true);
-    try {
-      // Load real data from API
-      const [statsResponse, usersResponse, shopsResponse] = await Promise.all([
-        apiService.getAdminStats(),
-        apiService.getAdminUsers(),
-        apiService.getAdminShops()
-      ]);
-
-      // Handle response data properly since interceptor returns data directly
-      setStats(statsResponse || { totalUsers: 0, totalShops: 0, totalOrders: 0, activeUsers: 0 });
-      setUsers(usersResponse || []);
-      setShops(shopsResponse || []);
-    } catch (error) {
-      console.error('Failed to load dashboard data:', error);
-      toast.error('Failed to load dashboard data');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.phone?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = userFilter === 'all' || user.role === userFilter;
-    return matchesSearch && matchesFilter;
+  // Fetch dashboard stats
+  const { data: statsData, refetch: refetchStats } = useQuery({
+    queryKey: ['admin-stats'],
+    queryFn: apiService.getAdminStats,
+    refetchInterval: 30000, // Refresh every 30 seconds
   });
 
-  const handleUserAction = async (action: string, userId: number) => {
+  // Fetch users
+  const { data: usersData, refetch: refetchUsers } = useQuery({
+    queryKey: ['admin-users', searchTerm],
+    queryFn: () => apiService.getAdminUsers({ search: searchTerm }),
+    enabled: activeTab === 'users',
+  });
+
+  // Fetch shops
+  const { data: shopsData, refetch: refetchShops } = useQuery({
+    queryKey: ['admin-shops'],
+    queryFn: apiService.getAdminShops,
+    enabled: activeTab === 'shops',
+  });
+
+  const stats = statsData?.stats || {};
+  const users = usersData?.users || [];
+  const shops = shopsData?.shops || [];
+
+  const handleRefresh = () => {
+    refetchStats();
+    if (activeTab === 'users') refetchUsers();
+    if (activeTab === 'shops') refetchShops();
+    toast.success('Data refreshed');
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  const handleToggleUserStatus = async (userId: number, isActive: boolean) => {
     try {
-      switch (action) {
-        case 'activate':
-          await apiService.updateUserStatus(userId, true);
-          toast.success('User activated successfully');
-          break;
-        case 'deactivate':
-          await apiService.updateUserStatus(userId, false);
-          toast.success('User deactivated successfully');
-          break;
-        case 'delete':
-          await apiService.deleteUser(userId);
-          toast.success('User deleted successfully');
-          break;
-        default:
-          break;
-      }
-      loadDashboardData();
-    } catch (error: any) {
-      toast.error(error.message || 'Action failed');
+      await apiService.updateUserStatus(userId, !isActive);
+      refetchUsers();
+      toast.success(`User ${!isActive ? 'activated' : 'deactivated'} successfully`);
+    } catch (error) {
+      toast.error('Failed to update user status');
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-golden-50 via-white to-golden-100 p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center py-12">
-            <div className="w-8 h-8 border-4 border-golden-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-neutral-600">Loading dashboard...</p>
+  const handleDeleteUser = async (userId: number) => {
+    if (!confirm('Are you sure you want to delete this user?')) return;
+    
+    try {
+      await apiService.deleteUser(userId);
+      refetchUsers();
+      toast.success('User deleted successfully');
+    } catch (error) {
+      toast.error('Failed to delete user');
+    }
+  };
+
+  const StatCard: React.FC<{ title: string; value: number; icon: React.ReactNode; color: string }> = ({ 
+    title, value, icon, color 
+  }) => (
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex items-center">
+          <div className={`p-2 rounded-md ${color} mr-4`}>
+            {icon}
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-600">{title}</p>
+            <p className="text-2xl font-bold text-gray-900">{value || 0}</p>
           </div>
         </div>
-      </div>
-    );
-  }
+      </CardContent>
+    </Card>
+  );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-golden-50 via-white to-golden-100 p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="flex justify-between items-center">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-neutral-900">Admin Dashboard</h1>
-            <p className="text-neutral-600 mt-1">Real-time platform analytics and management</p>
+            <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+            <p className="text-gray-600">Manage users, shops, and monitor system analytics</p>
           </div>
-          <div className="flex gap-3">
-            <Button 
-              onClick={() => window.location.href = '/admin/add-shop'}
-              className="bg-gradient-to-r from-golden-500 to-golden-600 hover:from-golden-600 hover:to-golden-700"
+          
+          <div className="flex items-center space-x-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              className="flex items-center space-x-2"
             >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Shop
+              <RefreshCw className="w-4 h-4" />
+              <span>Refresh</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={handleLogout}
+              className="text-red-600 border-red-200 hover:bg-red-50"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sign Out
             </Button>
           </div>
         </div>
+      </div>
 
-        {/* Quick Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-neutral-600">Total Users</p>
-                  <p className="text-2xl font-bold text-neutral-900">{stats.totalUsers}</p>
-                </div>
-                <Users className="w-8 h-8 text-golden-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-neutral-600">Active Users</p>
-                  <p className="text-2xl font-bold text-neutral-900">{stats.activeUsers}</p>
-                </div>
-                <TrendingUp className="w-8 h-8 text-green-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-neutral-600">Total Shops</p>
-                  <p className="text-2xl font-bold text-neutral-900">{stats.totalShops}</p>
-                </div>
-                <Store className="w-8 h-8 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-neutral-600">Total Orders</p>
-                  <p className="text-2xl font-bold text-neutral-900">{stats.totalOrders}</p>
-                </div>
-                <FileText className="w-8 h-8 text-purple-600" />
-              </div>
-            </CardContent>
-          </Card>
+      {/* Stats Overview - Only Real Metrics, No Revenue */}
+      <div className="p-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <StatCard
+            title="Total Users"
+            value={stats.totalUsers}
+            icon={<Users className="w-6 h-6 text-blue-600" />}
+            color="bg-blue-100"
+          />
+          <StatCard
+            title="Active Users"
+            value={stats.activeUsers}
+            icon={<Activity className="w-6 h-6 text-green-600" />}
+            color="bg-green-100"
+          />
+          <StatCard
+            title="Total Shops"
+            value={stats.totalShops}
+            icon={<Store className="w-6 h-6 text-purple-600" />}
+            color="bg-purple-100"
+          />
+          <StatCard
+            title="Total Orders"
+            value={stats.totalOrders}
+            icon={<Package className="w-6 h-6 text-orange-600" />}
+            color="bg-orange-100"
+          />
         </div>
 
-        {/* Main Content Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="analytics" className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
-              Real-Time Analytics
-            </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              User Management
-            </TabsTrigger>
-            <TabsTrigger value="shops" className="flex items-center gap-2">
-              <Store className="w-4 h-4" />
-              Shop Management
-            </TabsTrigger>
-          </TabsList>
+        {/* Tabs */}
+        <div className="bg-white rounded-lg shadow">
+          <div className="border-b border-gray-200">
+            <nav className="flex space-x-8 px-6">
+              {[
+                { id: 'analytics', label: 'Real-Time Analytics', icon: Activity },
+                { id: 'users', label: 'Users Management', icon: Users },
+                { id: 'shops', label: 'Shops Management', icon: Store }
+              ].map(tab => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as any)}
+                    className={`py-4 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
+                      activeTab === tab.id
+                        ? 'border-blue-500 text-blue-700'
+                        : 'border-transparent text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
 
-          <TabsContent value="analytics" className="space-y-6">
-            <RealTimeAnalytics />
-          </TabsContent>
+          <div className="p-6">
+            {activeTab === 'analytics' && (
+              <RealTimeAnalytics />
+            )}
 
-          <TabsContent value="users" className="space-y-6">
-            {/* Search and Filters */}
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex gap-4 items-center">
-                  <div className="relative flex-1">
-                    <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" />
-                    <Input
-                      placeholder="Search users by name, email, or phone..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
+            {activeTab === 'users' && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold">Users Management</h2>
+                  <div className="flex items-center space-x-3">
+                    <div className="relative">
+                      <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <Input
+                        placeholder="Search users..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10 w-64"
+                      />
+                    </div>
                   </div>
-                  <Select value={userFilter} onValueChange={setUserFilter}>
-                    <SelectTrigger className="w-48">
-                      <SelectValue placeholder="Filter by role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Roles</SelectItem>
-                      <SelectItem value="customer">Customers</SelectItem>
-                      <SelectItem value="shop_owner">Shop Owners</SelectItem>
-                      <SelectItem value="admin">Admins</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
-              </CardContent>
-            </Card>
 
-            {/* Users Table */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Users ({filteredUsers.length})</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {filteredUsers.map((user) => (
-                    <div key={user.id} className="flex items-center justify-between p-4 border border-neutral-200 rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <div className="w-10 h-10 bg-golden-100 rounded-full flex items-center justify-center">
-                          <Users className="w-5 h-5 text-golden-600" />
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-neutral-900">{user.name}</h4>
-                          <p className="text-sm text-neutral-600">{user.email || user.phone}</p>
-                          <div className="flex items-center space-x-2 mt-1">
-                            <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
-                              {user.role.replace('_', ' ')}
-                            </Badge>
-                            <Badge variant={user.is_active ? 'default' : 'destructive'}>
-                              {user.is_active ? 'Active' : 'Inactive'}
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Button size="sm" variant="outline">
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button size="sm" variant="outline">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          onClick={() => handleUserAction('delete', user.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {users.map((user: User) => (
+                          <tr key={user.id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                                <div className="text-sm text-gray-500">{user.email || user.phone}</div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <Badge className={`${
+                                user.role === 'admin' ? 'bg-red-100 text-red-800' :
+                                user.role === 'shop_owner' ? 'bg-blue-100 text-blue-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {user.role}
+                              </Badge>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <Badge className={user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                                {user.is_active ? 'Active' : 'Inactive'}
+                              </Badge>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {new Date(user.created_at).toLocaleDateString()}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                              <div className="flex items-center justify-end space-x-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleToggleUserStatus(user.id, user.is_active)}
+                                >
+                                  {user.is_active ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleDeleteUser(user.id)}
+                                  className="text-red-600 hover:bg-red-50"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+              </div>
+            )}
 
-          <TabsContent value="shops" className="space-y-6">
-            {/* Shops Table */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Shops ({shops.length})</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {shops.map((shop) => (
-                    <div key={shop.id} className="flex items-center justify-between p-4 border border-neutral-200 rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                          <Store className="w-5 h-5 text-blue-600" />
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-neutral-900">{shop.name}</h4>
-                          <p className="text-sm text-neutral-600">{shop.address}</p>
-                          <p className="text-xs text-neutral-500">{shop.email} • {shop.phone}</p>
-                          {shop.owner && (
-                            <p className="text-xs text-neutral-500">Owner: {shop.owner.name}</p>
-                          )}
-                          <Badge variant={shop.is_active ? 'default' : 'destructive'} className="mt-1">
-                            {shop.is_active ? 'Active' : 'Inactive'}
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Button size="sm" variant="outline">
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button size="sm" variant="outline">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button size="sm" variant="outline">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+            {activeTab === 'shops' && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold">Shops Management</h2>
+                  <Button onClick={() => navigate('/admin/add-shop')}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add New Shop
+                  </Button>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+
+                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Shop</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {shops.map((shop: Shop) => (
+                          <tr key={shop.id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">{shop.name}</div>
+                                <div className="text-sm text-gray-500 truncate max-w-xs">{shop.address}</div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">{shop.owner?.name}</div>
+                                <div className="text-sm text-gray-500">{shop.owner?.email}</div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{shop.phone}</div>
+                              <div className="text-sm text-gray-500">{shop.email}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <Badge className={shop.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                                {shop.is_active ? 'Active' : 'Inactive'}
+                              </Badge>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {new Date(shop.created_at).toLocaleDateString()}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                              <div className="flex items-center justify-end space-x-2">
+                                <Button size="sm" variant="outline">
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                                <Button size="sm" variant="outline">
+                                  <Settings className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

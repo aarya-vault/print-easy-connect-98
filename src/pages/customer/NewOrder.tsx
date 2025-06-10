@@ -39,7 +39,6 @@ const NewOrder: React.FC = () => {
     enabled: !visitedShopsData?.length
   });
 
-  // API service interceptor returns data directly, so response is the actual data
   const visitedShops = Array.isArray(visitedShopsData) ? visitedShopsData : (visitedShopsData?.shops || []);
   const allShops = Array.isArray(allShopsData) ? allShopsData : (allShopsData?.shops || []);
   const shops = visitedShops.length > 0 ? visitedShops : allShops;
@@ -65,36 +64,54 @@ const NewOrder: React.FC = () => {
       return;
     }
 
-    if (!formData.description.trim()) {
-      toast.error('Please describe your printing requirements');
-      return;
-    }
-
-    if (orderType === 'uploaded-files' && (!selectedFiles || selectedFiles.length === 0)) {
-      toast.error('Please select files to upload');
+    // Description is now optional, not mandatory
+    if (!formData.description.trim() && orderType === 'walk-in') {
+      toast.error('Please describe what you need for walk-in orders');
       return;
     }
 
     setIsLoading(true);
     try {
+      // Create FormData for the request
       const orderFormData = new FormData();
       orderFormData.append('shopId', formData.shopId);
       orderFormData.append('orderType', orderType);
-      orderFormData.append('description', formData.description);
+      orderFormData.append('description', formData.description || 'No specific requirements provided');
       orderFormData.append('customerName', formData.customerName);
       orderFormData.append('customerPhone', formData.customerPhone);
 
-      if (selectedFiles) {
+      // Add files if selected (optional for all order types now)
+      if (selectedFiles && selectedFiles.length > 0) {
         Array.from(selectedFiles).forEach(file => {
           orderFormData.append('files', file);
         });
       }
 
-      await apiService.createOrder(orderFormData);
+      console.log('📝 Submitting order with type:', orderType);
+      console.log('📁 Files count:', selectedFiles?.length || 0);
+
+      // Use the standard API service method
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token')}`
+        },
+        body: orderFormData
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create order');
+      }
+
+      const result = await response.json();
+      console.log('✅ Order created successfully:', result);
+
       toast.success('Order placed successfully!');
       navigate('/customer/dashboard', { replace: true });
+      
     } catch (error: any) {
-      console.error('Order creation failed:', error);
+      console.error('❌ Order creation failed:', error);
       toast.error(error.message || 'Failed to place order');
     } finally {
       setIsLoading(false);
@@ -191,29 +208,29 @@ const NewOrder: React.FC = () => {
                 </Select>
               </div>
 
-              {/* File Upload (only for uploaded-files) */}
-              {orderType === 'uploaded-files' && (
-                <div>
-                  <Label htmlFor="files" className="text-neutral-900 font-medium">Upload Files *</Label>
-                  <Input
-                    id="files"
-                    name="files"
-                    type="file"
-                    multiple
-                    onChange={handleFileChange}
-                    className="h-12 border-2 border-neutral-200 focus:border-yellow-500"
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                  />
-                  <p className="text-sm text-neutral-500 mt-2">
-                    Supported formats: PDF, DOC, DOCX, JPG, PNG
-                  </p>
-                </div>
-              )}
+              {/* File Upload - NO RESTRICTIONS */}
+              <div>
+                <Label htmlFor="files" className="text-neutral-900 font-medium">
+                  Upload Files (Optional - All file types accepted)
+                </Label>
+                <Input
+                  id="files"
+                  name="files"
+                  type="file"
+                  multiple
+                  onChange={handleFileChange}
+                  className="h-12 border-2 border-neutral-200 focus:border-yellow-500"
+                  // NO accept attribute - accept ALL file types
+                />
+                <p className="text-sm text-neutral-500 mt-2">
+                  All file formats are accepted - no restrictions on size or type
+                </p>
+              </div>
 
-              {/* Description */}
+              {/* Description - NOW OPTIONAL */}
               <div>
                 <Label htmlFor="description" className="text-neutral-900 font-medium">
-                  Printing Requirements *
+                  Printing Requirements (Optional)
                 </Label>
                 <Textarea
                   id="description"
@@ -221,10 +238,9 @@ const NewOrder: React.FC = () => {
                   value={formData.description}
                   onChange={handleInputChange}
                   placeholder={orderType === 'uploaded-files' 
-                    ? "Describe your printing needs (e.g., 10 copies, double-sided, color printing, binding)"
-                    : "Describe what you need to print when you visit the shop"
+                    ? "Optional: Describe your printing needs (e.g., 10 copies, double-sided, color printing, binding)"
+                    : "Optional: Describe what you need to print when you visit the shop"
                   }
-                  required
                   rows={4}
                   className="border-2 border-neutral-200 focus:border-yellow-500"
                 />
