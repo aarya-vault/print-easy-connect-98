@@ -9,81 +9,89 @@
     --font-sans: 'Poppins', system-ui, sans-serif;
     
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 0 0% 0%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 0 0% 0%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 0 0% 0%;
 
-    --primary: 245 158 11%;
-    --primary-foreground: 210 40% 98%;
+    /* Updated primary to golden yellow */
+    --primary: 48 100% 50%;
+    --primary-foreground: 0 0% 0%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 9%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 48 100% 50%;
+    --accent-foreground: 0 0% 0%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 245 158 11%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 48 100% 50%;
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 245 158 11%;
+    /* Custom golden theme colors */
+    --golden-50: 48 100% 97%;
+    --golden-100: 48 100% 92%;
+    --golden-200: 48 100% 84%;
+    --golden-300: 48 100% 76%;
+    --golden-400: 48 100% 68%;
+    --golden-500: 48 100% 50%;
+    --golden-600: 45 93% 47%;
+    --golden-700: 41 86% 42%;
+    --golden-800: 36 75% 35%;
+    --golden-900: 30 60% 25%;
+
+    /* Neutral colors for black/white */
+    --neutral-50: 0 0% 98%;
+    --neutral-100: 0 0% 96%;
+    --neutral-200: 0 0% 90%;
+    --neutral-300: 0 0% 83%;
+    --neutral-400: 0 0% 64%;
+    --neutral-500: 0 0% 45%;
+    --neutral-600: 0 0% 32%;
+    --neutral-700: 0 0% 25%;
+    --neutral-800: 0 0% 15%;
+    --neutral-900: 0 0% 9%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 0 0% 4%;
+    --foreground: 0 0% 98%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 245 158 11%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 48 100% 50%;
+    --primary-foreground: 0 0% 9%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 64%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 48 100% 50%;
+    --accent-foreground: 0 0% 9%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 245 158 11%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 245 158 11%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 245 158 11%;
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --ring: 48 100% 50%;
   }
 }
 
@@ -93,7 +101,7 @@
   }
 
   body {
-    @apply bg-background text-foreground font-poppins;
+    @apply bg-background text-foreground font-sans;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
@@ -102,29 +110,38 @@
   }
 }
 
-/* Premium Golden Theme Components */
+/* Golden Theme Components */
 @layer components {
-  /* Smooth Transitions - No Bad Animations */
+  /* Smooth Transitions */
   .smooth-transition {
     @apply transition-all duration-300 ease-in-out;
   }
 
   /* Golden Theme Buttons */
   .btn-golden {
-    @apply bg-gradient-to-r from-golden-500 to-golden-600 hover:from-golden-600 hover:to-golden-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl smooth-transition;
+    @apply bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black font-semibold rounded-xl shadow-lg hover:shadow-xl smooth-transition;
   }
 
   .btn-golden-outline {
-    @apply border-2 border-golden-500 text-golden-600 hover:bg-golden-50 hover:border-golden-600 rounded-xl smooth-transition;
+    @apply border-2 border-yellow-500 text-yellow-600 hover:bg-yellow-50 hover:border-yellow-600 rounded-xl smooth-transition;
+  }
+
+  /* Black & White Buttons */
+  .btn-black {
+    @apply bg-black hover:bg-neutral-800 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl smooth-transition;
+  }
+
+  .btn-white {
+    @apply bg-white hover:bg-neutral-50 text-black border border-neutral-200 font-semibold rounded-xl shadow-lg hover:shadow-xl smooth-transition;
   }
 
   /* Golden Cards */
   .card-golden {
-    @apply bg-white border border-golden-200 rounded-2xl shadow-lg hover:shadow-xl smooth-transition;
+    @apply bg-white border border-yellow-200 rounded-2xl shadow-lg hover:shadow-xl smooth-transition;
   }
 
-  .card-golden-premium {
-    @apply bg-gradient-to-br from-golden-50 to-white border border-golden-200 rounded-2xl shadow-xl hover:shadow-2xl smooth-transition;
+  .card-premium {
+    @apply bg-gradient-to-br from-yellow-50 to-white border border-yellow-200 rounded-2xl shadow-xl hover:shadow-2xl smooth-transition;
   }
 
   /* Mobile Optimizations */
@@ -140,27 +157,27 @@
     @apply text-2xl md:text-4xl lg:text-6xl;
   }
 
-  /* Floating Action Button */
-  .fab {
-    @apply fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-r from-golden-500 to-golden-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 smooth-transition z-50;
-  }
-
   /* Golden Gradients */
   .gradient-golden {
-    background: linear-gradient(135deg, #F59E0B 0%, #EAB308 50%, #F59E0B 100%);
+    background: linear-gradient(135deg, #FDE047 0%, #FACC15 50%, #EAB308 100%);
   }
 
   .gradient-golden-text {
-    @apply bg-gradient-to-r from-golden-600 via-golden-500 to-golden-700 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-yellow-600 via-yellow-500 to-yellow-600 bg-clip-text text-transparent;
+  }
+
+  /* Black to Yellow Gradients */
+  .gradient-black-golden {
+    background: linear-gradient(135deg, #000000 0%, #1F1F1F 30%, #FACC15 100%);
   }
 
   /* Premium Shadows */
   .shadow-golden {
-    box-shadow: 0 10px 40px rgba(245, 158, 11, 0.3);
+    box-shadow: 0 10px 40px rgba(250, 204, 21, 0.3);
   }
 
   .shadow-golden-lg {
-    box-shadow: 0 20px 60px rgba(245, 158, 11, 0.4);
+    box-shadow: 0 20px 60px rgba(250, 204, 21, 0.4);
   }
 
   /* Custom Scrollbar */
@@ -169,30 +186,15 @@
   }
 
   .custom-scrollbar::-webkit-scrollbar-track {
-    @apply bg-golden-100 rounded-full;
+    @apply bg-yellow-100 rounded-full;
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-gradient-to-b from-golden-500 to-golden-600 rounded-full;
+    @apply bg-gradient-to-b from-yellow-400 to-yellow-500 rounded-full;
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    @apply from-golden-600 to-golden-700;
-  }
-
-  /* Mobile Slider */
-  .mobile-slider {
-    @apply flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-
-  .mobile-slider::-webkit-scrollbar {
-    display: none;
-  }
-
-  .mobile-slider-item {
-    @apply snap-start flex-shrink-0;
+    @apply from-yellow-500 to-yellow-600;
   }
 
   /* Responsive Grid */
@@ -206,23 +208,18 @@
 
   /* Premium Loading States */
   .loading-shimmer {
-    @apply animate-pulse bg-gradient-to-r from-golden-100 via-golden-200 to-golden-100;
+    @apply animate-pulse bg-gradient-to-r from-yellow-100 via-yellow-200 to-yellow-100;
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
   }
 
-  /* Touch Friendly */
-  .touch-friendly {
-    @apply min-h-[44px] min-w-[44px];
-  }
-
   /* Focus States for Accessibility */
   .focus-golden:focus-visible {
-    @apply outline-2 outline-offset-2 outline-golden-500;
+    @apply outline-2 outline-offset-2 outline-yellow-500;
   }
 }
 
-/* Minimal Keyframes - Only Essential Animations */
+/* Minimal Keyframes */
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
@@ -233,71 +230,16 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes slideUp {
-  from { transform: translateY(100%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-/* Utility Animations - Subtle and Professional */
+/* Utility Animations */
 .animate-fade-in {
   animation: fadeIn 0.6s ease-out;
 }
 
-.animate-slide-up {
-  animation: slideUp 0.5s ease-out;
-}
-
-/* Mobile Responsive Utilities */
-@media (max-width: 768px) {
-  .mobile-full-width {
-    @apply w-full;
-  }
-  
-  .mobile-stack {
-    @apply flex-col;
-  }
-
-  .mobile-center {
-    @apply text-center;
-  }
-
-  .mobile-hide {
-    @apply hidden;
-  }
-
-  .mobile-show {
-    @apply block;
-  }
-}
-
-/* Print Styles */
-@media print {
-  .no-print {
-    display: none !important;
-  }
-}
-
-/* High Contrast Mode Support */
-@media (prefers-contrast: high) {
-  .high-contrast {
-    @apply border-2 border-black;
-  }
-}
-
-/* Reduced Motion Support */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
 /* Custom Selection */
 ::selection {
-  @apply bg-golden-200 text-golden-900;
+  @apply bg-yellow-200 text-black;
 }
 
 ::-moz-selection {
-  @apply bg-golden-200 text-golden-900;
+  @apply bg-yellow-200 text-black;
 }

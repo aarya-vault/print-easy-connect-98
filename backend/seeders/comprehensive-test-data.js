@@ -1,258 +1,218 @@
 
 const bcrypt = require('bcrypt');
 
-module.exports = {
-  up: async (queryInterface, Sequelize) => {
-    const transaction = await queryInterface.sequelize.transaction();
+// Function to create test data
+async function createTestData() {
+  const { User, Shop, Order, File, Message } = require('../models');
+  
+  try {
+    console.log('🧹 Clearing existing data...');
     
-    try {
-      // Clear existing data
-      await queryInterface.bulkDelete('files', {}, { transaction });
-      await queryInterface.bulkDelete('messages', {}, { transaction });
-      await queryInterface.bulkDelete('orders', {}, { transaction });
-      await queryInterface.bulkDelete('shops', {}, { transaction });
-      await queryInterface.bulkDelete('users', {}, { transaction });
+    // Clear existing data in correct order (respecting foreign keys)
+    await File.destroy({ where: {}, force: true });
+    await Message.destroy({ where: {}, force: true });
+    await Order.destroy({ where: {}, force: true });
+    await Shop.destroy({ where: {}, force: true });
+    await User.destroy({ where: {}, force: true });
 
-      console.log('🧹 Cleared existing data');
+    console.log('✅ Existing data cleared');
 
-      // Hash passwords properly
-      const hashedShopPassword = await bcrypt.hash('password123', 10);
-      const hashedAdminPassword = await bcrypt.hash('admin123', 10);
+    // Hash passwords properly for shop owners and admin
+    const hashedShopPassword = await bcrypt.hash('password123', 12);
+    const hashedAdminPassword = await bcrypt.hash('admin123', 12);
 
-      // Create Users with proper password hashing
-      const users = await queryInterface.bulkInsert('users', [
-        {
-          // Customer - Phone login only
-          phone: '9876543210',
-          name: 'Rajesh Kumar',
-          role: 'customer',
-          is_active: true,
-          created_at: new Date(),
-          updated_at: new Date()
-        },
-        {
-          // Shop Owner - Email login with properly hashed password
-          email: 'shop@printeasy.com',
-          name: 'Quick Print Owner',
-          password: hashedShopPassword,
-          role: 'shop_owner',
-          is_active: true,
-          created_at: new Date(),
-          updated_at: new Date()
-        },
-        {
-          // Admin - Email login with properly hashed password
-          email: 'admin@printeasy.com',
-          name: 'PrintEasy Admin',
-          password: hashedAdminPassword,
-          role: 'admin',
-          is_active: true,
-          created_at: new Date(),
-          updated_at: new Date()
-        },
-        {
-          // Additional customers for testing
-          phone: '9876543211',
-          name: 'Priya Sharma',
-          role: 'customer',
-          is_active: true,
-          created_at: new Date(),
-          updated_at: new Date()
-        },
-        {
-          phone: '9876543212',
-          name: 'Amit Singh',
-          role: 'customer',
-          is_active: true,
-          created_at: new Date(),
-          updated_at: new Date()
-        },
-        {
-          // Additional shop owner for testing
-          email: 'shop2@printeasy.com',
-          name: 'Digital Print Hub Owner',
-          password: hashedShopPassword,
-          role: 'shop_owner',
-          is_active: true,
-          created_at: new Date(),
-          updated_at: new Date()
-        }
-      ], { transaction, returning: true });
+    console.log('🔐 Creating users with properly hashed passwords...');
 
-      console.log('✅ Created users:', users.length);
+    // Create Users with proper password hashing and validation
+    const customer1 = await User.create({
+      phone: '9876543210',
+      name: 'Rajesh Kumar',
+      role: 'customer',
+      is_active: true
+    });
 
-      // Create Shops with proper owner relationships
-      const shops = await queryInterface.bulkInsert('shops', [
-        {
-          name: 'Quick Print Solutions',
-          address: 'Shop 12, MG Road, Bangalore, Karnataka 560001',
-          phone: '+91 98765 43210',
-          email: 'shop@quickprint.com',
-          description: 'Professional printing services with fast turnaround times. We offer document printing, binding, lamination, and more.',
-          owner_id: 2, // shop@printeasy.com
-          rating: 4.5,
-          is_active: true,
-          allows_offline_orders: true,
-          created_at: new Date(),
-          updated_at: new Date()
-        },
-        {
-          name: 'Digital Print Hub',
-          address: 'Plot 45, Electronic City, Bangalore, Karnataka 560100',
-          phone: '+91 98765 43211',
-          email: 'info@digitalprintHub.com',
-          description: 'Modern digital printing solutions for all your needs. Specializing in high-quality color prints.',
-          owner_id: 6, // shop2@printeasy.com
-          rating: 4.2,
-          is_active: true,
-          allows_offline_orders: false,
-          created_at: new Date(),
-          updated_at: new Date()
-        }
-      ], { transaction, returning: true });
+    const customer2 = await User.create({
+      phone: '9876543211',
+      name: 'Priya Sharma',
+      role: 'customer',
+      is_active: true
+    });
 
-      console.log('✅ Created shops:', shops.length);
+    const customer3 = await User.create({
+      phone: '9876543212',
+      name: 'Amit Singh',
+      role: 'customer',
+      is_active: true
+    });
 
-      // Create Sample Orders
-      const orders = await queryInterface.bulkInsert('orders', [
-        {
-          id: 'UF000001',
-          customer_id: 1, // Rajesh Kumar
-          shop_id: 1, // Quick Print Solutions
-          order_type: 'uploaded-files',
-          status: 'completed',
-          description: 'Print 50 copies of project report with spiral binding',
-          customer_name: 'Rajesh Kumar',
-          customer_phone: '9876543210',
-          is_urgent: false,
-          created_at: new Date(Date.now() - 86400000), // 1 day ago
-          updated_at: new Date(Date.now() - 3600000) // 1 hour ago
-        },
-        {
-          id: 'WI000001',
-          customer_id: 4, // Priya Sharma
-          shop_id: 1, // Quick Print Solutions
-          order_type: 'walk-in',
-          status: 'started',
-          description: 'Resume printing on premium paper - 5 copies',
-          customer_name: 'Priya Sharma',
-          customer_phone: '9876543211',
-          is_urgent: true,
-          created_at: new Date(Date.now() - 7200000), // 2 hours ago
-          updated_at: new Date(Date.now() - 1800000) // 30 minutes ago
-        },
-        {
-          id: 'UF000002',
-          customer_id: 5, // Amit Singh
-          shop_id: 2, // Digital Print Hub
-          order_type: 'uploaded-files',
-          status: 'received',
-          description: 'Color brochure printing - 100 copies',
-          customer_name: 'Amit Singh',
-          customer_phone: '9876543212',
-          is_urgent: false,
-          created_at: new Date(Date.now() - 1800000), // 30 minutes ago
-          updated_at: new Date(Date.now() - 1800000)
-        }
-      ], { transaction, returning: true });
+    const shopOwner1 = await User.create({
+      email: 'shop@printeasy.com',
+      name: 'Quick Print Owner',
+      password: hashedShopPassword,
+      role: 'shop_owner',
+      is_active: true
+    });
 
-      console.log('✅ Created orders:', orders.length);
+    const shopOwner2 = await User.create({
+      email: 'shop2@printeasy.com',
+      name: 'Digital Print Hub Owner',
+      password: hashedShopPassword,
+      role: 'shop_owner',
+      is_active: true
+    });
 
-      // Create Sample Files
-      await queryInterface.bulkInsert('files', [
-        {
-          order_id: 'UF000001',
-          filename: 'project_report_1640995200000.pdf',
-          original_name: 'project_report.pdf',
-          file_path: '/uploads/UF000001/project_report_1640995200000.pdf',
-          file_size: 2048576, // 2MB
-          mime_type: 'application/pdf',
-          created_at: new Date(Date.now() - 86400000),
-          updated_at: new Date(Date.now() - 86400000)
-        },
-        {
-          order_id: 'UF000002',
-          filename: 'brochure_design_1640995800000.pdf',
-          original_name: 'brochure_design.pdf',
-          file_path: '/uploads/UF000002/brochure_design_1640995800000.pdf',
-          file_size: 5242880, // 5MB
-          mime_type: 'application/pdf',
-          created_at: new Date(Date.now() - 1800000),
-          updated_at: new Date(Date.now() - 1800000)
-        }
-      ], { transaction });
+    const admin = await User.create({
+      email: 'admin@printeasy.com',
+      name: 'PrintEasy Admin',
+      password: hashedAdminPassword,
+      role: 'admin',
+      is_active: true
+    });
 
-      console.log('✅ Created files');
+    console.log('✅ Created users with proper authentication');
 
-      // Create Sample Messages
-      await queryInterface.bulkInsert('messages', [
-        {
-          order_id: 'UF000001',
-          sender_id: 1, // Rajesh Kumar
-          recipient_id: 2, // Shop Owner
-          message: 'Hi, when will my order be ready for pickup?',
-          is_read: true,
-          created_at: new Date(Date.now() - 7200000),
-          updated_at: new Date(Date.now() - 7200000)
-        },
-        {
-          order_id: 'UF000001',
-          sender_id: 2, // Shop Owner
-          recipient_id: 1, // Rajesh Kumar
-          message: 'Your order is completed and ready for pickup. Shop timings: 9 AM to 7 PM.',
-          is_read: false,
-          created_at: new Date(Date.now() - 3600000),
-          updated_at: new Date(Date.now() - 3600000)
-        },
-        {
-          order_id: 'WI000001',
-          sender_id: 2, // Shop Owner
-          recipient_id: 4, // Priya Sharma
-          message: 'Started working on your resume printing. Will be ready in 30 minutes.',
-          is_read: false,
-          created_at: new Date(Date.now() - 1800000),
-          updated_at: new Date(Date.now() - 1800000)
-        }
-      ], { transaction });
+    // Create Shops with proper owner relationships
+    const shop1 = await Shop.create({
+      name: 'Quick Print Solutions',
+      address: 'Shop 12, MG Road, Bangalore, Karnataka 560001',
+      phone: '+91 98765 43210',
+      email: 'contact@quickprint.com',
+      description: 'Professional printing services with fast turnaround times. We offer document printing, binding, lamination, and more.',
+      owner_id: shopOwner1.id,
+      rating: 4.5,
+      is_active: true,
+      allows_offline_orders: true
+    });
 
-      console.log('✅ Created messages');
+    const shop2 = await Shop.create({
+      name: 'Digital Print Hub',
+      address: 'Plot 45, Electronic City, Bangalore, Karnataka 560100',
+      phone: '+91 98765 43211',
+      email: 'info@digitalhub.com',
+      description: 'Modern digital printing solutions for all your needs. Specializing in high-quality color prints.',
+      owner_id: shopOwner2.id,
+      rating: 4.2,
+      is_active: true,
+      allows_offline_orders: false
+    });
 
-      await transaction.commit();
+    console.log('✅ Created shops with proper owners');
 
-      console.log('\n🎉 Comprehensive test data created successfully!');
-      console.log('\n📋 Test User Credentials:');
-      console.log('   👤 Customer: 9876543210 (phone login - direct access)');
-      console.log('   🏪 Shop Owner: shop@printeasy.com / password123');
-      console.log('   👨‍💼 Admin: admin@printeasy.com / admin123');
-      console.log('\n📊 Test Data Summary:');
-      console.log(`   • ${users.length} users created`);
-      console.log(`   • ${shops.length} shops created`);
-      console.log(`   • ${orders.length} orders created`);
-      console.log('   • 2 files uploaded');
-      console.log('   • 3 chat messages');
+    // Create Sample Orders to establish customer-shop relationships for visited shops logic
+    const order1 = await Order.create({
+      id: 'UF000001',
+      customer_id: customer1.id,
+      shop_id: shop1.id,
+      order_type: 'uploaded-files',
+      status: 'completed',
+      description: 'Print 50 copies of project report with spiral binding',
+      customer_name: customer1.name,
+      customer_phone: customer1.phone,
+      is_urgent: false
+    });
 
-    } catch (error) {
-      await transaction.rollback();
-      console.error('❌ Error creating test data:', error);
-      throw error;
-    }
-  },
+    const order2 = await Order.create({
+      id: 'WI000001',
+      customer_id: customer2.id,
+      shop_id: shop1.id,
+      order_type: 'walk-in',
+      status: 'started',
+      description: 'Resume printing on premium paper - 5 copies',
+      customer_name: customer2.name,
+      customer_phone: customer2.phone,
+      is_urgent: true
+    });
 
-  down: async (queryInterface, Sequelize) => {
-    const transaction = await queryInterface.sequelize.transaction();
-    
-    try {
-      await queryInterface.bulkDelete('files', {}, { transaction });
-      await queryInterface.bulkDelete('messages', {}, { transaction });
-      await queryInterface.bulkDelete('orders', {}, { transaction });
-      await queryInterface.bulkDelete('shops', {}, { transaction });
-      await queryInterface.bulkDelete('users', {}, { transaction });
-      
-      await transaction.commit();
-      console.log('🧹 Test data removed successfully');
-    } catch (error) {
-      await transaction.rollback();
-      throw error;
-    }
+    const order3 = await Order.create({
+      id: 'UF000002',
+      customer_id: customer3.id,
+      shop_id: shop2.id,
+      order_type: 'uploaded-files',
+      status: 'received',
+      description: 'Color brochure printing - 100 copies',
+      customer_name: customer3.name,
+      customer_phone: customer3.phone,
+      is_urgent: false
+    });
+
+    // Customer1 has ordered from shop1, so they can reorder from shop1
+    const order4 = await Order.create({
+      id: 'UF000003',
+      customer_id: customer1.id,
+      shop_id: shop2.id,
+      order_type: 'uploaded-files',
+      status: 'completed',
+      description: 'Business cards printing - 500 copies',
+      customer_name: customer1.name,
+      customer_phone: customer1.phone,
+      is_urgent: false
+    });
+
+    console.log('✅ Created orders with proper customer-shop relationships');
+
+    // Create Sample Files
+    await File.create({
+      order_id: 'UF000001',
+      filename: 'project_report_1640995200000.pdf',
+      original_name: 'project_report.pdf',
+      file_path: '/uploads/UF000001/project_report_1640995200000.pdf',
+      file_size: 2048576,
+      mime_type: 'application/pdf'
+    });
+
+    await File.create({
+      order_id: 'UF000002',
+      filename: 'brochure_design_1640995800000.pdf',
+      original_name: 'brochure_design.pdf',
+      file_path: '/uploads/UF000002/brochure_design_1640995800000.pdf',
+      file_size: 5242880,
+      mime_type: 'application/pdf'
+    });
+
+    console.log('✅ Created sample files');
+
+    // Create Sample Messages
+    await Message.create({
+      order_id: 'UF000001',
+      sender_id: customer1.id,
+      recipient_id: shopOwner1.id,
+      message: 'Hi, when will my order be ready for pickup?',
+      is_read: true
+    });
+
+    await Message.create({
+      order_id: 'UF000001',
+      sender_id: shopOwner1.id,
+      recipient_id: customer1.id,
+      message: 'Your order is completed and ready for pickup. Shop timings: 9 AM to 7 PM.',
+      is_read: false
+    });
+
+    console.log('✅ Created sample messages');
+
+    console.log('\n🎉 Comprehensive test data created successfully!');
+    console.log('\n📋 Test User Credentials:');
+    console.log('   👤 Customer: 9876543210 (phone login - direct access)');
+    console.log('   👤 Customer: 9876543211 (phone login - direct access)');
+    console.log('   👤 Customer: 9876543212 (phone login - direct access)');
+    console.log('   🏪 Shop Owner: shop@printeasy.com / password123');
+    console.log('   🏪 Shop Owner: shop2@printeasy.com / password123');
+    console.log('   👨‍💼 Admin: admin@printeasy.com / admin123');
+    console.log('\n📊 Test Data Summary:');
+    console.log('   • 6 users created (3 customers, 2 shop owners, 1 admin)');
+    console.log('   • 2 shops created with proper owner relationships');
+    console.log('   • 4 orders created for visited shops logic');
+    console.log('   • 2 files uploaded');
+    console.log('   • 2 chat messages');
+    console.log('\n🔄 Customer-Shop Relationships for Reorder Logic:');
+    console.log('   • Customer 9876543210 can reorder from: Quick Print Solutions, Digital Print Hub');
+    console.log('   • Customer 9876543211 can reorder from: Quick Print Solutions');
+    console.log('   • Customer 9876543212 can reorder from: Digital Print Hub');
+
+  } catch (error) {
+    console.error('❌ Error creating test data:', error);
+    throw error;
   }
-};
+}
+
+module.exports = { createTestData };

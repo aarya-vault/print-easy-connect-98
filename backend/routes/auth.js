@@ -1,4 +1,3 @@
-
 const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -30,6 +29,7 @@ const generateToken = (user) => {
 router.post('/phone-login', validatePhoneLogin, async (req, res) => {
   try {
     const { phone } = req.body;
+    console.log(`📱 Phone login attempt for: ${phone}`);
 
     // Find or create customer
     let user = await User.findOne({ where: { phone } });
@@ -56,6 +56,8 @@ router.post('/phone-login', validatePhoneLogin, async (req, res) => {
     // Generate JWT token
     const token = generateToken(user);
 
+    console.log(`✅ Phone login successful for: ${phone}`);
+
     res.json({
       success: true,
       message: user.name.includes('Customer') ? 'Welcome to PrintEasy!' : 'Welcome back!',
@@ -70,7 +72,7 @@ router.post('/phone-login', validatePhoneLogin, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Phone login error:', error);
+    console.error('❌ Phone login error:', error);
     res.status(500).json({ 
       success: false,
       error: 'Login failed',
@@ -83,6 +85,7 @@ router.post('/phone-login', validatePhoneLogin, async (req, res) => {
 router.post('/email-login', validateEmailLogin, async (req, res) => {
   try {
     const { email, password } = req.body;
+    console.log(`📧 Email login attempt for: ${email}`);
 
     const user = await User.findOne({ 
       where: { email },
@@ -90,6 +93,7 @@ router.post('/email-login', validateEmailLogin, async (req, res) => {
     });
 
     if (!user || !user.password) {
+      console.log(`❌ User not found or no password set for: ${email}`);
       return res.status(401).json({ 
         success: false,
         error: 'Invalid credentials',
@@ -98,6 +102,7 @@ router.post('/email-login', validateEmailLogin, async (req, res) => {
     }
 
     if (!user.is_active) {
+      console.log(`❌ Account deactivated for: ${email}`);
       return res.status(403).json({ 
         success: false,
         error: 'Account deactivated',
@@ -105,8 +110,14 @@ router.post('/email-login', validateEmailLogin, async (req, res) => {
       });
     }
 
+    console.log(`🔐 Comparing password for user: ${email}`);
+    console.log(`🔐 Stored password hash: ${user.password}`);
+    
     const validPassword = await bcrypt.compare(password, user.password);
+    console.log(`🔐 Password validation result: ${validPassword}`);
+    
     if (!validPassword) {
+      console.log(`❌ Invalid password for: ${email}`);
       return res.status(401).json({ 
         success: false,
         error: 'Invalid credentials',
@@ -115,6 +126,8 @@ router.post('/email-login', validateEmailLogin, async (req, res) => {
     }
 
     const token = generateToken(user);
+
+    console.log(`✅ Email login successful for: ${email}`);
 
     res.json({
       success: true,
@@ -132,7 +145,7 @@ router.post('/email-login', validateEmailLogin, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Email login error:', error);
+    console.error('❌ Email login error:', error);
     res.status(500).json({ 
       success: false,
       error: 'Login failed',

@@ -66,7 +66,7 @@ function App() {
                   } 
                 />
                 
-                {/* Customer Routes */}
+                {/* Customer Routes - FIXED PATHS */}
                 <Route 
                   path="/customer/dashboard" 
                   element={
@@ -84,7 +84,12 @@ function App() {
                   path="/customer/order/new" 
                   element={
                     <ProtectedRoute allowedRoles={['customer']}>
-                      <NewOrder />
+                      <div>
+                        <UniversalHeader title="New Order" subtitle="Place a new print order" />
+                        <main className="pt-16">
+                          <NewOrder />
+                        </main>
+                      </div>
                     </ProtectedRoute>
                   } 
                 />
@@ -104,7 +109,7 @@ function App() {
                   } 
                 />
                 
-                {/* Admin Routes */}
+                {/* Admin Routes - FIXED AND ADDED */}
                 <Route 
                   path="/admin/dashboard" 
                   element={
@@ -122,7 +127,12 @@ function App() {
                   path="/admin/add-shop" 
                   element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                      <AddShop />
+                      <div>
+                        <UniversalHeader title="Add New Shop" subtitle="Create a new print shop" />
+                        <main className="pt-16">
+                          <AddShop />
+                        </main>
+                      </div>
                     </ProtectedRoute>
                   } 
                 />
