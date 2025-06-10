@@ -10,21 +10,21 @@ interface OrderFile {
   type: string;
   size: number;
   url: string;
+  original_name?: string;
 }
 
 interface ShopOrder {
   id: string;
-  customerName: string;
-  customerPhone: string;
-  customerEmail: string;
-  orderType: 'walk-in' | 'uploaded-files';
+  customer_name: string;
+  customer_phone: string;
+  customer_email?: string;
+  order_type: 'walk-in' | 'uploaded-files';
   description: string;
-  status: 'new' | 'confirmed' | 'processing' | 'ready' | 'completed' | 'cancelled';
-  isUrgent: boolean;
-  createdAt: Date;
+  status: 'received' | 'started' | 'completed';
+  is_urgent: boolean;
+  created_at: string;
   files?: OrderFile[];
   instructions?: string;
-  services: string[];
   pages?: number;
   copies?: number;
   paperType?: string;
@@ -59,7 +59,7 @@ const OrderSection: React.FC<OrderSectionProps> = ({
   onViewDetails,
   onPrintFile
 }) => {
-  const urgentCount = orders.filter(order => order.isUrgent).length;
+  const urgentCount = orders.filter(order => order.is_urgent).length;
 
   return (
     <div className="space-y-4">

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -553,7 +552,7 @@ const ShopDashboard: React.FC = () => {
 
       {/* QR Code Modal */}
       <QRCodeModal
-        open={showQRModal}
+        isOpen={showQRModal}
         onClose={() => setShowQRModal(false)}
       />
     </div>
