@@ -37,8 +37,10 @@ const ShopUploadPage: React.FC = () => {
 
         console.log('🔍 Fetching shop data for slug:', shopSlug);
         const response = await apiService.getShopBySlug(shopSlug);
-        setShop(response.shop);
-        console.log('✅ Shop data loaded:', response.shop);
+        // Handle both nested and direct response structures
+        const shopData = response?.shop || response;
+        setShop(shopData);
+        console.log('✅ Shop data loaded:', shopData);
       } catch (error: any) {
         console.error('❌ Failed to load shop:', error);
         toast.error('Shop not found');
@@ -101,7 +103,9 @@ const ShopUploadPage: React.FC = () => {
       };
 
       const orderResponse = await apiService.createOrder(orderData);
-      const orderId = orderResponse.order.id;
+      // Handle both nested and direct response structures
+      const orderData2 = orderResponse?.order || orderResponse;
+      const orderId = orderData2.id;
 
       console.log('✅ Order created:', orderId);
 

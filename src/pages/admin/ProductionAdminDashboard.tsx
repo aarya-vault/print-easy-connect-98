@@ -82,9 +82,10 @@ const ProductionAdminDashboard: React.FC = () => {
         apiService.getAdminShops()
       ]);
 
-      setStats(statsResponse.stats || statsResponse);
-      setUsers(usersResponse.users || []);
-      setShops(shopsResponse.shops || []);
+      // Handle both nested and direct response structures
+      setStats(statsResponse?.stats || statsResponse);
+      setUsers(usersResponse?.users || usersResponse || []);
+      setShops(shopsResponse?.shops || shopsResponse || []);
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
       toast.error('Failed to load dashboard data');

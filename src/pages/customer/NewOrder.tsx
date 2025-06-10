@@ -38,8 +38,11 @@ const NewOrder: React.FC = () => {
     enabled: !visitedShopsData?.shops?.length
   });
 
-  const shops = visitedShopsData?.shops?.length > 0 ? visitedShopsData.shops : allShopsData?.shops || [];
-  const showingVisitedShops = visitedShopsData?.shops?.length > 0;
+  // Handle both nested and direct response structures
+  const visitedShops = visitedShopsData?.shops || visitedShopsData || [];
+  const allShops = allShopsData?.shops || allShopsData || [];
+  const shops = visitedShops.length > 0 ? visitedShops : allShops;
+  const showingVisitedShops = visitedShops.length > 0;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;

@@ -75,7 +75,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setIsLoading(true);
       const response = await apiService.phoneLogin(phone);
-      const { token: authToken, user: userData } = response;
+      
+      // Handle both nested and direct response structures
+      const authToken = response?.token || response;
+      const userData = response?.user || response;
       
       setToken(authToken);
       setUser(userData);
@@ -101,7 +104,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setIsLoading(true);
       const response = await apiService.emailLogin(email, password);
-      const { token: authToken, user: userData } = response;
+      
+      // Handle both nested and direct response structures
+      const authToken = response?.token || response;
+      const userData = response?.user || response;
       
       setToken(authToken);
       setUser(userData);
