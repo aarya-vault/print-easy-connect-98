@@ -192,6 +192,41 @@ class ApiService {
     });
   }
 
+  // Chat methods - FIXED: Adding missing methods
+  async getOrderMessages(orderId: string) {
+    const response = await this.makeRequest(`/chat/order/${orderId}`);
+    
+    if (response.messages) {
+      response.messages = response.messages.map((message: any) => this.normalizeMessageData(message));
+    }
+    
+    return response.messages || [];
+  }
+
+  async sendMessage(orderId: string, message: string, recipientId: number) {
+    const response = await this.makeRequest('/chat/send', {
+      method: 'POST',
+      body: JSON.stringify({ orderId, message, recipientId }),
+    });
+    
+    if (response.message) {
+      response.message = this.normalizeMessageData(response.message);
+    }
+    
+    return response;
+  }
+
+  async getUnreadMessageCount() {
+    const response = await this.makeRequest('/chat/unread-count');
+    return response.unreadCount || 0;
+  }
+
+  async markMessageAsRead(messageId: string) {
+    return this.makeRequest(`/chat/${messageId}/read`, {
+      method: 'PATCH',
+    });
+  }
+
   // Admin methods
   async getAdminStats() {
     return this.makeRequest('/admin/stats');
@@ -282,6 +317,18 @@ class ApiService {
       shop: order.shop ? this.normalizeShopData(order.shop) : null,
       customer: order.customer ? this.normalizeUserData(order.customer) : null,
       files: order.files || []
+    };
+  }
+
+  private normalizeMessageData(message: any) {
+    return {
+      id: message.id,
+      order_id: message.order_id,
+      sender_id: message.sender_id,
+      message: message.message,
+      created_at: message.created_at,
+      is_read: message.is_read,
+      sender_name: message.sender?.name || 'Unknown'
     };
   }
 }
