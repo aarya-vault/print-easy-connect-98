@@ -1,123 +1,192 @@
-import React, { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { 
-  RefreshCw, 
-  Phone, 
-  Eye, 
-  Zap, 
-  CheckCircle, 
+  Package, 
   Clock, 
-  Bell, 
-  Package,
+  CheckCircle, 
+  Phone, 
+  AlertTriangle,
+  Search,
+  Filter,
   QrCode,
   Settings,
-  Upload,
-  UserCheck,
-  LogOut
+  MoreVertical
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import apiService from '@/services/api';
-import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import OrderDetailsModal from '@/components/shop/OrderDetailsModal';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ApiShopOrder } from '@/types/order';
-import { convertShopOrderToApi } from '@/utils/orderUtils';
+import UniversalHeader from '@/components/layout/UniversalHeader';
 
-interface ShopOrder {
+interface Order {
   id: string;
-  customer: {
-    name: string;
-    phone: string;
-  };
+  customer_name: string;
+  customer_phone: string;
   order_type: 'uploaded-files' | 'walk-in';
   description: string;
   status: 'received' | 'started' | 'completed';
   is_urgent: boolean;
   created_at: string;
-  files?: Array<{
-    id: string;
-    original_name: string;
-    file_size: number;
-    mime_type: string;
-    file_path: string;
-  }>;
+  customer?: any;
+  files?: any[];
 }
 
+const OrderCard: React.FC<{ order: Order; onStatusUpdate: (orderId: string, status: string) => void; onToggleUrgency: (orderId: string) => void }> = ({ 
+  order, 
+  onStatusUpdate, 
+  onToggleUrgency 
+}) => {
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const callCustomer = () => {
+    window.open(`tel:${order.customer_phone}`);
+  };
+
+  return (
+    <Card className={`h-fit ${order.is_urgent ? 'border-red-300 bg-red-50' : ''}`}>
+      <CardContent className="p-4">
+        <div className="space-y-3">
+          {/* Header */}
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <p className="font-semibold text-sm">#{order.id}</p>
+                {order.is_urgent && (
+                  <Badge variant="destructive" className="text-xs">Urgent</Badge>
+                )}
+              </div>
+              <Badge variant="outline" className="text-xs capitalize">
+                {order.order_type.replace('-', ' ')}
+              </Badge>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onToggleUrgency(order.id)}>
+                  <AlertTriangle className="w-4 h-4 mr-2" />
+                  {order.is_urgent ? 'Remove Urgent' : 'Mark Urgent'}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={callCustomer}>
+                  <Phone className="w-4 h-4 mr-2" />
+                  Call Customer
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Customer Info */}
+          <div>
+            <p className="font-medium text-sm">{order.customer_name}</p>
+            <p className="text-xs text-neutral-600">{order.customer_phone}</p>
+          </div>
+
+          {/* Description */}
+          <p className="text-sm text-neutral-700 line-clamp-2">
+            {order.description}
+          </p>
+
+          {/* Files Count */}
+          {order.files && order.files.length > 0 && (
+            <Badge variant="secondary" className="text-xs">
+              {order.files.length} file{order.files.length > 1 ? 's' : ''}
+            </Badge>
+          )}
+
+          {/* Time */}
+          <p className="text-xs text-neutral-500">
+            {formatDate(order.created_at)}
+          </p>
+
+          {/* Actions */}
+          <div className="space-y-2">
+            {order.status === 'received' && (
+              <Button 
+                size="sm" 
+                className="w-full text-xs" 
+                onClick={() => onStatusUpdate(order.id, 'started')}
+              >
+                Start Order
+              </Button>
+            )}
+            {order.status === 'started' && (
+              <Button 
+                size="sm" 
+                className="w-full text-xs bg-green-600 hover:bg-green-700" 
+                onClick={() => onStatusUpdate(order.id, 'completed')}
+              >
+                Mark Complete
+              </Button>
+            )}
+            {order.status === 'completed' && (
+              <Badge className="w-full justify-center bg-green-100 text-green-800">
+                <CheckCircle className="w-3 h-3 mr-1" />
+                Completed
+              </Badge>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
 const FourColumnShopDashboard: React.FC = () => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const [selectedOrder, setSelectedOrder] = useState<ApiShopOrder | null>(null);
-  const [isOrderDetailsOpen, setIsOrderDetailsOpen] = useState(false);
-  const [showQRCode, setShowQRCode] = useState(false);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showQRModal, setShowQRModal] = useState(false);
 
-  // Fetch shop orders
-  const { data: ordersData, isLoading, refetch } = useQuery({
-    queryKey: ['shop-orders'],
-    queryFn: () => apiService.getShopOrders(),
-    refetchInterval: 30000, // Auto-refresh every 30 seconds
-  });
+  useEffect(() => {
+    fetchOrders();
+  }, []);
 
-  const orders = ordersData?.orders || [];
-
-  // Organize orders by status and type
-  const organizeOrders = () => {
-    const uploadOrders = orders.filter((order: ShopOrder) => order.order_type === 'uploaded-files');
-    const walkInOrders = orders.filter((order: ShopOrder) => order.order_type === 'walk-in');
-
-    return {
-      uploadNew: uploadOrders.filter((order: ShopOrder) => ['received', 'started'].includes(order.status)),
-      uploadCompleted: uploadOrders.filter((order: ShopOrder) => order.status === 'completed'),
-      walkInNew: walkInOrders.filter((order: ShopOrder) => ['received', 'started'].includes(order.status)),
-      walkInCompleted: walkInOrders.filter((order: ShopOrder) => order.status === 'completed')
-    };
+  const fetchOrders = async () => {
+    try {
+      setIsLoading(true);
+      const response = await apiService.getShopOrders();
+      setOrders(response.orders || []);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      toast.error('Failed to load orders');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const { uploadNew, uploadCompleted, walkInNew, walkInCompleted } = organizeOrders();
-
-  const handleRefresh = () => {
-    refetch();
-    toast.success('Dashboard refreshed');
-  };
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
-  const handleOrderClick = (order: ShopOrder) => {
-    // Convert ShopOrder to ApiShopOrder format
-    const apiOrder: ApiShopOrder = {
-      id: order.id,
-      customer: order.customer,
-      order_type: order.order_type,
-      description: order.description,
-      status: order.status,
-      is_urgent: order.is_urgent,
-      created_at: order.created_at,
-      files: order.files?.map(file => ({
-        id: file.id,
-        original_name: file.original_name,
-        file_size: file.file_size,
-        mime_type: file.mime_type,
-        file_path: file.file_path || ''
-      }))
-    };
-    setSelectedOrder(apiOrder);
-    setIsOrderDetailsOpen(true);
-  };
-
-  const handleUpdateStatus = async (orderId: string, newStatus: string) => {
+  const handleStatusUpdate = async (orderId: string, newStatus: string) => {
     try {
       await apiService.updateOrderStatus(orderId, newStatus);
-      queryClient.invalidateQueries({ queryKey: ['shop-orders'] });
-      toast.success('Order status updated');
+      setOrders(prev => prev.map(order => 
+        order.id === orderId ? { ...order, status: newStatus as any } : order
+      ));
+      toast.success(`Order ${newStatus} successfully`);
+      
+      if (newStatus === 'completed') {
+        // Move completed orders out of active columns after a short delay
+        setTimeout(() => {
+          fetchOrders();
+        }, 1000);
+      }
     } catch (error) {
-      console.error('Error updating status:', error);
       toast.error('Failed to update order status');
     }
   };
@@ -125,334 +194,207 @@ const FourColumnShopDashboard: React.FC = () => {
   const handleToggleUrgency = async (orderId: string) => {
     try {
       await apiService.toggleOrderUrgency(orderId);
-      queryClient.invalidateQueries({ queryKey: ['shop-orders'] });
-      toast.success('Order urgency toggled');
+      setOrders(prev => prev.map(order => 
+        order.id === orderId ? { ...order, is_urgent: !order.is_urgent } : order
+      ));
+      toast.success('Order urgency updated');
     } catch (error) {
-      console.error('Error toggling urgency:', error);
-      toast.error('Failed to toggle urgency');
+      toast.error('Failed to update urgency');
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'received': return 'bg-amber-100 text-amber-800 border-amber-200';
-      case 'started': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'completed': return 'bg-green-100 text-green-800 border-green-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
+  const filteredOrders = orders.filter(order => 
+    order.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'received': return <Bell className="w-3 h-3" />;
-      case 'started': return <Clock className="w-3 h-3" />;
-      case 'completed': return <CheckCircle className="w-3 h-3" />;
-      default: return <Clock className="w-3 h-3" />;
-    }
-  };
+  // Filter orders by type and status for columns
+  const uploadedNew = filteredOrders.filter(o => o.order_type === 'uploaded-files' && ['received'].includes(o.status));
+  const uploadedInProgress = filteredOrders.filter(o => o.order_type === 'uploaded-files' && ['started'].includes(o.status));
+  const walkinNew = filteredOrders.filter(o => o.order_type === 'walk-in' && ['received'].includes(o.status));
+  const walkinInProgress = filteredOrders.filter(o => o.order_type === 'walk-in' && ['started'].includes(o.status));
 
-  const getNextStatus = (currentStatus: string) => {
-    switch (currentStatus) {
-      case 'received': return 'started';
-      case 'started': return 'completed';
-      default: return null;
-    }
-  };
-
-  const getStatusAction = (currentStatus: string) => {
-    switch (currentStatus) {
-      case 'received': return 'Start';
-      case 'started': return 'Complete';
-      default: return null;
-    }
-  };
-
-  const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
-    if (diffInHours < 1) return 'Just now';
-    if (diffInHours < 24) return `${diffInHours}h ago`;
-    const diffInDays = Math.floor(diffInHours / 24);
-    return `${diffInDays}d ago`;
-  };
-
-  const OrderCard: React.FC<{ order: ShopOrder }> = ({ order }) => {
-    const nextStatus = getNextStatus(order.status);
-    const statusAction = getStatusAction(order.status);
-
-    return (
-      <Card className={`border-2 shadow-sm hover:shadow-md transition-all duration-200 ${
-        order.is_urgent ? 'border-red-200 bg-red-50/30' : 'border-gray-100'
-      } mb-3`}>
-        <CardContent className="p-3">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-2">
-                <h3 className="font-bold text-sm text-gray-900 truncate">{order.customer?.name || 'Unknown'}</h3>
-                {order.is_urgent && (
-                  <div className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0"></div>
-                )}
-              </div>
-              
-              <div className="flex items-center gap-2 mb-2 text-xs">
-                <span className="font-mono text-gray-600">{order.id}</span>
-                <Badge className={`text-xs px-2 py-0.5 ${
-                  order.order_type === 'uploaded-files' 
-                    ? 'bg-blue-100 text-blue-700 border-blue-200' 
-                    : 'bg-purple-100 text-purple-700 border-purple-200'
-                }`}>
-                  {order.order_type === 'uploaded-files' ? (
-                    <><Upload className="w-2 h-2 mr-1" />FILES</>
-                  ) : (
-                    <><UserCheck className="w-2 h-2 mr-1" />WALK-IN</>
-                  )}
-                </Badge>
-                <span className="text-gray-500">{formatTimeAgo(order.created_at)}</span>
-              </div>
-
-              <Badge className={`text-xs px-2 py-0.5 mb-2 ${getStatusColor(order.status)}`}>
-                {getStatusIcon(order.status)}
-                <span className="ml-1 capitalize">{order.status}</span>
-              </Badge>
-
-              <p className="text-xs text-gray-700 mb-2 line-clamp-2">{order.description}</p>
-
-              <div className="flex items-center gap-3 text-xs text-gray-600">
-                <span>{order.customer?.phone}</span>
-                {order.files && <span>{order.files.length} files</span>}
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-1 min-w-[80px]">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleOrderClick(order)}
-                className="text-xs h-6 px-2"
-              >
-                <Eye className="w-3 h-3" />
-              </Button>
-
-              <div className="flex gap-1">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => window.open(`tel:${order.customer?.phone}`)}
-                  className="flex-1 text-xs h-6 px-1"
-                >
-                  <Phone className="w-3 h-3" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleToggleUrgency(order.id)}
-                  className={`flex-1 text-xs h-6 px-1 ${order.is_urgent ? 'bg-red-100 text-red-700 border-red-200' : ''}`}
-                >
-                  <Zap className="w-3 h-3" />
-                </Button>
-              </div>
-
-              {nextStatus && statusAction && order.status !== 'completed' && (
-                <Button
-                  size="sm"
-                  onClick={() => handleUpdateStatus(order.id, nextStatus)}
-                  className="text-xs h-6 px-2 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black"
-                >
-                  ✓
-                </Button>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
+  const handleRefresh = () => {
+    fetchOrders();
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-white to-neutral-100 flex items-center justify-center">
-        <div className="text-center">
-          <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4" />
-          <p>Loading dashboard...</p>
+      <div className="min-h-screen bg-neutral-50">
+        <UniversalHeader 
+          title="Shop Dashboard" 
+          subtitle="Manage your print orders efficiently"
+          onRefresh={handleRefresh}
+        />
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <div className="w-8 h-8 border-4 border-golden-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-neutral-600">Loading your orders...</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-white to-neutral-100">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">Shop Dashboard</h1>
-            <p className="text-gray-600 text-sm">Welcome back, {user?.name}</p>
+    <div className="min-h-screen bg-neutral-50">
+      <UniversalHeader 
+        title="Shop Dashboard" 
+        subtitle="Manage your print orders efficiently"
+        onRefresh={handleRefresh}
+      />
+      
+      <div className="p-6">
+        {/* Controls */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400" />
+              <Input
+                placeholder="Search orders..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 w-64"
+              />
+            </div>
+            <Button variant="outline" size="sm">
+              <Filter className="w-4 h-4 mr-2" />
+              Filter
+            </Button>
           </div>
           
-          <div className="flex items-center space-x-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              className="flex items-center space-x-2"
-            >
-              <RefreshCw className="w-4 h-4" />
-              <span>Refresh</span>
-            </Button>
-
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setShowQRCode(true)}
-            >
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowQRModal(true)}>
               <QrCode className="w-4 h-4 mr-2" />
               QR Code
             </Button>
-
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => navigate('/shop/settings')}
-            >
+            <Button variant="outline" size="sm">
               <Settings className="w-4 h-4 mr-2" />
               Settings
             </Button>
+          </div>
+        </div>
 
-            <Button
-              variant="outline"
-              onClick={handleLogout}
-              className="text-red-600 border-red-200 hover:bg-red-50"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
-            </Button>
+        {/* 4-Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Column 1: Upload Orders - New */}
+          <div>
+            <Card className="mb-4">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Package className="w-4 h-4 text-blue-600" />
+                  Upload Orders - New
+                  <Badge variant="secondary">{uploadedNew.length}</Badge>
+                </CardTitle>
+              </CardHeader>
+            </Card>
+            <div className="space-y-4">
+              {uploadedNew.map((order) => (
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  onStatusUpdate={handleStatusUpdate}
+                  onToggleUrgency={handleToggleUrgency}
+                />
+              ))}
+              {uploadedNew.length === 0 && (
+                <div className="text-center py-8 text-neutral-500">
+                  <Package className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No new upload orders</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Column 2: Upload Orders - In Progress */}
+          <div>
+            <Card className="mb-4">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-yellow-600" />
+                  Upload Orders - In Progress
+                  <Badge variant="secondary">{uploadedInProgress.length}</Badge>
+                </CardTitle>
+              </CardHeader>
+            </Card>
+            <div className="space-y-4">
+              {uploadedInProgress.map((order) => (
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  onStatusUpdate={handleStatusUpdate}
+                  onToggleUrgency={handleToggleUrgency}
+                />
+              ))}
+              {uploadedInProgress.length === 0 && (
+                <div className="text-center py-8 text-neutral-500">
+                  <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No orders in progress</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Column 3: Walk-in Orders - New */}
+          <div>
+            <Card className="mb-4">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Package className="w-4 h-4 text-green-600" />
+                  Walk-in Orders - New
+                  <Badge variant="secondary">{walkinNew.length}</Badge>
+                </CardTitle>
+              </CardHeader>
+            </Card>
+            <div className="space-y-4">
+              {walkinNew.map((order) => (
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  onStatusUpdate={handleStatusUpdate}
+                  onToggleUrgency={handleToggleUrgency}
+                />
+              ))}
+              {walkinNew.length === 0 && (
+                <div className="text-center py-8 text-neutral-500">
+                  <Package className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No new walk-in orders</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Column 4: Walk-in Orders - In Progress */}
+          <div>
+            <Card className="mb-4">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-purple-600" />
+                  Walk-in Orders - In Progress
+                  <Badge variant="secondary">{walkinInProgress.length}</Badge>
+                </CardTitle>
+              </CardHeader>
+            </Card>
+            <div className="space-y-4">
+              {walkinInProgress.map((order) => (
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  onStatusUpdate={handleStatusUpdate}
+                  onToggleUrgency={handleToggleUrgency}
+                />
+              ))}
+              {walkinInProgress.length === 0 && (
+                <div className="text-center py-8 text-neutral-500">
+                  <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No orders in progress</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Four Column Layout */}
-      <div className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Upload Orders - New & Processing */}
-          <Card className="h-[calc(100vh-200px)]">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Upload className="w-5 h-5 text-blue-600" />
-                Upload Orders
-                <Badge variant="secondary">{uploadNew.length}</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="overflow-y-auto h-full">
-              {uploadNew.length === 0 ? (
-                <div className="text-center text-gray-500 py-8">
-                  <Upload className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                  <p>No active upload orders</p>
-                </div>
-              ) : (
-                uploadNew.map(order => (
-                  <OrderCard key={order.id} order={order} />
-                ))
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Upload Orders - Completed */}
-          <Card className="h-[calc(100vh-200px)]">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-green-600" />
-                Upload Completed
-                <Badge variant="secondary">{uploadCompleted.length}</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="overflow-y-auto h-full">
-              {uploadCompleted.length === 0 ? (
-                <div className="text-center text-gray-500 py-8">
-                  <Package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                  <p>No completed upload orders</p>
-                </div>
-              ) : (
-                uploadCompleted.map(order => (
-                  <OrderCard key={order.id} order={order} />
-                ))
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Walk-in Orders - New & Processing */}
-          <Card className="h-[calc(100vh-200px)]">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <UserCheck className="w-5 h-5 text-purple-600" />
-                Walk-in Orders
-                <Badge variant="secondary">{walkInNew.length}</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="overflow-y-auto h-full">
-              {walkInNew.length === 0 ? (
-                <div className="text-center text-gray-500 py-8">
-                  <UserCheck className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                  <p>No active walk-in orders</p>
-                </div>
-              ) : (
-                walkInNew.map(order => (
-                  <OrderCard key={order.id} order={order} />
-                ))
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Walk-in Orders - Completed */}
-          <Card className="h-[calc(100vh-200px)]">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Package className="w-5 h-5 text-gray-600" />
-                Walk-in Completed
-                <Badge variant="secondary">{walkInCompleted.length}</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="overflow-y-auto h-full">
-              {walkInCompleted.length === 0 ? (
-                <div className="text-center text-gray-500 py-8">
-                  <Package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                  <p>No completed walk-in orders</p>
-                </div>
-              ) : (
-                walkInCompleted.map(order => (
-                  <OrderCard key={order.id} order={order} />
-                ))
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Order Details Modal */}
-      {selectedOrder && (
-        <OrderDetailsModal
-          order={selectedOrder}
-          isOpen={isOrderDetailsOpen}
-          onClose={() => {
-            setIsOrderDetailsOpen(false);
-            setSelectedOrder(null);
-          }}
-        />
-      )}
-
-      {/* QR Code Modal */}
-      <Dialog open={showQRCode} onOpenChange={setShowQRCode}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Shop QR Code</DialogTitle>
-          </DialogHeader>
-          <div className="text-center py-8">
-            <QrCode className="w-24 h-24 mx-auto mb-4" />
-            <p className="text-gray-600">QR Code functionality will be implemented soon</p>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

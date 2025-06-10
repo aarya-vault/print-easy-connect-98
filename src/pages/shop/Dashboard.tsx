@@ -2,8 +2,8 @@
 import React from 'react';
 import FourColumnShopDashboard from './FourColumnShopDashboard';
 
-const Dashboard: React.FC = () => {
+const ShopDashboard: React.FC = () => {
   return <FourColumnShopDashboard />;
 };
 
-export default Dashboard;
+export default ShopDashboard;

@@ -1,315 +1,359 @@
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Search, 
-  MapPin, 
-  Star, 
-  Phone,
-  Clock,
-  Upload,
-  UserPlus,
-  ArrowRight,
-  Building,
-  Zap,
-  Award,
-  CheckCircle
-} from 'lucide-react';
-
-interface Shop {
-  id: string;
-  name: string;
-  address: string;
-  phone: string;
-  rating: number;
-  totalReviews: number;
-  distance: string;
-  estimatedTime: string;
-  specialties: string[];
-  services: string[];
-  isOpen: boolean;
-  uploadSlug: string;
-}
+import { toast } from 'sonner';
+import { ArrowLeft, Upload, Users, FileText, Phone, MapPin, Star } from 'lucide-react';
+import apiService from '@/services/api';
+import { useAuth } from '@/contexts/AuthContext';
+import { useDropzone } from 'react-dropzone';
 
 const NewOrderFlow: React.FC = () => {
+  const { shopSlug } = useParams();
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedOrderType, setSelectedOrderType] = useState<'upload' | 'walkin' | null>(null);
+  const { user } = useAuth();
+  
+  const [shop, setShop] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [orderType, setOrderType] = useState<'uploaded-files' | 'walk-in' | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [description, setDescription] = useState('');
+  const [customerName, setCustomerName] = useState(user?.name || '');
+  const [customerPhone, setCustomerPhone] = useState(user?.phone || '');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [nearbyShops] = useState<Shop[]>([
-    {
-      id: 'shop1',
-      name: 'Quick Print Solutions',
-      address: 'Shop 12, MG Road, Bangalore',
-      phone: '9876543210',
-      rating: 4.8,
-      totalReviews: 245,
-      distance: '0.5 km',
-      estimatedTime: '15-20 mins',
-      specialties: ['24/7 Service', 'Same Day Delivery'],
-      services: ['Color Printing', 'Black & White', 'Binding', 'Scanning'],
-      isOpen: true,
-      uploadSlug: 'quick-print-solutions'
-    },
-    {
-      id: 'shop2',
-      name: 'Campus Copy Center',
-      address: 'Near College Gate, Whitefield',
-      phone: '8765432109',
-      rating: 4.5,
-      totalReviews: 189,
-      distance: '1.2 km',
-      estimatedTime: '10-15 mins',
-      specialties: ['Student Discounts', 'Bulk Orders'],
-      services: ['Photocopying', 'Scanning', 'Lamination'],
-      isOpen: true,
-      uploadSlug: 'campus-copy-center'
-    },
-    {
-      id: 'shop3',
-      name: 'Digital Express Printing',
-      address: 'Forum Mall, Level 1, Koramangala',
-      phone: '7654321098',
-      rating: 4.9,
-      totalReviews: 312,
-      distance: '2.1 km',
-      estimatedTime: '20-25 mins',
-      specialties: ['Premium Quality', 'Fast Service'],
-      services: ['Color Printing', 'Photo Printing', 'Large Format'],
-      isOpen: true,
-      uploadSlug: 'digital-express-printing'
-    },
-    {
-      id: 'shop4',
-      name: 'Print Hub Express',
-      address: 'HSR Layout, Sector 7',
-      phone: '5555566666',
-      rating: 4.6,
-      totalReviews: 156,
-      distance: '3.0 km',
-      estimatedTime: '25-30 mins',
-      specialties: ['Eco-Friendly', 'Competitive Pricing'],
-      services: ['Black & White', 'Binding', 'Lamination'],
-      isOpen: false,
-      uploadSlug: 'print-hub-express'
+  useEffect(() => {
+    if (shopSlug) {
+      fetchShop();
     }
-  ]);
+  }, [shopSlug]);
 
-  const filteredShops = nearbyShops.filter(shop =>
-    shop.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    shop.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    shop.services.some(service => service.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  useEffect(() => {
+    setCustomerName(user?.name || '');
+    setCustomerPhone(user?.phone || '');
+  }, [user]);
 
-  const handleShopSelect = (shop: Shop, orderType: 'upload' | 'walkin') => {
-    if (orderType === 'upload') {
-      navigate(`/customer/shop/${shop.uploadSlug}/upload`);
-    } else {
-      navigate(`/customer/shop/${shop.id}/walkin`);
+  const fetchShop = async () => {
+    try {
+      const response = await apiService.getShopBySlug(shopSlug!);
+      setShop(response.shop);
+    } catch (error) {
+      toast.error('Shop not found');
+      navigate('/customer/dashboard');
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop: (acceptedFiles) => {
+      setFiles(prev => [...prev, ...acceptedFiles]);
+    },
+    disabled: orderType !== 'uploaded-files'
+  });
+
+  const removeFile = (index: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!orderType) {
+      toast.error('Please select an order type');
+      return;
+    }
+
+    if (!description.trim()) {
+      toast.error('Please provide a description');
+      return;
+    }
+
+    if (orderType === 'uploaded-files' && files.length === 0) {
+      toast.error('Please upload at least one file');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // Create FormData for order with files
+      const formData = new FormData();
+      formData.append('shopId', shop.id.toString());
+      formData.append('orderType', orderType);
+      formData.append('description', description);
+      formData.append('customerName', customerName);
+      formData.append('customerPhone', customerPhone);
+
+      // Add files for uploaded-files orders
+      if (orderType === 'uploaded-files') {
+        files.forEach(file => {
+          formData.append('files', file);
+        });
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}/orders`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token')}`
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create order');
+      }
+
+      const result = await response.json();
+      
+      toast.success('Order placed successfully!');
+      navigate(`/customer/order-success/${result.order.id}`);
+      
+    } catch (error) {
+      console.error('Order creation error:', error);
+      toast.error('Failed to place order. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-golden-50 via-white to-golden-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-golden-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-neutral-600">Loading shop information...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!shop) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-golden-50 via-white to-golden-100 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-neutral-600">Shop not found</p>
+          <Button onClick={() => navigate('/customer/dashboard')} className="mt-4">
+            Back to Dashboard
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-golden-50 via-white to-golden-100">
-      <div className="container mx-auto px-6 py-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-neutral-900 mb-4">
-            Create New <span className="text-golden-600">Print Order</span>
-          </h1>
-          <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
-            Choose your preferred print shop and order type to get started
-          </p>
-        </div>
-
-        {/* Order Type Selection */}
-        <div className="max-w-4xl mx-auto mb-8">
-          <h2 className="text-xl font-semibold text-neutral-900 mb-4">Choose Your Order Type</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card 
-              className={`border-2 cursor-pointer transition-all duration-300 hover:shadow-lg ${
-                selectedOrderType === 'upload' ? 'border-blue-500 bg-blue-50' : 'border-neutral-200 hover:border-blue-300'
-              }`}
-              onClick={() => setSelectedOrderType('upload')}
-            >
-              <CardContent className="p-6">
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-blue-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-                    <Upload className="w-8 h-8 text-blue-600" />
-                  </div>
-                  <h3 className="text-lg font-bold text-neutral-900 mb-2">Upload Files</h3>
-                  <p className="text-neutral-600 mb-4">
-                    Upload your documents and get them printed with custom options
-                  </p>
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    <Badge variant="outline" className="text-xs">PDF, DOC, DOCX</Badge>
-                    <Badge variant="outline" className="text-xs">JPG, PNG</Badge>
-                    <Badge variant="outline" className="text-xs">Custom Options</Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card 
-              className={`border-2 cursor-pointer transition-all duration-300 hover:shadow-lg ${
-                selectedOrderType === 'walkin' ? 'border-purple-500 bg-purple-50' : 'border-neutral-200 hover:border-purple-300'
-              }`}
-              onClick={() => setSelectedOrderType('walkin')}
-            >
-              <CardContent className="p-6">
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-purple-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-                    <UserPlus className="w-8 h-8 text-purple-600" />
-                  </div>
-                  <h3 className="text-lg font-bold text-neutral-900 mb-2">Walk-in Order</h3>
-                  <p className="text-neutral-600 mb-4">
-                    Create an order to visit the shop with your documents
-                  </p>
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    <Badge variant="outline" className="text-xs">Physical Documents</Badge>
-                    <Badge variant="outline" className="text-xs">In-Person Service</Badge>
-                    <Badge variant="outline" className="text-xs">Immediate Help</Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Shop Search */}
-        {selectedOrderType && (
-          <div className="max-w-4xl mx-auto mb-6">
-            <Card className="border-2 border-neutral-200 shadow-md bg-white">
-              <CardContent className="p-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400" />
-                  <Input
-                    placeholder="Search shops by name, location, or services..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 h-12 border-2 border-neutral-200 focus:border-golden-400 rounded-xl bg-white shadow-sm"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Shop Selection */}
-        {selectedOrderType && (
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-xl font-semibold text-neutral-900 mb-6">
-              Select a Print Shop ({filteredShops.length} available)
-            </h2>
-            
-            <div className="space-y-4">
-              {filteredShops.map((shop) => (
-                <Card 
-                  key={shop.id} 
-                  className={`border-2 shadow-lg hover:shadow-xl transition-all duration-300 ${
-                    shop.isOpen ? 'border-green-200 hover:border-green-300' : 'border-gray-200 opacity-70'
-                  }`}
-                >
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="w-12 h-12 bg-gradient-to-r from-golden-500 to-golden-600 rounded-xl flex items-center justify-center">
-                            <Building className="w-6 h-6 text-white" />
-                          </div>
-                          <div>
-                            <h3 className="text-xl font-bold text-neutral-900">{shop.name}</h3>
-                            <div className="flex items-center gap-4 mt-1">
-                              <div className="flex items-center gap-1">
-                                <Star className="w-4 h-4 text-golden-500 fill-current" />
-                                <span className="font-semibold text-neutral-900">{shop.rating}</span>
-                                <span className="text-sm text-neutral-500">({shop.totalReviews} reviews)</span>
-                              </div>
-                              <Badge className={`text-xs ${shop.isOpen ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                {shop.isOpen ? 'Open' : 'Closed'}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="space-y-2 mb-4">
-                          <div className="flex items-center gap-2 text-neutral-600">
-                            <MapPin className="w-4 h-4" />
-                            <span className="text-sm">{shop.address}</span>
-                            <span className="text-sm text-golden-600 font-medium">• {shop.distance}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-neutral-600">
-                            <Phone className="w-4 h-4" />
-                            <span className="text-sm">{shop.phone}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-neutral-600">
-                            <Clock className="w-4 h-4" />
-                            <span className="text-sm">Est. completion: {shop.estimatedTime}</span>
-                          </div>
-                        </div>
-
-                        <div className="space-y-3">
-                          <div>
-                            <h4 className="text-sm font-semibold text-neutral-900 mb-2">Specialties:</h4>
-                            <div className="flex flex-wrap gap-2">
-                              {shop.specialties.map((specialty, index) => (
-                                <Badge key={index} className="text-xs bg-golden-100 text-golden-800 border-golden-300">
-                                  {index === 0 ? <Zap className="w-3 h-3 mr-1" /> : <Award className="w-3 h-3 mr-1" />}
-                                  {specialty}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                          
-                          <div>
-                            <h4 className="text-sm font-semibold text-neutral-900 mb-2">Services:</h4>
-                            <div className="flex flex-wrap gap-2">
-                              {shop.services.map((service, index) => (
-                                <Badge key={index} variant="outline" className="text-xs border-neutral-300 text-neutral-700">
-                                  <CheckCircle className="w-3 h-3 mr-1" />
-                                  {service}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="ml-6">
-                        <Button
-                          onClick={() => handleShopSelect(shop, selectedOrderType)}
-                          disabled={!shop.isOpen}
-                          className={`h-12 px-6 font-semibold ${
-                            selectedOrderType === 'upload'
-                              ? 'bg-blue-500 hover:bg-blue-600 text-white'
-                              : 'bg-purple-500 hover:bg-purple-600 text-white'
-                          }`}
-                        >
-                          {selectedOrderType === 'upload' ? 'Upload Files' : 'Create Walk-in Order'}
-                          <ArrowRight className="w-4 h-4 ml-2" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="text-center mt-8">
+    <div className="min-h-screen bg-gradient-to-br from-golden-50 via-white to-golden-100 p-6">
+      <div className="max-w-2xl mx-auto">
+        <div className="mb-6">
           <Button
             variant="ghost"
             onClick={() => navigate('/customer/dashboard')}
-            className="text-neutral-600 hover:text-neutral-900"
+            className="flex items-center gap-2 text-neutral-600 hover:text-neutral-900"
           >
-            ← Back to Dashboard
+            <ArrowLeft className="w-4 h-4" />
+            Back to Dashboard
           </Button>
         </div>
+
+        {/* Shop Info */}
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="w-16 h-16 bg-golden-100 rounded-lg flex items-center justify-center">
+                <FileText className="w-8 h-8 text-golden-600" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-xl font-bold mb-2">{shop.name}</h2>
+                <div className="flex items-center gap-4 text-sm text-neutral-600 mb-2">
+                  <div className="flex items-center gap-1">
+                    <MapPin className="w-4 h-4" />
+                    {shop.address}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Phone className="w-4 h-4" />
+                    {shop.phone}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
+                    <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                    <span className="text-sm">{shop.rating}</span>
+                  </div>
+                  <Badge variant={shop.is_active ? 'default' : 'secondary'}>
+                    {shop.is_active ? 'Open' : 'Closed'}
+                  </Badge>
+                  {shop.allows_offline_orders && (
+                    <Badge variant="outline">Walk-in Available</Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Order Type Selection */}
+        {!orderType && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Choose Order Type</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div 
+                  className="border-2 border-dashed border-neutral-200 rounded-lg p-6 hover:border-golden-500 hover:bg-golden-50 cursor-pointer transition-colors"
+                  onClick={() => setOrderType('uploaded-files')}
+                >
+                  <div className="text-center">
+                    <Upload className="w-12 h-12 text-golden-600 mx-auto mb-4" />
+                    <h3 className="font-semibold mb-2">Upload Files</h3>
+                    <p className="text-sm text-neutral-600">Upload your digital files for printing</p>
+                  </div>
+                </div>
+
+                {shop.allows_offline_orders && (
+                  <div 
+                    className="border-2 border-dashed border-neutral-200 rounded-lg p-6 hover:border-golden-500 hover:bg-golden-50 cursor-pointer transition-colors"
+                    onClick={() => setOrderType('walk-in')}
+                  >
+                    <div className="text-center">
+                      <Users className="w-12 h-12 text-golden-600 mx-auto mb-4" />
+                      <h3 className="font-semibold mb-2">Walk-in Service</h3>
+                      <p className="text-sm text-neutral-600">Book a visit to the shop with your documents</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Order Form */}
+        {orderType && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  {orderType === 'uploaded-files' ? <Upload className="w-5 h-5" /> : <Users className="w-5 h-5" />}
+                  {orderType === 'uploaded-files' ? 'Upload Files Order' : 'Walk-in Service Order'}
+                </CardTitle>
+                <Button variant="outline" size="sm" onClick={() => setOrderType(null)}>
+                  Change Type
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* File Upload for uploaded-files orders */}
+                {orderType === 'uploaded-files' && (
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Upload Files *
+                    </label>
+                    <div 
+                      {...getRootProps()} 
+                      className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+                        isDragActive ? 'border-golden-500 bg-golden-50' : 'border-neutral-300 hover:border-golden-500'
+                      }`}
+                    >
+                      <input {...getInputProps()} />
+                      <Upload className="w-8 h-8 text-neutral-400 mx-auto mb-2" />
+                      <p className="text-sm text-neutral-600">
+                        {isDragActive ? 'Drop files here...' : 'Drag & drop files here, or click to select'}
+                      </p>
+                      <p className="text-xs text-neutral-500 mt-1">
+                        Supports PDF, DOC, DOCX, JPG, PNG files
+                      </p>
+                    </div>
+                    
+                    {files.length > 0 && (
+                      <div className="mt-4">
+                        <h4 className="text-sm font-medium mb-2">Selected Files:</h4>
+                        <div className="space-y-2">
+                          {files.map((file, index) => (
+                            <div key={index} className="flex items-center justify-between bg-neutral-50 p-2 rounded">
+                              <span className="text-sm">{file.name}</span>
+                              <Button 
+                                type="button" 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => removeFile(index)}
+                              >
+                                Remove
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    {orderType === 'uploaded-files' ? 'Printing Instructions *' : 'Service Description *'}
+                  </label>
+                  <Textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder={
+                      orderType === 'uploaded-files' 
+                        ? "Describe your printing requirements (paper size, binding, copies, etc.)"
+                        : "Describe the service you need (documents to print, binding requirements, etc.)"
+                    }
+                    className="min-h-[100px]"
+                    required
+                  />
+                </div>
+
+                {/* Customer Details */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Your Name *
+                    </label>
+                    <Input
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      placeholder="Enter your name"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Phone Number *
+                    </label>
+                    <Input
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(e.target.value)}
+                      placeholder="Enter your phone number"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Submit Button */}
+                <Button
+                  type="submit"
+                  disabled={isSubmitting || !description.trim() || (orderType === 'uploaded-files' && files.length === 0)}
+                  className="w-full h-12 bg-gradient-to-r from-golden-500 to-golden-600 hover:from-golden-600 hover:to-golden-700"
+                >
+                  {isSubmitting ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Placing Order...
+                    </div>
+                  ) : (
+                    `Place ${orderType === 'uploaded-files' ? 'Upload' : 'Walk-in'} Order`
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

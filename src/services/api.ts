@@ -22,7 +22,7 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => {
     console.log('API Response:', response.data);
-    return response.data; // Return data directly
+    return response; // Return full response, not just data
   },
   (error) => {
     console.error('API Error:', error.response?.data || error.message);
@@ -32,24 +32,24 @@ api.interceptors.response.use(
 
 const apiService = {
   // Authentication
-  phoneLogin: (phone: string): Promise<any> => api.post('/auth/phone-login', { phone }),
-  emailLogin: (email: string, password: string): Promise<any> => api.post('/auth/email-login', { email, password }),
-  getCurrentUser: (): Promise<any> => api.get('/auth/me'),
-  updateProfile: (name: string): Promise<any> => api.patch('/auth/update-profile', { name }),
-  logout: (): Promise<any> => api.post('/auth/logout'),
+  phoneLogin: (phone: string): Promise<any> => api.post('/auth/phone-login', { phone }).then(res => res.data),
+  emailLogin: (email: string, password: string): Promise<any> => api.post('/auth/email-login', { email, password }).then(res => res.data),
+  getCurrentUser: (): Promise<any> => api.get('/auth/me').then(res => res.data),
+  updateProfile: (name: string): Promise<any> => api.patch('/auth/update-profile', { name }).then(res => res.data),
+  logout: (): Promise<any> => api.post('/auth/logout').then(res => res.data),
 
   // Orders
-  createOrder: (orderData: any): Promise<any> => api.post('/orders', orderData),
-  getCustomerOrders: (): Promise<any> => api.get('/orders/customer'),
-  getShopOrders: (filters?: any): Promise<any> => api.get('/orders/shop', { params: filters }),
-  updateOrderStatus: (orderId: string, status: string): Promise<any> => api.patch(`/orders/${orderId}/status`, { status }),
-  toggleOrderUrgency: (orderId: string): Promise<any> => api.patch(`/orders/${orderId}/urgency`),
-  getOrderById: (orderId: string): Promise<any> => api.get(`/orders/${orderId}`),
+  createOrder: (orderData: any): Promise<any> => api.post('/orders', orderData).then(res => res.data),
+  getCustomerOrders: (): Promise<any> => api.get('/orders/customer').then(res => res.data),
+  getShopOrders: (filters?: any): Promise<any> => api.get('/orders/shop', { params: filters }).then(res => res.data),
+  updateOrderStatus: (orderId: string, status: string): Promise<any> => api.patch(`/orders/${orderId}/status`, { status }).then(res => res.data),
+  toggleOrderUrgency: (orderId: string): Promise<any> => api.patch(`/orders/${orderId}/urgency`).then(res => res.data),
+  getOrderById: (orderId: string): Promise<any> => api.get(`/orders/${orderId}`).then(res => res.data),
 
   // Shops
-  getShops: (params?: any): Promise<any> => api.get('/shops', { params }),
-  getShopBySlug: (slug: string): Promise<any> => api.get(`/shops/slug/${slug}`),
-  getVisitedShops: (): Promise<any> => api.get('/shops/visited'),
+  getShops: (params?: any): Promise<any> => api.get('/shops', { params }).then(res => res.data),
+  getShopBySlug: (slug: string): Promise<any> => api.get(`/shops/slug/${slug}`).then(res => res.data),
+  getVisitedShops: (): Promise<any> => api.get('/shops/visited').then(res => res.data),
 
   // Files
   uploadFiles: (files: File[], orderId: string): Promise<any> => {
@@ -60,40 +60,28 @@ const apiService = {
     return api.post('/files/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 60000,
-    });
+    }).then(res => res.data);
   },
 
   // Chat
   sendMessage: (orderId: string, message: string, recipientId: number): Promise<any> => 
-    api.post('/chat/send', { orderId, message, recipientId }),
-  getOrderMessages: (orderId: string): Promise<any> => api.get(`/chat/${orderId}`),
+    api.post('/chat/send', { orderId, message, recipientId }).then(res => res.data),
+  getOrderMessages: (orderId: string): Promise<any> => api.get(`/chat/${orderId}`).then(res => res.data),
 
   // Admin
-  getAdminStats: (): Promise<any> => api.get('/admin/stats'),
-  getAllUsers: (params?: any): Promise<any> => api.get('/admin/users', { params }),
-  getAdminUsers: (params?: any): Promise<any> => api.get('/admin/users', { params }),
-  getAllShops: (): Promise<any> => api.get('/admin/shops'),
-  getAdminShops: (): Promise<any> => api.get('/admin/shops'),
-  createShop: (shopData: any): Promise<any> => api.post('/admin/shops', shopData),
+  getAdminStats: (): Promise<any> => api.get('/admin/stats').then(res => res.data),
+  getAllUsers: (params?: any): Promise<any> => api.get('/admin/users', { params }).then(res => res.data),
+  getAllShops: (): Promise<any> => api.get('/admin/shops').then(res => res.data),
+  createShop: (shopData: any): Promise<any> => api.post('/admin/shops', shopData).then(res => res.data),
   updateUserStatus: (userId: number, isActive: boolean): Promise<any> => 
-    api.patch(`/admin/users/${userId}/status`, { isActive }),
-  deleteUser: (userId: number): Promise<any> => api.delete(`/admin/users/${userId}`),
+    api.patch(`/admin/users/${userId}/status`, { isActive }).then(res => res.data),
+  deleteUser: (userId: number): Promise<any> => api.delete(`/admin/users/${userId}`).then(res => res.data),
+  getAdminAnalytics: (): Promise<any> => api.get('/admin/analytics/realtime').then(res => res.data),
+  updateShopSettings: (shopId: number, shopData: any): Promise<any> => api.put(`/admin/shops/${shopId}`, shopData).then(res => res.data),
 
-  // Real-time analytics endpoints
-  getOrderAnalytics: (): Promise<any> => api.get('/admin/analytics/orders'),
-  getShopAnalytics: (): Promise<any> => api.get('/admin/analytics/shops'),
-  getUserAnalytics: (): Promise<any> => api.get('/admin/analytics/users'),
-  getRealtimeMetrics: (): Promise<any> => api.get('/admin/analytics/realtime'),
-  
-  // Admin Analytics - consolidated method
-  getAdminAnalytics: (): Promise<any> => api.get('/admin/analytics/realtime'),
-
-  // Admin Shop Management - consolidated method
-  updateShopSettings: (shopId: number, shopData: any): Promise<any> => api.put(`/admin/shops/${shopId}`, shopData),
-
-  // Shop Management - consolidated methods
-  getShopSettings: (): Promise<any> => api.get('/shops/settings'),
-  generateShopQRCode: (): Promise<any> => api.post('/shops/qr-code'),
+  // Shop Management
+  getShopSettings: (): Promise<any> => api.get('/shops/settings').then(res => res.data),
+  generateShopQRCode: (): Promise<any> => api.post('/shops/qr-code').then(res => res.data),
 };
 
 export default apiService;

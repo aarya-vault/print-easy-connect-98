@@ -1,292 +1,207 @@
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from 'sonner';
-import { ArrowLeft, Upload, FileText, Store } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Search, MapPin, Star, Phone } from 'lucide-react';
 import apiService from '@/services/api';
-import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
+import CustomerHeader from '@/components/layout/CustomerHeader';
+
+interface Shop {
+  id: number;
+  name: string;
+  address: string;
+  phone: string;
+  rating: number;
+  is_active: boolean;
+  allows_offline_orders: boolean;
+  slug: string;
+}
 
 const NewOrder: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
-  const [orderType, setOrderType] = useState<'uploaded-files' | 'walk-in'>('uploaded-files');
-  const [formData, setFormData] = useState({
-    shopId: '',
-    description: '',
-    customerName: user?.name || '',
-    customerPhone: user?.phone || ''
-  });
-  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
+  const [shops, setShops] = useState<Shop[]>([]);
+  const [visitedShops, setVisitedShops] = useState<Shop[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  // Get visited shops for reorder logic
-  const { data: visitedShopsData, isLoading: shopsLoading } = useQuery({
-    queryKey: ['visited-shops'],
-    queryFn: apiService.getVisitedShops,
-  });
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  // Fallback to all shops if no visited shops
-  const { data: allShopsData } = useQuery({
-    queryKey: ['all-shops'],
-    queryFn: apiService.getShops,
-    enabled: !visitedShopsData?.length
-  });
-
-  const visitedShops = Array.isArray(visitedShopsData) ? visitedShopsData : (visitedShopsData?.shops || []);
-  const allShops = Array.isArray(allShopsData) ? allShopsData : (allShopsData?.shops || []);
-  const shops = visitedShops.length > 0 ? visitedShops : allShops;
-  const showingVisitedShops = visitedShops.length > 0;
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSelectedFiles(e.target.files);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.shopId) {
-      toast.error('Please select a shop');
-      return;
-    }
-
-    // Description is now optional, not mandatory
-    if (!formData.description.trim() && orderType === 'walk-in') {
-      toast.error('Please describe what you need for walk-in orders');
-      return;
-    }
-
-    setIsLoading(true);
+  const fetchData = async () => {
     try {
-      // Create FormData for the request
-      const orderFormData = new FormData();
-      orderFormData.append('shopId', formData.shopId);
-      orderFormData.append('orderType', orderType);
-      orderFormData.append('description', formData.description || 'No specific requirements provided');
-      orderFormData.append('customerName', formData.customerName);
-      orderFormData.append('customerPhone', formData.customerPhone);
-
-      // Add files if selected (optional for all order types now)
-      if (selectedFiles && selectedFiles.length > 0) {
-        Array.from(selectedFiles).forEach(file => {
-          orderFormData.append('files', file);
-        });
-      }
-
-      console.log('📝 Submitting order with type:', orderType);
-      console.log('📁 Files count:', selectedFiles?.length || 0);
-
-      // Use the standard API service method
-      const response = await fetch('/api/orders', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token')}`
-        },
-        body: orderFormData
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create order');
-      }
-
-      const result = await response.json();
-      console.log('✅ Order created successfully:', result);
-
-      toast.success('Order placed successfully!');
-      navigate('/customer/dashboard', { replace: true });
+      setIsLoading(true);
+      const [shopsResponse, visitedResponse] = await Promise.all([
+        apiService.getShops({ limit: 20 }),
+        apiService.getVisitedShops()
+      ]);
       
-    } catch (error: any) {
-      console.error('❌ Order creation failed:', error);
-      toast.error(error.message || 'Failed to place order');
+      setShops(shopsResponse.shops || []);
+      setVisitedShops(visitedResponse.shops || []);
+    } catch (error) {
+      console.error('Error fetching shops:', error);
+      toast.error('Failed to load shops');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const filteredShops = shops.filter(shop =>
+    shop.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    shop.address.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const selectShop = (shop: Shop) => {
+    navigate(`/customer/order/${shop.slug || shop.id}`);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-golden-50 via-white to-golden-100">
+        <CustomerHeader />
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <div className="w-8 h-8 border-4 border-golden-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-neutral-600">Loading shops...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-white to-neutral-100 p-6">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-golden-50 via-white to-golden-100">
+      <CustomerHeader />
+      
+      <div className="max-w-4xl mx-auto p-6">
         <div className="mb-6">
           <Button
             variant="ghost"
             onClick={() => navigate('/customer/dashboard')}
-            className="flex items-center gap-2 text-neutral-600 hover:text-neutral-900"
+            className="flex items-center gap-2 text-neutral-600 hover:text-neutral-900 mb-4"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
           </Button>
+          
+          <h1 className="text-3xl font-bold text-neutral-900 mb-2">Place New Order</h1>
+          <p className="text-neutral-600">Choose a print shop to get started</p>
         </div>
 
-        <Card className="shadow-xl border-yellow-200">
-          <CardHeader className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-black rounded-t-lg">
-            <CardTitle className="text-2xl font-bold text-center flex items-center justify-center gap-3">
-              <FileText className="w-8 h-8" />
-              Place New Order
-            </CardTitle>
-          </CardHeader>
+        {/* Search */}
+        <Card className="mb-6">
           <CardContent className="p-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Order Type Selection */}
-              <div className="space-y-4">
-                <Label className="text-lg font-semibold text-neutral-900">Order Type</Label>
-                <div className="grid grid-cols-2 gap-4">
-                  <Button
-                    type="button"
-                    variant={orderType === 'uploaded-files' ? 'default' : 'outline'}
-                    onClick={() => setOrderType('uploaded-files')}
-                    className={`h-16 ${orderType === 'uploaded-files' 
-                      ? 'bg-yellow-500 hover:bg-yellow-600 text-black' 
-                      : 'border-yellow-300 text-neutral-700 hover:bg-yellow-50'
-                    }`}
-                  >
-                    <div className="flex flex-col items-center gap-2">
-                      <Upload className="w-5 h-5" />
-                      <span>Upload Files</span>
-                    </div>
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={orderType === 'walk-in' ? 'default' : 'outline'}
-                    onClick={() => setOrderType('walk-in')}
-                    className={`h-16 ${orderType === 'walk-in' 
-                      ? 'bg-yellow-500 hover:bg-yellow-600 text-black' 
-                      : 'border-yellow-300 text-neutral-700 hover:bg-yellow-50'
-                    }`}
-                  >
-                    <div className="flex flex-col items-center gap-2">
-                      <Store className="w-5 h-5" />
-                      <span>Walk-in Order</span>
-                    </div>
-                  </Button>
-                </div>
-              </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400" />
+              <Input
+                placeholder="Search shops by name or location..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </CardContent>
+        </Card>
 
-              {/* Shop Selection */}
-              <div>
-                <Label htmlFor="shopId" className="text-neutral-900 font-medium">
-                  Select Shop *
-                  {showingVisitedShops && (
-                    <span className="text-sm text-yellow-600 ml-2">
-                      (Showing shops you've ordered from before)
-                    </span>
-                  )}
-                </Label>
-                <Select value={formData.shopId} onValueChange={(value) => setFormData(prev => ({ ...prev, shopId: value }))}>
-                  <SelectTrigger className="h-12 border-2 border-neutral-200 focus:border-yellow-500">
-                    <SelectValue placeholder={shopsLoading ? "Loading shops..." : "Choose a print shop"} />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white border-neutral-200 z-50">
-                    {shops.map((shop: any) => (
-                      <SelectItem key={shop.id} value={shop.id.toString()}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{shop.name}</span>
-                          <span className="text-sm text-neutral-500">{shop.address}</span>
+        {/* Visited Shops */}
+        {visitedShops.length > 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Your Recent Shops</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {visitedShops.slice(0, 6).map((shop) => (
+                  <div
+                    key={shop.id}
+                    className="border rounded-lg p-4 hover:bg-neutral-50 cursor-pointer transition-colors"
+                    onClick={() => selectShop(shop)}
+                  >
+                    <h3 className="font-semibold mb-2">{shop.name}</h3>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-1 text-sm text-neutral-600">
+                        <MapPin className="w-4 h-4" />
+                        <span className="truncate">{shop.address}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1">
+                          <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                          <span className="text-sm">{shop.rating}</span>
                         </div>
-                      </SelectItem>
-                    ))}
-                    {shops.length === 0 && !shopsLoading && (
-                      <SelectItem value="none" disabled>
-                        No shops available
-                      </SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* File Upload - NO RESTRICTIONS */}
-              <div>
-                <Label htmlFor="files" className="text-neutral-900 font-medium">
-                  Upload Files (Optional - All file types accepted)
-                </Label>
-                <Input
-                  id="files"
-                  name="files"
-                  type="file"
-                  multiple
-                  onChange={handleFileChange}
-                  className="h-12 border-2 border-neutral-200 focus:border-yellow-500"
-                  // NO accept attribute - accept ALL file types
-                />
-                <p className="text-sm text-neutral-500 mt-2">
-                  All file formats are accepted - no restrictions on size or type
-                </p>
-              </div>
-
-              {/* Description - NOW OPTIONAL */}
-              <div>
-                <Label htmlFor="description" className="text-neutral-900 font-medium">
-                  Printing Requirements (Optional)
-                </Label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  placeholder={orderType === 'uploaded-files' 
-                    ? "Optional: Describe your printing needs (e.g., 10 copies, double-sided, color printing, binding)"
-                    : "Optional: Describe what you need to print when you visit the shop"
-                  }
-                  rows={4}
-                  className="border-2 border-neutral-200 focus:border-yellow-500"
-                />
-              </div>
-
-              {/* Customer Details */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="customerName" className="text-neutral-900 font-medium">Your Name</Label>
-                  <Input
-                    id="customerName"
-                    name="customerName"
-                    value={formData.customerName}
-                    onChange={handleInputChange}
-                    placeholder="Your full name"
-                    className="h-12 border-2 border-neutral-200 focus:border-yellow-500"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="customerPhone" className="text-neutral-900 font-medium">Phone Number</Label>
-                  <Input
-                    id="customerPhone"
-                    name="customerPhone"
-                    value={formData.customerPhone}
-                    onChange={handleInputChange}
-                    placeholder="Your phone number"
-                    className="h-12 border-2 border-neutral-200 focus:border-yellow-500"
-                  />
-                </div>
-              </div>
-
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="w-full h-12 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-semibold"
-              >
-                {isLoading ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                    Placing Order...
+                        <div className="flex items-center gap-2">
+                          <Badge variant={shop.is_active ? 'default' : 'secondary'}>
+                            {shop.is_active ? 'Open' : 'Closed'}
+                          </Badge>
+                          {shop.allows_offline_orders && (
+                            <Badge variant="outline" className="text-xs">Walk-in</Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                ) : (
-                  `Place ${orderType === 'uploaded-files' ? 'Upload' : 'Walk-in'} Order`
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* All Shops */}
+        <Card>
+          <CardHeader>
+            <CardTitle>All Print Shops</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {filteredShops.length === 0 ? (
+              <div className="text-center py-8 text-neutral-500">
+                <MapPin className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>No shops found</p>
+                {searchTerm && (
+                  <Button variant="outline" onClick={() => setSearchTerm('')} className="mt-4">
+                    Clear Search
+                  </Button>
                 )}
-              </Button>
-            </form>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredShops.map((shop) => (
+                  <div
+                    key={shop.id}
+                    className="border rounded-lg p-4 hover:bg-neutral-50 cursor-pointer transition-colors"
+                    onClick={() => selectShop(shop)}
+                  >
+                    <h3 className="font-semibold mb-2">{shop.name}</h3>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-1 text-sm text-neutral-600">
+                        <MapPin className="w-4 h-4" />
+                        <span className="truncate">{shop.address}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-sm text-neutral-600">
+                        <Phone className="w-4 h-4" />
+                        <span>{shop.phone}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1">
+                          <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                          <span className="text-sm">{shop.rating}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={shop.is_active ? 'default' : 'secondary'}>
+                            {shop.is_active ? 'Open' : 'Closed'}
+                          </Badge>
+                          {shop.allows_offline_orders && (
+                            <Badge variant="outline" className="text-xs">Walk-in</Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
