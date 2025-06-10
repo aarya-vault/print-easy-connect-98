@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { FileUpload } from '@/components/ui/file-upload';
+import FileUpload from '@/components/ui/file-upload';
 import { useAuth } from '@/contexts/AuthContext';
 import apiService from '@/services/api';
 import { Upload, FileText, ArrowLeft } from 'lucide-react';
@@ -152,9 +152,10 @@ const NewOrder: React.FC = () => {
                 <div>
                   <Label>Upload Files *</Label>
                   <FileUpload
-                    onChange={handleFileChange}
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                    multiple
+                    onFilesSelected={handleFileChange}
+                    maxFiles={5}
+                    maxSize={10 * 1024 * 1024}
+                    acceptedTypes={['application/pdf', 'image/*', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']}
                     className="mt-2"
                   />
                   {files.length > 0 && (

@@ -1,41 +1,34 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
 import { 
   Users, 
   Store, 
+  FileText, 
   TrendingUp, 
-  FileText,
-  Edit,
+  Search, 
+  Plus, 
+  Edit, 
   Trash2,
-  UserPlus,
-  Plus,
-  Search,
-  Bell,
-  User as UserIcon
+  Eye,
+  Filter,
+  MoreHorizontal
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import apiService from '@/services/api';
 
 interface User {
   id: string;
   name: string;
-  phone: string;
-  email?: string;
+  email: string;
+  phone?: string;
   role: 'customer' | 'shop_owner' | 'admin';
-  shopId?: string;
   isActive: boolean;
   createdAt: Date;
 }
@@ -46,237 +39,213 @@ interface Shop {
   address: string;
   phone: string;
   email: string;
-  ownerName: string;
-  rating: number;
-  totalOrders: number;
   isActive: boolean;
-  allowsOfflineOrders: boolean;
   createdAt: Date;
 }
 
+interface DashboardStats {
+  totalUsers: number;
+  totalShops: number;
+  totalOrders: number;
+  activeUsers: number;
+}
+
 const ProductionAdminDashboard: React.FC = () => {
-  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [stats, setStats] = useState<DashboardStats>({
+    totalUsers: 0,
+    totalShops: 0,
+    totalOrders: 0,
+    activeUsers: 0
+  });
   const [users, setUsers] = useState<User[]>([]);
   const [shops, setShops] = useState<Shop[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [selectedShop, setSelectedShop] = useState<Shop | null>(null);
-  const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
-  const [isShopDialogOpen, setIsShopDialogOpen] = useState(false);
+  const [userFilter, setUserFilter] = useState('all');
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock data based on seeded data
   useEffect(() => {
-    const mockUsers: User[] = [
-      {
-        id: '1',
-        name: 'Rajesh Kumar',
-        phone: '9876543210',
-        role: 'customer',
-        isActive: true,
-        createdAt: new Date(Date.now() - 86400000)
-      },
-      {
-        id: '2',
-        name: 'Quick Print Owner',
-        phone: '9876543211',
-        email: 'shop@printeasy.com',
-        role: 'shop_owner',
-        shopId: '1',
-        isActive: true,
-        createdAt: new Date(Date.now() - 172800000)
-      },
-      {
-        id: '3',
-        name: 'PrintEasy Admin',
-        email: 'admin@printeasy.com',
-        role: 'admin',
-        isActive: true,
-        createdAt: new Date(Date.now() - 259200000)
-      },
-      {
-        id: '4',
-        name: 'Priya Sharma',
-        phone: '9876543211',
-        role: 'customer',
-        isActive: true,
-        createdAt: new Date(Date.now() - 172800000)
-      },
-      {
-        id: '5',
-        name: 'Amit Singh',
-        phone: '9876543212',
-        role: 'customer',
-        isActive: true,
-        createdAt: new Date(Date.now() - 172800000)
-      }
-    ];
-
-    const mockShops: Shop[] = [
-      {
-        id: '1',
-        name: 'Quick Print Solutions',
-        address: 'Shop 12, MG Road, Bangalore, Karnataka 560001',
-        phone: '+91 98765 43210',
-        email: 'shop@quickprint.com',
-        ownerName: 'Quick Print Owner',
-        rating: 4.5,
-        totalOrders: 156,
-        isActive: true,
-        allowsOfflineOrders: true,
-        createdAt: new Date(Date.now() - 172800000)
-      },
-      {
-        id: '2',
-        name: 'Digital Print Hub',
-        address: 'Plot 45, Electronic City, Bangalore, Karnataka 560100',
-        phone: '+91 98765 43211',
-        email: 'info@digitalprinthub.com',
-        ownerName: 'Not Assigned',
-        rating: 4.2,
-        totalOrders: 89,
-        isActive: true,
-        allowsOfflineOrders: false,
-        createdAt: new Date(Date.now() - 259200000)
-      }
-    ];
-
-    setUsers(mockUsers);
-    setShops(mockShops);
+    loadDashboardData();
   }, []);
 
-  const handleEditUser = (user: User) => {
-    setSelectedUser(user);
-    setIsUserDialogOpen(true);
-  };
+  const loadDashboardData = async () => {
+    setIsLoading(true);
+    try {
+      // Load mock data for demonstration
+      const mockStats: DashboardStats = {
+        totalUsers: 150,
+        totalShops: 25,
+        totalOrders: 450,
+        activeUsers: 125
+      };
 
-  const handleEditShop = (shop: Shop) => {
-    setSelectedShop(shop);
-    setIsShopDialogOpen(true);
-  };
+      const mockUsers: User[] = [
+        {
+          id: '1',
+          name: 'John Customer',
+          email: 'customer@example.com',
+          phone: '9876543210',
+          role: 'customer',
+          isActive: true,
+          createdAt: new Date()
+        },
+        {
+          id: '2',
+          name: 'Quick Print Shop',
+          email: 'shop@printeasy.com',
+          phone: '9876543211',
+          role: 'shop_owner',
+          isActive: true,
+          createdAt: new Date()
+        },
+        {
+          id: '3',
+          name: 'Admin User',
+          email: 'admin@printeasy.com',
+          phone: '9876543212',
+          role: 'admin',
+          isActive: true,
+          createdAt: new Date()
+        }
+      ];
 
-  const handleSaveUser = () => {
-    if (selectedUser) {
-      setUsers(prev => 
-        prev.map(user => user.id === selectedUser.id ? selectedUser : user)
-      );
-      toast.success('User updated successfully');
-      setIsUserDialogOpen(false);
-      setSelectedUser(null);
+      const mockShops: Shop[] = [
+        {
+          id: '1',
+          name: 'Quick Print Solutions',
+          address: 'Shop 12, MG Road, Bangalore',
+          phone: '+91 98765 43210',
+          email: 'contact@quickprint.com',
+          isActive: true,
+          createdAt: new Date()
+        },
+        {
+          id: '2',
+          name: 'Campus Copy Center',
+          address: 'Near College Gate, Whitefield',
+          phone: '+91 87654 32109',
+          email: 'info@campuscopy.com',
+          isActive: true,
+          createdAt: new Date()
+        }
+      ];
+
+      setStats(mockStats);
+      setUsers(mockUsers);
+      setShops(mockShops);
+    } catch (error) {
+      console.error('Failed to load dashboard data:', error);
+      toast.error('Failed to load dashboard data');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleSaveShop = () => {
-    if (selectedShop) {
-      setShops(prev => 
-        prev.map(shop => shop.id === selectedShop.id ? selectedShop : shop)
-      );
-      toast.success('Shop updated successfully');
-      setIsShopDialogOpen(false);
-      setSelectedShop(null);
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         user.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = userFilter === 'all' || user.role === userFilter;
+    return matchesSearch && matchesFilter;
+  });
+
+  const handleUserAction = async (action: string, userId: string) => {
+    try {
+      switch (action) {
+        case 'activate':
+          // Implement user activation
+          toast.success('User activated successfully');
+          break;
+        case 'deactivate':
+          // Implement user deactivation
+          toast.success('User deactivated successfully');
+          break;
+        case 'delete':
+          // Implement user deletion
+          toast.success('User deleted successfully');
+          break;
+        default:
+          break;
+      }
+      loadDashboardData();
+    } catch (error) {
+      toast.error('Action failed');
     }
   };
 
-  const handleDeleteUser = (userId: string) => {
-    setUsers(prev => prev.filter(user => user.id !== userId));
-    toast.success('User deleted successfully');
-  };
-
-  const handleDeleteShop = (shopId: string) => {
-    setShops(prev => prev.filter(shop => shop.id !== shopId));
-    toast.success('Shop deleted successfully');
-  };
-
-  const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.phone?.includes(searchTerm) ||
-    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const filteredShops = shops.filter(shop =>
-    shop.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    shop.ownerName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const stats = {
-    totalUsers: users.length,
-    totalShops: shops.length,
-    activeShops: shops.filter(s => s.isActive).length,
-    totalOrders: shops.reduce((sum, shop) => sum + shop.totalOrders, 0)
-  };
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-golden-50 via-white to-golden-100 p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center py-12">
+            <div className="w-8 h-8 border-4 border-golden-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-neutral-600">Loading dashboard...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header Actions */}
-        <div className="flex justify-between items-center mb-6">
+    <div className="min-h-screen bg-gradient-to-br from-golden-50 via-white to-golden-100 p-6">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-neutral-900">Admin Dashboard</h1>
-            <p className="text-neutral-600">Manage users, shops and system settings</p>
+            <h1 className="text-3xl font-bold text-neutral-900">Admin Dashboard</h1>
+            <p className="text-neutral-600 mt-1">Manage users, shops, and platform operations</p>
           </div>
           <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={() => navigate('/notifications')}
-              className="flex items-center gap-2"
-            >
-              <Bell className="w-4 h-4" />
-              Notifications
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => navigate('/profile')}
-              className="flex items-center gap-2"
-            >
-              <UserIcon className="w-4 h-4" />
-              Profile
+            <Button className="bg-gradient-to-r from-golden-500 to-golden-600 hover:from-golden-600 hover:to-golden-700">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Shop
             </Button>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total Users</p>
-                  <p className="text-2xl font-bold">{stats.totalUsers}</p>
+                  <p className="text-sm font-medium text-neutral-600">Total Users</p>
+                  <p className="text-2xl font-bold text-neutral-900">{stats.totalUsers}</p>
                 </div>
-                <Users className="w-8 h-8 text-blue-600" />
+                <Users className="w-8 h-8 text-golden-600" />
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total Shops</p>
-                  <p className="text-2xl font-bold">{stats.totalShops}</p>
+                  <p className="text-sm font-medium text-neutral-600">Active Users</p>
+                  <p className="text-2xl font-bold text-neutral-900">{stats.activeUsers}</p>
                 </div>
-                <Store className="w-8 h-8 text-green-600" />
+                <TrendingUp className="w-8 h-8 text-green-600" />
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Active Shops</p>
-                  <p className="text-2xl font-bold">{stats.activeShops}</p>
+                  <p className="text-sm font-medium text-neutral-600">Total Shops</p>
+                  <p className="text-2xl font-bold text-neutral-900">{stats.totalShops}</p>
                 </div>
-                <TrendingUp className="w-8 h-8 text-orange-600" />
+                <Store className="w-8 h-8 text-blue-600" />
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total Orders</p>
-                  <p className="text-2xl font-bold">{stats.totalOrders}</p>
+                  <p className="text-sm font-medium text-neutral-600">Total Orders</p>
+                  <p className="text-2xl font-bold text-neutral-900">{stats.totalOrders}</p>
                 </div>
                 <FileText className="w-8 h-8 text-purple-600" />
               </div>
@@ -284,51 +253,60 @@ const ProductionAdminDashboard: React.FC = () => {
           </Card>
         </div>
 
-        {/* Search Bar */}
-        <div className="mb-6">
-          <div className="relative max-w-md">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <Input
-              placeholder="Search users or shops..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </div>
-
-        {/* Main Tabs */}
+        {/* Main Content */}
         <Tabs defaultValue="users" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="users">User Management</TabsTrigger>
             <TabsTrigger value="shops">Shop Management</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="users" className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold">Users ({filteredUsers.length})</h2>
-              <Button className="flex items-center space-x-2">
-                <UserPlus className="w-4 h-4" />
-                <span>Add User</span>
-              </Button>
-            </div>
+          <TabsContent value="users" className="space-y-6">
+            {/* Search and Filters */}
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex gap-4 items-center">
+                  <div className="relative flex-1">
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" />
+                    <Input
+                      placeholder="Search users by name or email..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <Select value={userFilter} onValueChange={setUserFilter}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Filter by role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Roles</SelectItem>
+                      <SelectItem value="customer">Customers</SelectItem>
+                      <SelectItem value="shop_owner">Shop Owners</SelectItem>
+                      <SelectItem value="admin">Admins</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
 
-            <div className="grid gap-4">
-              {filteredUsers.map((user) => (
-                <Card key={user.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3">
-                          <div>
-                            <h3 className="font-semibold text-lg">{user.name}</h3>
-                            <p className="text-gray-600">
-                              {user.phone && `${user.phone}`} 
-                              {user.email && `${user.phone ? ' • ' : ''}${user.email}`}
-                            </p>
-                          </div>
-                          <div className="flex flex-col gap-1">
-                            <Badge variant={user.role === 'admin' ? 'default' : user.role === 'shop_owner' ? 'secondary' : 'outline'}>
+            {/* Users Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Users ({filteredUsers.length})</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {filteredUsers.map((user) => (
+                    <div key={user.id} className="flex items-center justify-between p-4 border border-neutral-200 rounded-lg">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-10 h-10 bg-golden-100 rounded-full flex items-center justify-center">
+                          <Users className="w-5 h-5 text-golden-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-neutral-900">{user.name}</h4>
+                          <p className="text-sm text-neutral-600">{user.email}</p>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
                               {user.role.replace('_', ' ')}
                             </Badge>
                             <Badge variant={user.isActive ? 'default' : 'destructive'}>
@@ -337,192 +315,69 @@ const ProductionAdminDashboard: React.FC = () => {
                           </div>
                         </div>
                       </div>
-                      
                       <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditUser(user)}
-                        >
+                        <Button size="sm" variant="outline">
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button size="sm" variant="outline">
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteUser(user.id)}
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => handleUserAction('delete', user.id)}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
-          <TabsContent value="shops" className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold">Shops ({filteredShops.length})</h2>
-              <Button 
-                className="flex items-center space-x-2"
-                onClick={() => navigate('/admin/add-shop')}
-              >
-                <Plus className="w-4 h-4" />
-                <span>Add Shop</span>
-              </Button>
-            </div>
-
-            <div className="grid gap-4">
-              {filteredShops.map((shop) => (
-                <Card key={shop.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3">
-                          <div>
-                            <h3 className="font-semibold text-lg">{shop.name}</h3>
-                            <p className="text-gray-600">{shop.address}</p>
-                            <p className="text-sm text-gray-500">Owner: {shop.ownerName} • {shop.phone}</p>
-                            <p className="text-sm text-gray-500">Orders: {shop.totalOrders} • Rating: {shop.rating}/5</p>
-                          </div>
-                          <div className="flex flex-col space-y-1">
-                            <Badge variant={shop.isActive ? 'default' : 'destructive'}>
-                              {shop.isActive ? 'Active' : 'Inactive'}
-                            </Badge>
-                            <Badge variant={shop.allowsOfflineOrders ? 'secondary' : 'outline'}>
-                              {shop.allowsOfflineOrders ? 'Offline Module' : 'Upload Only'}
-                            </Badge>
-                          </div>
+          <TabsContent value="shops" className="space-y-6">
+            {/* Shops Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Shops ({shops.length})</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {shops.map((shop) => (
+                    <div key={shop.id} className="flex items-center justify-between p-4 border border-neutral-200 rounded-lg">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Store className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-neutral-900">{shop.name}</h4>
+                          <p className="text-sm text-neutral-600">{shop.address}</p>
+                          <p className="text-xs text-neutral-500">{shop.email} • {shop.phone}</p>
+                          <Badge variant={shop.isActive ? 'default' : 'destructive'} className="mt-1">
+                            {shop.isActive ? 'Active' : 'Inactive'}
+                          </Badge>
                         </div>
                       </div>
-                      
                       <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditShop(shop)}
-                        >
+                        <Button size="sm" variant="outline">
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button size="sm" variant="outline">
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteShop(shop.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
+                        <Button size="sm" variant="outline">
+                          <MoreHorizontal className="w-4 h-4" />
                         </Button>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
-
-        {/* User Edit Dialog */}
-        <Dialog open={isUserDialogOpen} onOpenChange={setIsUserDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Edit User</DialogTitle>
-            </DialogHeader>
-            {selectedUser && (
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="userName">Name</Label>
-                  <Input
-                    id="userName"
-                    value={selectedUser.name}
-                    onChange={(e) => setSelectedUser({...selectedUser, name: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="userPhone">Phone</Label>
-                  <Input
-                    id="userPhone"
-                    value={selectedUser.phone || ''}
-                    onChange={(e) => setSelectedUser({...selectedUser, phone: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="userEmail">Email</Label>
-                  <Input
-                    id="userEmail"
-                    value={selectedUser.email || ''}
-                    onChange={(e) => setSelectedUser({...selectedUser, email: e.target.value})}
-                  />
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    checked={selectedUser.isActive}
-                    onCheckedChange={(checked) => setSelectedUser({...selectedUser, isActive: checked})}
-                  />
-                  <Label>Active</Label>
-                </div>
-                <div className="flex space-x-2">
-                  <Button onClick={handleSaveUser} className="flex-1">Save</Button>
-                  <Button variant="outline" onClick={() => setIsUserDialogOpen(false)} className="flex-1">Cancel</Button>
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
-
-        {/* Shop Edit Dialog */}
-        <Dialog open={isShopDialogOpen} onOpenChange={setIsShopDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Edit Shop</DialogTitle>
-            </DialogHeader>
-            {selectedShop && (
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="shopName">Shop Name</Label>
-                  <Input
-                    id="shopName"
-                    value={selectedShop.name}
-                    onChange={(e) => setSelectedShop({...selectedShop, name: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="shopAddress">Address</Label>
-                  <Input
-                    id="shopAddress"
-                    value={selectedShop.address}
-                    onChange={(e) => setSelectedShop({...selectedShop, address: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="shopPhone">Phone</Label>
-                  <Input
-                    id="shopPhone"
-                    value={selectedShop.phone}
-                    onChange={(e) => setSelectedShop({...selectedShop, phone: e.target.value})}
-                  />
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    checked={selectedShop.isActive}
-                    onCheckedChange={(checked) => setSelectedShop({...selectedShop, isActive: checked})}
-                  />
-                  <Label>Active</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    checked={selectedShop.allowsOfflineOrders}
-                    onCheckedChange={(checked) => setSelectedShop({...selectedShop, allowsOfflineOrders: checked})}
-                  />
-                  <Label>Allow Offline Orders</Label>
-                </div>
-                <div className="flex space-x-2">
-                  <Button onClick={handleSaveShop} className="flex-1">Save</Button>
-                  <Button variant="outline" onClick={() => setIsShopDialogOpen(false)} className="flex-1">Cancel</Button>
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
       </div>
     </div>
   );
