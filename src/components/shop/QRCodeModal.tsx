@@ -11,13 +11,15 @@ interface QRCodeModalProps {
   onClose: () => void;
   shopName: string;
   shopSlug?: string;
+  offlineModuleEnabled?: boolean;
 }
 
 const QRCodeModal: React.FC<QRCodeModalProps> = ({
   isOpen,
   onClose,
   shopName,
-  shopSlug
+  shopSlug,
+  offlineModuleEnabled = false
 }) => {
   // Generate proper URLs
   const baseUrl = window.location.origin;
@@ -98,6 +100,11 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({
               
               <p className="text-sm text-gray-600 mb-4">
                 Customers can scan this QR code to access your upload page directly
+                {offlineModuleEnabled && (
+                  <span className="block mt-1 text-xs text-blue-600">
+                    (Walk-in orders enabled)
+                  </span>
+                )}
               </p>
               
               <Button 
