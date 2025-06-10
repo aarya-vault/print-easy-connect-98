@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -117,7 +116,8 @@ const OptimizedDashboard: React.FC = () => {
   const handleViewDetails = (orderId: string) => {
     const order = orders.find(o => o.id === orderId);
     if (order) {
-      setSelectedOrder(order);
+      const apiOrder = convertShopOrderToApi(order);
+      setSelectedOrder(apiOrder);
       setIsDetailsModalOpen(true);
     }
   };

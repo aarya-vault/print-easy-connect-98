@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,6 +24,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import OrderDetailsModal from '@/components/shop/OrderDetailsModal';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ApiShopOrder } from '@/types/order';
+import { convertShopOrderToApi } from '@/utils/orderUtils';
 
 interface ShopOrder {
   id: string;
@@ -42,6 +43,7 @@ interface ShopOrder {
     original_name: string;
     file_size: number;
     mime_type: string;
+    file_path: string;
   }>;
 }
 
@@ -49,7 +51,7 @@ const FourColumnShopDashboard: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [selectedOrder, setSelectedOrder] = useState<ShopOrder | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<ApiShopOrder | null>(null);
   const [isOrderDetailsOpen, setIsOrderDetailsOpen] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
 
@@ -88,7 +90,24 @@ const FourColumnShopDashboard: React.FC = () => {
   };
 
   const handleOrderClick = (order: ShopOrder) => {
-    setSelectedOrder(order);
+    // Convert ShopOrder to ApiShopOrder format
+    const apiOrder: ApiShopOrder = {
+      id: order.id,
+      customer: order.customer,
+      order_type: order.order_type,
+      description: order.description,
+      status: order.status,
+      is_urgent: order.is_urgent,
+      created_at: order.created_at,
+      files: order.files?.map(file => ({
+        id: file.id,
+        original_name: file.original_name,
+        file_size: file.file_size,
+        mime_type: file.mime_type,
+        file_path: file.file_path || ''
+      }))
+    };
+    setSelectedOrder(apiOrder);
     setIsOrderDetailsOpen(true);
   };
 

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -163,7 +162,10 @@ const ModernDashboard: React.FC = () => {
 
   const handleViewDetails = useCallback((orderId: string) => {
     const order = orders.find(o => o.id === orderId);
-    setSelectedOrder(order || null);
+    if (order) {
+      const apiOrder = convertShopOrderToApi(order);
+      setSelectedOrder(apiOrder);
+    }
   }, [orders]);
 
   const handleOpenChat = useCallback((orderId: string) => {
