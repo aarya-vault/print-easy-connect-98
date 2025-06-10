@@ -21,12 +21,11 @@ api.interceptors.request.use((config) => {
 // Response interceptor for error handling
 api.interceptors.response.use(
   (response) => {
-    // Return only the data from the response
+    console.log('API Response:', response.data);
     return response.data;
   },
   (error) => {
     console.error('API Error:', error.response?.data || error.message);
-    // For errors, we want to preserve the original error structure
     throw error;
   }
 );
@@ -60,7 +59,7 @@ const apiService = {
     
     return api.post('/files/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
-      timeout: 60000, // 1 minute for large files
+      timeout: 60000,
     });
   },
 
