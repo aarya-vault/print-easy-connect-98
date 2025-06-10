@@ -24,27 +24,28 @@ import {
 
 interface OrderFile {
   id: string;
-  name: string;
-  type: string;
-  size: number;
-  url: string;
+  original_name: string;
+  file_size: number;
+  mime_type: string;
+  file_path: string;
 }
 
-interface ShopOrder {
+interface ApiShopOrder {
   id: string;
-  customerName: string;
-  customerPhone: string;
-  customerEmail?: string;
-  orderType: 'walk-in' | 'uploaded-files';
+  customer: {
+    name: string;
+    phone: string;
+  };
+  order_type: 'uploaded-files' | 'walk-in';
   description: string;
   status: 'received' | 'started' | 'completed';
-  isUrgent: boolean;
-  createdAt: Date;
+  is_urgent: boolean;
+  created_at: string;
   files?: OrderFile[];
 }
 
 interface OrderDetailsModalProps {
-  order: ShopOrder | null;
+  order: ApiShopOrder | null;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -74,6 +75,22 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
     }
   };
 
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleString();
+    } catch (error) {
+      return 'Invalid date';
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
@@ -85,7 +102,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                 {getStatusIcon(order.status)}
                 <span className="ml-2 capitalize">{order.status}</span>
               </Badge>
-              {order.isUrgent && (
+              {order.is_urgent && (
                 <Badge className="bg-red-100 text-red-800 border-red-300 text-xs sm:text-sm">
                   <Zap className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                   URGENT
@@ -103,7 +120,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                 <h3 className="font-semibold text-base sm:text-lg">Customer Information</h3>
                 <Button
                   size="sm"
-                  onClick={() => window.open(`tel:${order.customerPhone}`)}
+                  onClick={() => window.open(`tel:${order.customer?.phone || ''}`)}
                   className="bg-green-500 hover:bg-green-600 text-white w-full sm:w-auto"
                 >
                   <Phone className="w-4 h-4 mr-2" />
@@ -116,7 +133,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                     <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                   </div>
                   <div className="min-w-0">
-                    <p className="font-medium text-neutral-900 truncate">{order.customerName}</p>
+                    <p className="font-medium text-neutral-900 truncate">{order.customer?.name || 'Unknown Customer'}</p>
                     <p className="text-sm text-neutral-600">Customer Name</p>
                   </div>
                 </div>
@@ -125,7 +142,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                     <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
                   </div>
                   <div className="min-w-0">
-                    <p className="font-medium text-neutral-900">{order.customerPhone}</p>
+                    <p className="font-medium text-neutral-900">{order.customer?.phone || 'No phone'}</p>
                     <p className="text-sm text-neutral-600">Phone Number</p>
                   </div>
                 </div>
@@ -134,7 +151,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                     <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />
                   </div>
                   <div className="min-w-0">
-                    <p className="font-medium text-neutral-900 text-sm sm:text-base">{order.createdAt.toLocaleString()}</p>
+                    <p className="font-medium text-neutral-900 text-sm sm:text-base">{formatDate(order.created_at)}</p>
                     <p className="text-sm text-neutral-600">Order Created</p>
                   </div>
                 </div>
@@ -149,9 +166,9 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
                   <Badge className={`text-xs sm:text-sm ${
-                    order.orderType === 'uploaded-files' ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-purple-100 text-purple-700 border-purple-300'
+                    order.order_type === 'uploaded-files' ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-purple-100 text-purple-700 border-purple-300'
                   }`}>
-                    {order.orderType === 'uploaded-files' ? (
+                    {order.order_type === 'uploaded-files' ? (
                       <><Upload className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />UPLOADED FILES</>
                     ) : (
                       <><UserCheck className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />WALK-IN</>
@@ -160,25 +177,25 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                 </div>
                 <div>
                   <p className="font-medium text-neutral-900 mb-2">Description</p>
-                  <p className="text-neutral-700 text-sm sm:text-base leading-relaxed">{order.description}</p>
+                  <p className="text-neutral-700 text-sm sm:text-base leading-relaxed">{order.description || 'No description provided'}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Files Section - Only show for uploaded files */}
-          {order.orderType === 'uploaded-files' && order.files && order.files.length > 0 && (
+          {order.order_type === 'uploaded-files' && order.files && order.files.length > 0 && (
             <Card>
               <CardContent className="p-4 sm:p-6">
                 <h3 className="font-semibold text-base sm:text-lg mb-4">Files ({order.files.length})</h3>
                 <div className="space-y-3">
-                  {order.files.map((file) => (
-                    <div key={file.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-neutral-50 rounded-lg border border-neutral-200 gap-3">
+                  {order.files.map((file, index) => (
+                    <div key={file.id || index} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-neutral-50 rounded-lg border border-neutral-200 gap-3">
                       <div className="flex items-center gap-3 min-w-0">
                         <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-neutral-600 flex-shrink-0" />
                         <div className="min-w-0">
-                          <p className="font-medium text-neutral-900 text-sm sm:text-base truncate">{file.name}</p>
-                          <p className="text-xs sm:text-sm text-neutral-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                          <p className="font-medium text-neutral-900 text-sm sm:text-base truncate">{file.original_name}</p>
+                          <p className="text-xs sm:text-sm text-neutral-500">{formatFileSize(file.file_size)} • {file.mime_type}</p>
                         </div>
                       </div>
                       <div className="flex gap-2 flex-shrink-0">
