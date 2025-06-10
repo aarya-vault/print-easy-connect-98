@@ -68,7 +68,9 @@ const apiService = {
   // Admin
   getAdminStats: () => api.get('/admin/stats'),
   getAllUsers: (params?: any) => api.get('/admin/users', { params }),
+  getAdminUsers: (params?: any) => api.get('/admin/users', { params }),
   getAllShops: () => api.get('/admin/shops'),
+  getAdminShops: () => api.get('/admin/shops'),
   createShop: (shopData: any) => api.post('/admin/shops', shopData),
   updateUserStatus: (userId: number, isActive: boolean) => 
     api.patch(`/admin/users/${userId}/status`, { isActive }),

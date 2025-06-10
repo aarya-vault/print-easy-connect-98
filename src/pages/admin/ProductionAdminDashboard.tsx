@@ -24,7 +24,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import apiService from '@/services/api';
 
 interface User {
-  id: string;
+  id: number;
   name: string;
   email: string;
   phone?: string;
@@ -34,14 +34,14 @@ interface User {
 }
 
 interface Shop {
-  id: string;
+  id: number;
   name: string;
   address: string;
   phone: string;
   email: string;
   is_active: boolean;
   owner?: {
-    id: string;
+    id: number;
     name: string;
     email: string;
   };
@@ -83,7 +83,7 @@ const ProductionAdminDashboard: React.FC = () => {
         apiService.getAdminShops()
       ]);
 
-      setStats(statsResponse.stats);
+      setStats(statsResponse.stats || statsResponse);
       setUsers(usersResponse.users || []);
       setShops(shopsResponse.shops || []);
     } catch (error) {
@@ -102,7 +102,7 @@ const ProductionAdminDashboard: React.FC = () => {
     return matchesSearch && matchesFilter;
   });
 
-  const handleUserAction = async (action: string, userId: string) => {
+  const handleUserAction = async (action: string, userId: number) => {
     try {
       switch (action) {
         case 'activate':
