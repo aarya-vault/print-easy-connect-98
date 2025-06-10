@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
@@ -84,6 +83,34 @@ const apiService = {
   getShopAnalytics: (): Promise<any> => api.get('/admin/analytics/shops'),
   getUserAnalytics: (): Promise<any> => api.get('/admin/analytics/users'),
   getRealtimeMetrics: (): Promise<any> => api.get('/admin/analytics/realtime'),
+  
+  // Admin Analytics
+  getAdminAnalytics: async () => {
+    const response = await api.get('/admin/analytics/realtime');
+    return response.data;
+  },
+
+  // Admin Shop Management
+  updateShopSettings: async (shopId: number, shopData: any) => {
+    const response = await api.put(`/admin/shops/${shopId}`, shopData);
+    return response.data;
+  },
+
+  // Shop Management
+  getShopSettings: async () => {
+    const response = await api.get('/shops/settings');
+    return response.data;
+  },
+
+  generateShopQRCode: async () => {
+    const response = await api.post('/shops/qr-code');
+    return response.data;
+  },
+
+  getShopOrders: async () => {
+    const response = await api.get('/shops/orders');
+    return response.data;
+  },
 };
 
 export default apiService;

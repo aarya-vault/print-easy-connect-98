@@ -7,23 +7,40 @@ const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Phone-based login with minimal validation
+// Phone-based login with enhanced validation
 router.post('/phone-login', async (req, res) => {
   try {
     const { phone } = req.body;
 
     console.log('📱 Phone login attempt:', phone);
 
-    // Basic phone validation - just check if it exists and has at least 10 digits
-    if (!phone || phone.length < 10) {
+    // Enhanced phone validation
+    if (!phone) {
       return res.status(400).json({
         success: false,
-        error: 'Please provide a valid phone number'
+        error: 'Phone number is required'
       });
     }
 
-    // Clean phone number (remove spaces, dashes, etc.)
-    const cleanPhone = phone.replace(/\D/g, '');
+    // Clean phone number and validate format
+    let cleanPhone = phone.replace(/\D/g, '');
+    
+    // Handle different phone formats
+    if (cleanPhone.startsWith('91') && cleanPhone.length === 12) {
+      cleanPhone = cleanPhone.substring(2); // Remove country code
+    } else if (cleanPhone.startsWith('0') && cleanPhone.length === 11) {
+      cleanPhone = cleanPhone.substring(1); // Remove leading zero
+    }
+    
+    // Validate final phone number length
+    if (cleanPhone.length !== 10) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please provide a valid 10-digit phone number'
+      });
+    }
+
+    console.log('📱 Cleaned phone number:', cleanPhone);
     
     // Find or create user
     let user = await User.findOne({ where: { phone: cleanPhone } });
@@ -57,7 +74,8 @@ router.post('/phone-login', async (req, res) => {
       if (shop) {
         shopInfo = {
           shop_id: shop.id,
-          shop_name: shop.name
+          shop_name: shop.name,
+          shop_slug: shop.slug
         };
       }
     }

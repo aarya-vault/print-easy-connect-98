@@ -1,10 +1,157 @@
-
 const express = require('express');
 const { Shop, User, Order } = require('../models');
 const { authenticateToken } = require('../middleware/auth');
 const { Op } = require('sequelize');
+const QRCode = require('qrcode');
 
 const router = express.Router();
+
+// Get shop settings for shop owner
+router.get('/settings', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'shop_owner') {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied. Shop owner role required.'
+      });
+    }
+
+    const shop = await Shop.findOne({ 
+      where: { owner_id: req.user.id },
+      include: [
+        {
+          model: User,
+          as: 'owner',
+          attributes: ['id', 'name', 'email', 'phone']
+        }
+      ]
+    });
+
+    if (!shop) {
+      return res.status(404).json({
+        success: false,
+        error: 'No shop found for this user'
+      });
+    }
+
+    res.json({
+      success: true,
+      shop
+    });
+
+  } catch (error) {
+    console.error('Get shop settings error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get shop settings'
+    });
+  }
+});
+
+// Generate QR code for shop
+router.post('/qr-code', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'shop_owner') {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied. Shop owner role required.'
+      });
+    }
+
+    const shop = await Shop.findOne({ where: { owner_id: req.user.id } });
+    if (!shop) {
+      return res.status(404).json({
+        success: false,
+        error: 'No shop found for this user'
+      });
+    }
+
+    // Generate QR code URL - pointing to customer order page
+    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const qrUrl = `${baseUrl}/customer/order/${shop.slug || shop.id}`;
+    
+    // Generate QR code as data URL
+    const qrCodeDataUrl = await QRCode.toDataURL(qrUrl, {
+      width: 256,
+      margin: 2,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      }
+    });
+
+    // Update shop with QR code URL
+    await shop.update({
+      qr_code_url: qrCodeDataUrl
+    });
+
+    res.json({
+      success: true,
+      qrCode: {
+        url: qrUrl,
+        dataUrl: qrCodeDataUrl,
+        shopName: shop.name
+      }
+    });
+
+  } catch (error) {
+    console.error('Generate QR code error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate QR code'
+    });
+  }
+});
+
+// Get shop orders for dashboard
+router.get('/orders', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'shop_owner') {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied. Shop owner role required.'
+      });
+    }
+
+    const shop = await Shop.findOne({ where: { owner_id: req.user.id } });
+    if (!shop) {
+      return res.status(404).json({
+        success: false,
+        error: 'No shop found for this user'
+      });
+    }
+
+    const orders = await Order.findAll({
+      where: { shop_id: shop.id },
+      order: [['created_at', 'DESC']],
+      limit: 100
+    });
+
+    // Separate orders by type and status
+    const digitalOrders = orders.filter(order => order.order_type === 'uploaded-files');
+    const walkinOrders = orders.filter(order => order.order_type === 'walk-in');
+    const activeOrders = orders.filter(order => order.status !== 'completed');
+    const completedOrders = orders.filter(order => order.status === 'completed');
+
+    res.json({
+      success: true,
+      orders: {
+        all: orders,
+        digital: digitalOrders,
+        walkin: walkinOrders,
+        active: activeOrders,
+        completed: completedOrders
+      }
+    });
+
+  } catch (error) {
+    console.error('Get shop orders error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get shop orders'
+    });
+  }
+});
 
 // Get all shops with optional filtering
 router.get('/', async (req, res) => {

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import { 
   Users, 
   Store, 
@@ -15,8 +16,7 @@ import {
   Plus,
   Eye,
   Settings,
-  ToggleLeft,
-  ToggleRight,
+  Edit,
   Trash2,
   LogOut
 } from 'lucide-react';
@@ -26,16 +26,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import RealTimeAnalytics from '@/components/admin/RealTimeAnalytics';
 
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  role: string;
-  is_active: boolean;
-  created_at: string;
-}
-
 interface Shop {
   id: number;
   name: string;
@@ -43,6 +33,8 @@ interface Shop {
   phone: string;
   email: string;
   is_active: boolean;
+  allows_offline_orders: boolean;
+  shop_timings: string;
   owner: {
     name: string;
     email: string;
@@ -60,7 +52,7 @@ const ProductionAdminDashboard: React.FC = () => {
   const { data: statsData, refetch: refetchStats } = useQuery({
     queryKey: ['admin-stats'],
     queryFn: apiService.getAdminStats,
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 30000,
   });
 
   // Fetch users
@@ -93,25 +85,27 @@ const ProductionAdminDashboard: React.FC = () => {
     navigate('/login');
   };
 
-  const handleToggleUserStatus = async (userId: number, isActive: boolean) => {
+  const handleToggleOfflineAccess = async (shopId: number, currentValue: boolean) => {
     try {
-      await apiService.updateUserStatus(userId, !isActive);
-      refetchUsers();
-      toast.success(`User ${!isActive ? 'activated' : 'deactivated'} successfully`);
+      await apiService.updateShopSettings(shopId, {
+        allows_offline_orders: !currentValue
+      });
+      refetchShops();
+      toast.success(`Offline access ${!currentValue ? 'enabled' : 'disabled'} for shop`);
     } catch (error) {
-      toast.error('Failed to update user status');
+      toast.error('Failed to update offline access');
     }
   };
 
-  const handleDeleteUser = async (userId: number) => {
-    if (!confirm('Are you sure you want to delete this user?')) return;
-    
+  const handleToggleShopStatus = async (shopId: number, currentValue: boolean) => {
     try {
-      await apiService.deleteUser(userId);
-      refetchUsers();
-      toast.success('User deleted successfully');
+      await apiService.updateShopSettings(shopId, {
+        is_active: !currentValue
+      });
+      refetchShops();
+      toast.success(`Shop ${!currentValue ? 'activated' : 'deactivated'}`);
     } catch (error) {
-      toast.error('Failed to delete user');
+      toast.error('Failed to update shop status');
     }
   };
 
@@ -134,12 +128,14 @@ const ProductionAdminDashboard: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-golden-50 via-white to-golden-100">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
+      <div className="bg-white border-b border-golden-200 px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Print<span className="text-golden-600">Easy</span> Admin Dashboard
+            </h1>
             <p className="text-gray-600">Manage users, shops, and monitor system analytics</p>
           </div>
           
@@ -166,7 +162,7 @@ const ProductionAdminDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Stats Overview - Only Real Metrics, No Revenue */}
+      {/* Stats Overview */}
       <div className="p-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <StatCard
@@ -211,7 +207,7 @@ const ProductionAdminDashboard: React.FC = () => {
                     onClick={() => setActiveTab(tab.id as any)}
                     className={`py-4 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
                       activeTab === tab.id
-                        ? 'border-blue-500 text-blue-700'
+                        ? 'border-golden-500 text-golden-700'
                         : 'border-transparent text-gray-600 hover:text-gray-900'
                     }`}
                   >
@@ -232,16 +228,14 @@ const ProductionAdminDashboard: React.FC = () => {
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-semibold">Users Management</h2>
-                  <div className="flex items-center space-x-3">
-                    <div className="relative">
-                      <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                      <Input
-                        placeholder="Search users..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 w-64"
-                      />
-                    </div>
+                  <div className="relative">
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <Input
+                      placeholder="Search users..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 w-64"
+                    />
                   </div>
                 </div>
 
@@ -250,15 +244,15 @@ const ProductionAdminDashboard: React.FC = () => {
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {users.map((user: User) => (
+                        {users.map((user: any) => (
                           <tr key={user.id} className="hover:bg-gray-50">
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div>
@@ -283,24 +277,10 @@ const ProductionAdminDashboard: React.FC = () => {
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {new Date(user.created_at).toLocaleDateString()}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                              <div className="flex items-center justify-end space-x-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleToggleUserStatus(user.id, user.is_active)}
-                                >
-                                  {user.is_active ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleDeleteUser(user.id)}
-                                  className="text-red-600 hover:bg-red-50"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
+                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                              <Button size="sm" variant="outline" className="text-red-600">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
                             </td>
                           </tr>
                         ))}
@@ -315,7 +295,7 @@ const ProductionAdminDashboard: React.FC = () => {
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-semibold">Shops Management</h2>
-                  <Button onClick={() => navigate('/admin/add-shop')}>
+                  <Button onClick={() => navigate('/admin/add-shop')} className="bg-golden-500 hover:bg-golden-600">
                     <Plus className="w-4 h-4 mr-2" />
                     Add New Shop
                   </Button>
@@ -326,12 +306,12 @@ const ProductionAdminDashboard: React.FC = () => {
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Shop</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Shop</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Owner</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Offline Orders</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Timings</th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
@@ -350,24 +330,37 @@ const ProductionAdminDashboard: React.FC = () => {
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm text-gray-900">{shop.phone}</div>
-                              <div className="text-sm text-gray-500">{shop.email}</div>
+                              <div className="flex items-center space-x-2">
+                                <Switch
+                                  checked={shop.is_active}
+                                  onCheckedChange={() => handleToggleShopStatus(shop.id, shop.is_active)}
+                                />
+                                <span className="text-sm text-gray-600">
+                                  {shop.is_active ? 'Active' : 'Inactive'}
+                                </span>
+                              </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <Badge className={shop.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                                {shop.is_active ? 'Active' : 'Inactive'}
-                              </Badge>
+                              <div className="flex items-center space-x-2">
+                                <Switch
+                                  checked={shop.allows_offline_orders}
+                                  onCheckedChange={() => handleToggleOfflineAccess(shop.id, shop.allows_offline_orders)}
+                                />
+                                <span className="text-sm text-gray-600">
+                                  {shop.allows_offline_orders ? 'Enabled' : 'Disabled'}
+                                </span>
+                              </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {new Date(shop.created_at).toLocaleDateString()}
+                              {shop.shop_timings || 'Not set'}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <td className="px-6 py-4 whitespace-nowrap text-right">
                               <div className="flex items-center justify-end space-x-2">
                                 <Button size="sm" variant="outline">
                                   <Eye className="w-4 h-4" />
                                 </Button>
                                 <Button size="sm" variant="outline">
-                                  <Settings className="w-4 h-4" />
+                                  <Edit className="w-4 h-4" />
                                 </Button>
                               </div>
                             </td>

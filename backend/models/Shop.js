@@ -24,6 +24,18 @@ module.exports = (sequelize) => {
         len: [2, 255]
       }
     },
+    slug: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      unique: true,
+      validate: {
+        isSlug(value) {
+          if (value && !/^[a-z0-9-]+$/.test(value)) {
+            throw new Error('Slug must contain only lowercase letters, numbers, and hyphens');
+          }
+        }
+      }
+    },
     address: {
       type: DataTypes.TEXT,
       allowNull: false,
@@ -68,6 +80,15 @@ module.exports = (sequelize) => {
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: true
+    },
+    shop_timings: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      defaultValue: 'Mon-Sat: 9:00 AM - 7:00 PM'
+    },
+    qr_code_url: {
+      type: DataTypes.TEXT,
+      allowNull: true
     }
   }, {
     tableName: 'shops',
@@ -80,6 +101,15 @@ module.exports = (sequelize) => {
       },
       {
         fields: ['is_active']
+      },
+      {
+        unique: true,
+        fields: ['slug'],
+        where: {
+          slug: {
+            [sequelize.Sequelize.Op.ne]: null
+          }
+        }
       }
     ]
   });

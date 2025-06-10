@@ -21,146 +21,18 @@ import {
 } from 'lucide-react';
 import apiService from '@/services/api';
 
-interface AnalyticsData {
-  orders: Array<{
-    date: string;
-    count: number;
-    uploaded_files: number;
-    walk_in: number;
-  }>;
-  ordersByStatus: Array<{
-    status: string;
-    count: number;
-  }>;
-  shopPerformance: Array<{
-    shop_name: string;
-    total_orders: number;
-    avg_completion_time: number;
-  }>;
-  realtimeMetrics: {
-    activeUsers: number;
-    ordersToday: number;
-    avgProcessingTime: number;
-    completionRate: number;
-  };
-}
-
 const RealTimeAnalytics: React.FC = () => {
-  const [refreshInterval, setRefreshInterval] = useState(30000); // 30 seconds
   const [lastRefresh, setLastRefresh] = useState(new Date());
 
-  // Fetch real-time analytics data
+  // Fetch real-time analytics data from backend
   const { data: analyticsData, refetch, isLoading } = useQuery({
-    queryKey: ['realtime-analytics'],
+    queryKey: ['admin-realtime-analytics'],
     queryFn: async () => {
-      // Since we don't have specific analytics endpoints yet, we'll use existing data
-      const [orders, users, shops] = await Promise.all([
-        apiService.getCustomerOrders(),
-        apiService.getAdminUsers(),
-        apiService.getAdminShops()
-      ]);
-
-      // Process the data to create analytics
-      const processedData = processAnalyticsData(orders, users, shops);
-      return processedData;
+      const response = await apiService.getAdminAnalytics();
+      return response.analytics;
     },
-    refetchInterval: refreshInterval,
+    refetchInterval: 30000, // Refresh every 30 seconds
   });
-
-  const processAnalyticsData = (orders: any, users: any, shops: any) => {
-    const ordersArray = orders?.orders || [];
-    const usersArray = users?.users || [];
-    const shopsArray = shops?.shops || [];
-
-    // Generate order trends for last 7 days
-    const orderTrends = generateOrderTrends(ordersArray);
-    
-    // Generate status distribution
-    const statusDistribution = generateStatusDistribution(ordersArray);
-    
-    // Generate shop performance metrics
-    const shopPerformance = generateShopPerformance(ordersArray, shopsArray);
-    
-    // Calculate real-time metrics
-    const realtimeMetrics = calculateRealtimeMetrics(ordersArray, usersArray);
-
-    return {
-      orders: orderTrends,
-      ordersByStatus: statusDistribution,
-      shopPerformance: shopPerformance,
-      realtimeMetrics: realtimeMetrics
-    };
-  };
-
-  const generateOrderTrends = (orders: any[]) => {
-    const last7Days = Array.from({ length: 7 }, (_, i) => {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      return date.toISOString().split('T')[0];
-    }).reverse();
-
-    return last7Days.map(date => {
-      const dayOrders = orders.filter(order => 
-        order.created_at?.startsWith(date)
-      );
-      
-      return {
-        date: new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
-        count: dayOrders.length,
-        uploaded_files: dayOrders.filter(o => o.order_type === 'uploaded-files').length,
-        walk_in: dayOrders.filter(o => o.order_type === 'walk-in').length
-      };
-    });
-  };
-
-  const generateStatusDistribution = (orders: any[]) => {
-    const statusCounts = orders.reduce((acc, order) => {
-      const status = order.status || 'received';
-      acc[status] = (acc[status] || 0) + 1;
-      return acc;
-    }, {});
-
-    return Object.entries(statusCounts).map(([status, count]) => ({
-      status: status.charAt(0).toUpperCase() + status.slice(1),
-      count: count as number
-    }));
-  };
-
-  const generateShopPerformance = (orders: any[], shops: any[]) => {
-    const shopStats = shops.slice(0, 5).map(shop => {
-      const shopOrders = orders.filter(order => order.shop_id === shop.id);
-      const completedOrders = shopOrders.filter(order => order.status === 'completed');
-      
-      // Calculate average completion time (mock data for now)
-      const avgTime = Math.floor(Math.random() * 120) + 30; // 30-150 minutes
-      
-      return {
-        shop_name: shop.name.length > 15 ? shop.name.substring(0, 15) + '...' : shop.name,
-        total_orders: shopOrders.length,
-        avg_completion_time: avgTime
-      };
-    });
-
-    return shopStats;
-  };
-
-  const calculateRealtimeMetrics = (orders: any[], users: any[]) => {
-    const today = new Date().toISOString().split('T')[0];
-    const todayOrders = orders.filter(order => 
-      order.created_at?.startsWith(today)
-    );
-    
-    const completedToday = todayOrders.filter(order => 
-      order.status === 'completed'
-    );
-
-    return {
-      activeUsers: users.filter(user => user.is_active).length,
-      ordersToday: todayOrders.length,
-      avgProcessingTime: Math.floor(Math.random() * 120) + 45, // Mock data
-      completionRate: todayOrders.length > 0 ? Math.round((completedToday.length / todayOrders.length) * 100) : 0
-    };
-  };
 
   const handleManualRefresh = () => {
     refetch();
@@ -224,6 +96,8 @@ const RealTimeAnalytics: React.FC = () => {
   const metrics = analyticsData?.realtimeMetrics || {
     activeUsers: 0,
     ordersToday: 0,
+    urgentOrders: 0,
+    pendingOrders: 0,
     avgProcessingTime: 0,
     completionRate: 0
   };
@@ -270,16 +144,14 @@ const RealTimeAnalytics: React.FC = () => {
           color="bg-green-100"
         />
         <MetricCard
-          title="Avg Processing Time"
-          value={`${metrics.avgProcessingTime}m`}
-          change={-8}
-          icon={<Clock className="w-6 h-6 text-orange-600" />}
-          color="bg-orange-100"
+          title="Urgent Orders"
+          value={metrics.urgentOrders}
+          icon={<Clock className="w-6 h-6 text-red-600" />}
+          color="bg-red-100"
         />
         <MetricCard
-          title="Completion Rate"
-          value={`${metrics.completionRate}%`}
-          change={3}
+          title="Pending Orders"
+          value={metrics.pendingOrders}
           icon={<TrendingUp className="w-6 h-6 text-purple-600" />}
           color="bg-purple-100"
         />
@@ -373,7 +245,7 @@ const RealTimeAnalytics: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="w-5 h-5" />
-              Shop Performance
+              Top Shop Performance
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -386,72 +258,6 @@ const RealTimeAnalytics: React.FC = () => {
                 <Bar dataKey="total_orders" fill="#8B5CF6" name="Total Orders" />
               </BarChart>
             </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Data Tables */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Activity */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent System Activity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {[
-                { time: '2 min ago', action: 'New order placed', type: 'order', status: 'new' },
-                { time: '5 min ago', action: 'Order completed', type: 'order', status: 'completed' },
-                { time: '8 min ago', action: 'New shop registered', type: 'shop', status: 'new' },
-                { time: '12 min ago', action: 'User logged in', type: 'user', status: 'active' },
-                { time: '15 min ago', action: 'Order status updated', type: 'order', status: 'updated' }
-              ].map((activity, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{activity.action}</p>
-                    <p className="text-xs text-gray-500">{activity.time}</p>
-                  </div>
-                  <Badge 
-                    className={`${
-                      activity.status === 'new' ? 'bg-blue-100 text-blue-800' :
-                      activity.status === 'completed' ? 'bg-green-100 text-green-800' :
-                      activity.status === 'active' ? 'bg-purple-100 text-purple-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}
-                  >
-                    {activity.status}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* System Health */}
-        <Card>
-          <CardHeader>
-            <CardTitle>System Health Metrics</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[
-                { metric: 'API Response Time', value: '124ms', status: 'good', color: 'green' },
-                { metric: 'Database Connection', value: 'Stable', status: 'good', color: 'green' },
-                { metric: 'File Upload Success Rate', value: '99.2%', status: 'good', color: 'green' },
-                { metric: 'Error Rate', value: '0.1%', status: 'good', color: 'green' },
-                { metric: 'Active Connections', value: '47', status: 'normal', color: 'blue' }
-              ].map((health, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">{health.metric}</span>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm font-medium">{health.value}</span>
-                    <div className={`w-2 h-2 rounded-full ${
-                      health.color === 'green' ? 'bg-green-500' : 'bg-blue-500'
-                    }`}></div>
-                  </div>
-                </div>
-              ))}
-            </div>
           </CardContent>
         </Card>
       </div>

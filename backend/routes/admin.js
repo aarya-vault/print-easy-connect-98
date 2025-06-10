@@ -182,6 +182,133 @@ router.post('/shops', authenticateToken, authorizeRoles('admin'), validateShopCr
   }
 });
 
+// Get real-time analytics data
+router.get('/analytics/realtime', authenticateToken, authorizeRoles('admin'), async (req, res) => {
+  try {
+    const [totalUsers, totalShops, totalOrders, activeUsers, todayOrders] = await Promise.all([
+      User.count(),
+      Shop.count(),
+      Order.count(),
+      User.count({ where: { is_active: true } }),
+      Order.count({
+        where: {
+          created_at: {
+            [Op.gte]: new Date(new Date().setHours(0, 0, 0, 0))
+          }
+        }
+      })
+    ]);
+
+    // Get order trends for last 7 days
+    const orderTrends = await Promise.all(
+      Array.from({ length: 7 }, async (_, i) => {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const startOfDay = new Date(date.setHours(0, 0, 0, 0));
+        const endOfDay = new Date(date.setHours(23, 59, 59, 999));
+
+        const [totalCount, uploadedCount, walkinCount] = await Promise.all([
+          Order.count({
+            where: {
+              created_at: { [Op.between]: [startOfDay, endOfDay] }
+            }
+          }),
+          Order.count({
+            where: {
+              created_at: { [Op.between]: [startOfDay, endOfDay] },
+              order_type: 'uploaded-files'
+            }
+          }),
+          Order.count({
+            where: {
+              created_at: { [Op.between]: [startOfDay, endOfDay] },
+              order_type: 'walk-in'
+            }
+          })
+        ]);
+
+        return {
+          date: startOfDay.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+          count: totalCount,
+          uploaded_files: uploadedCount,
+          walk_in: walkinCount
+        };
+      })
+    );
+
+    // Get order status distribution
+    const ordersByStatus = await Order.findAll({
+      attributes: [
+        'status',
+        [require('sequelize').fn('COUNT', '*'), 'count']
+      ],
+      group: ['status'],
+      raw: true
+    });
+
+    // Get shop performance
+    const shopPerformance = await Shop.findAll({
+      attributes: [
+        'name',
+        [require('sequelize').fn('COUNT', require('sequelize').col('orders.id')), 'total_orders']
+      ],
+      include: [{
+        model: Order,
+        as: 'orders',
+        attributes: []
+      }],
+      group: ['Shop.id', 'Shop.name'],
+      limit: 5,
+      order: [[require('sequelize').fn('COUNT', require('sequelize').col('orders.id')), 'DESC']],
+      raw: true
+    });
+
+    const urgentOrders = await Order.count({
+      where: { 
+        is_urgent: true,
+        status: { [Op.ne]: 'completed' }
+      }
+    });
+
+    const pendingOrders = await Order.count({
+      where: { 
+        status: { [Op.in]: ['received', 'started'] }
+      }
+    });
+
+    res.json({
+      success: true,
+      analytics: {
+        orders: orderTrends.reverse(),
+        ordersByStatus: ordersByStatus.map(item => ({
+          status: item.status.charAt(0).toUpperCase() + item.status.slice(1),
+          count: parseInt(item.count)
+        })),
+        shopPerformance: shopPerformance.map(item => ({
+          shop_name: item.name.length > 15 ? item.name.substring(0, 15) + '...' : item.name,
+          total_orders: parseInt(item.total_orders),
+          avg_completion_time: Math.floor(Math.random() * 120) + 30 // Mock data for now
+        })),
+        realtimeMetrics: {
+          activeUsers,
+          ordersToday: todayOrders,
+          urgentOrders,
+          pendingOrders,
+          avgProcessingTime: Math.floor(Math.random() * 120) + 45, // Mock data for now
+          completionRate: todayOrders > 0 ? Math.round((todayOrders / totalOrders) * 100) : 0
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Get analytics error:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to get analytics data'
+    });
+  }
+});
+
 // Update user status
 router.patch('/users/:userId/status', authenticateToken, authorizeRoles('admin'), async (req, res) => {
   try {
@@ -269,6 +396,76 @@ router.get('/stats', authenticateToken, authorizeRoles('admin'), async (req, res
     res.status(500).json({ 
       success: false,
       error: 'Failed to get statistics'
+    });
+  }
+});
+
+// Update shop settings
+router.put('/shops/:shopId', authenticateToken, authorizeRoles('admin'), async (req, res) => {
+  try {
+    const { shopId } = req.params;
+    const { 
+      name, 
+      address, 
+      phone, 
+      email, 
+      description, 
+      is_active, 
+      allows_offline_orders, 
+      shop_timings 
+    } = req.body;
+
+    const shop = await Shop.findByPk(shopId);
+    if (!shop) {
+      return res.status(404).json({
+        success: false,
+        error: 'Shop not found'
+      });
+    }
+
+    // Generate new slug if name changed
+    let slug = shop.slug;
+    if (name && name !== shop.name) {
+      slug = name.toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .trim();
+    }
+
+    await shop.update({
+      name: name || shop.name,
+      slug,
+      address: address || shop.address,
+      phone: phone || shop.phone,
+      email: email || shop.email,
+      description: description !== undefined ? description : shop.description,
+      is_active: is_active !== undefined ? is_active : shop.is_active,
+      allows_offline_orders: allows_offline_orders !== undefined ? allows_offline_orders : shop.allows_offline_orders,
+      shop_timings: shop_timings || shop.shop_timings
+    });
+
+    const updatedShop = await Shop.findByPk(shopId, {
+      include: [
+        { 
+          model: User, 
+          as: 'owner',
+          attributes: ['id', 'name', 'email', 'phone']
+        }
+      ]
+    });
+
+    res.json({
+      success: true,
+      message: 'Shop updated successfully',
+      shop: updatedShop
+    });
+
+  } catch (error) {
+    console.error('Update shop error:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to update shop'
     });
   }
 });
