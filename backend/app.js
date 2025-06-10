@@ -1,4 +1,3 @@
-
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -18,6 +17,7 @@ const orderRoutes = require('./routes/orders');
 const shopRoutes = require('./routes/shops');
 const fileRoutes = require('./routes/files');
 const chatRoutes = require('./routes/chat');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 const server = http.createServer(app);
@@ -132,11 +132,12 @@ app.get('/', (req, res) => {
 });
 
 // API routes with proper mounting
-app.use('/api/auth', authRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/shops', shopRoutes);
-app.use('/api/files', fileRoutes);
-app.use('/api/chat', chatRoutes);
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/shops', require('./routes/shops'));
+app.use('/api/orders', require('./routes/orders'));
+app.use('/api/files', require('./routes/files'));
+app.use('/api/chat', require('./routes/chat'));
+app.use('/api/admin', require('./routes/admin'));
 
 // 404 handler
 app.use('*', (req, res) => {

@@ -15,11 +15,11 @@ module.exports = {
 
       console.log('🧹 Cleared existing data');
 
-      // Hash passwords
-      const hashedPassword = await bcrypt.hash('password123', 10);
+      // Hash passwords properly
+      const hashedShopPassword = await bcrypt.hash('password123', 10);
       const hashedAdminPassword = await bcrypt.hash('admin123', 10);
 
-      // Create Users
+      // Create Users with proper password hashing
       const users = await queryInterface.bulkInsert('users', [
         {
           // Customer - Phone login only
@@ -31,17 +31,17 @@ module.exports = {
           updated_at: new Date()
         },
         {
-          // Shop Owner - Email login
+          // Shop Owner - Email login with properly hashed password
           email: 'shop@printeasy.com',
           name: 'Quick Print Owner',
-          password: hashedPassword,
+          password: hashedShopPassword,
           role: 'shop_owner',
           is_active: true,
           created_at: new Date(),
           updated_at: new Date()
         },
         {
-          // Admin - Email login
+          // Admin - Email login with properly hashed password
           email: 'admin@printeasy.com',
           name: 'PrintEasy Admin',
           password: hashedAdminPassword,
@@ -66,12 +66,22 @@ module.exports = {
           is_active: true,
           created_at: new Date(),
           updated_at: new Date()
+        },
+        {
+          // Additional shop owner for testing
+          email: 'shop2@printeasy.com',
+          name: 'Digital Print Hub Owner',
+          password: hashedShopPassword,
+          role: 'shop_owner',
+          is_active: true,
+          created_at: new Date(),
+          updated_at: new Date()
         }
       ], { transaction, returning: true });
 
       console.log('✅ Created users:', users.length);
 
-      // Create Shops
+      // Create Shops with proper owner relationships
       const shops = await queryInterface.bulkInsert('shops', [
         {
           name: 'Quick Print Solutions',
@@ -92,7 +102,7 @@ module.exports = {
           phone: '+91 98765 43211',
           email: 'info@digitalprintHub.com',
           description: 'Modern digital printing solutions for all your needs. Specializing in high-quality color prints.',
-          owner_id: null, // No owner assigned yet
+          owner_id: 6, // shop2@printeasy.com
           rating: 4.2,
           is_active: true,
           allows_offline_orders: false,
@@ -106,7 +116,7 @@ module.exports = {
       // Create Sample Orders
       const orders = await queryInterface.bulkInsert('orders', [
         {
-          id: 'ORD001',
+          id: 'UF000001',
           customer_id: 1, // Rajesh Kumar
           shop_id: 1, // Quick Print Solutions
           order_type: 'uploaded-files',
@@ -114,13 +124,12 @@ module.exports = {
           description: 'Print 50 copies of project report with spiral binding',
           customer_name: 'Rajesh Kumar',
           customer_phone: '9876543210',
-          total_pages: 50,
-          urgent: false,
+          is_urgent: false,
           created_at: new Date(Date.now() - 86400000), // 1 day ago
           updated_at: new Date(Date.now() - 3600000) // 1 hour ago
         },
         {
-          id: 'ORD002',
+          id: 'WI000001',
           customer_id: 4, // Priya Sharma
           shop_id: 1, // Quick Print Solutions
           order_type: 'walk-in',
@@ -128,13 +137,12 @@ module.exports = {
           description: 'Resume printing on premium paper - 5 copies',
           customer_name: 'Priya Sharma',
           customer_phone: '9876543211',
-          total_pages: 5,
-          urgent: true,
+          is_urgent: true,
           created_at: new Date(Date.now() - 7200000), // 2 hours ago
           updated_at: new Date(Date.now() - 1800000) // 30 minutes ago
         },
         {
-          id: 'ORD003',
+          id: 'UF000002',
           customer_id: 5, // Amit Singh
           shop_id: 2, // Digital Print Hub
           order_type: 'uploaded-files',
@@ -142,8 +150,7 @@ module.exports = {
           description: 'Color brochure printing - 100 copies',
           customer_name: 'Amit Singh',
           customer_phone: '9876543212',
-          total_pages: 100,
-          urgent: false,
+          is_urgent: false,
           created_at: new Date(Date.now() - 1800000), // 30 minutes ago
           updated_at: new Date(Date.now() - 1800000)
         }
@@ -154,20 +161,20 @@ module.exports = {
       // Create Sample Files
       await queryInterface.bulkInsert('files', [
         {
-          order_id: 'ORD001',
+          order_id: 'UF000001',
           filename: 'project_report_1640995200000.pdf',
           original_name: 'project_report.pdf',
-          file_path: '/uploads/ORD001/project_report_1640995200000.pdf',
+          file_path: '/uploads/UF000001/project_report_1640995200000.pdf',
           file_size: 2048576, // 2MB
           mime_type: 'application/pdf',
           created_at: new Date(Date.now() - 86400000),
           updated_at: new Date(Date.now() - 86400000)
         },
         {
-          order_id: 'ORD003',
+          order_id: 'UF000002',
           filename: 'brochure_design_1640995800000.pdf',
           original_name: 'brochure_design.pdf',
-          file_path: '/uploads/ORD003/brochure_design_1640995800000.pdf',
+          file_path: '/uploads/UF000002/brochure_design_1640995800000.pdf',
           file_size: 5242880, // 5MB
           mime_type: 'application/pdf',
           created_at: new Date(Date.now() - 1800000),
@@ -180,7 +187,7 @@ module.exports = {
       // Create Sample Messages
       await queryInterface.bulkInsert('messages', [
         {
-          order_id: 'ORD001',
+          order_id: 'UF000001',
           sender_id: 1, // Rajesh Kumar
           recipient_id: 2, // Shop Owner
           message: 'Hi, when will my order be ready for pickup?',
@@ -189,7 +196,7 @@ module.exports = {
           updated_at: new Date(Date.now() - 7200000)
         },
         {
-          order_id: 'ORD001',
+          order_id: 'UF000001',
           sender_id: 2, // Shop Owner
           recipient_id: 1, // Rajesh Kumar
           message: 'Your order is completed and ready for pickup. Shop timings: 9 AM to 7 PM.',
@@ -198,7 +205,7 @@ module.exports = {
           updated_at: new Date(Date.now() - 3600000)
         },
         {
-          order_id: 'ORD002',
+          order_id: 'WI000001',
           sender_id: 2, // Shop Owner
           recipient_id: 4, // Priya Sharma
           message: 'Started working on your resume printing. Will be ready in 30 minutes.',

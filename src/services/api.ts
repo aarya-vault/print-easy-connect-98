@@ -1,4 +1,3 @@
-
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 class ApiService {
@@ -267,6 +266,46 @@ class ApiService {
   async getUnreadMessageCount() {
     const response = await this.makeRequest('/chat/unread-count');
     return response.unreadCount || 0;
+  }
+
+  // Admin methods
+  async getAdminStats() {
+    return this.makeRequest('/admin/stats');
+  }
+
+  async getAdminUsers(page = 1, limit = 50, search = '', role = '') {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      search,
+      role
+    });
+    
+    return this.makeRequest(`/admin/users?${params}`);
+  }
+
+  async getAdminShops() {
+    return this.makeRequest('/admin/shops');
+  }
+
+  async createShop(shopData: any) {
+    return this.makeRequest('/admin/shops', {
+      method: 'POST',
+      body: JSON.stringify(shopData),
+    });
+  }
+
+  async updateUserStatus(userId: string, isActive: boolean) {
+    return this.makeRequest(`/admin/users/${userId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ isActive }),
+    });
+  }
+
+  async deleteUser(userId: string) {
+    return this.makeRequest(`/admin/users/${userId}`, {
+      method: 'DELETE',
+    });
   }
 
   // Data normalization helpers

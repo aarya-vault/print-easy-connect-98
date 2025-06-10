@@ -29,8 +29,8 @@ interface User {
   email: string;
   phone?: string;
   role: 'customer' | 'shop_owner' | 'admin';
-  isActive: boolean;
-  createdAt: Date;
+  is_active: boolean;
+  created_at: Date;
 }
 
 interface Shop {
@@ -39,8 +39,13 @@ interface Shop {
   address: string;
   phone: string;
   email: string;
-  isActive: boolean;
-  createdAt: Date;
+  is_active: boolean;
+  owner?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  created_at: Date;
 }
 
 interface DashboardStats {
@@ -71,68 +76,16 @@ const ProductionAdminDashboard: React.FC = () => {
   const loadDashboardData = async () => {
     setIsLoading(true);
     try {
-      // Load mock data for demonstration
-      const mockStats: DashboardStats = {
-        totalUsers: 150,
-        totalShops: 25,
-        totalOrders: 450,
-        activeUsers: 125
-      };
+      // Load real data from API
+      const [statsResponse, usersResponse, shopsResponse] = await Promise.all([
+        apiService.getAdminStats(),
+        apiService.getAdminUsers(),
+        apiService.getAdminShops()
+      ]);
 
-      const mockUsers: User[] = [
-        {
-          id: '1',
-          name: 'John Customer',
-          email: 'customer@example.com',
-          phone: '9876543210',
-          role: 'customer',
-          isActive: true,
-          createdAt: new Date()
-        },
-        {
-          id: '2',
-          name: 'Quick Print Shop',
-          email: 'shop@printeasy.com',
-          phone: '9876543211',
-          role: 'shop_owner',
-          isActive: true,
-          createdAt: new Date()
-        },
-        {
-          id: '3',
-          name: 'Admin User',
-          email: 'admin@printeasy.com',
-          phone: '9876543212',
-          role: 'admin',
-          isActive: true,
-          createdAt: new Date()
-        }
-      ];
-
-      const mockShops: Shop[] = [
-        {
-          id: '1',
-          name: 'Quick Print Solutions',
-          address: 'Shop 12, MG Road, Bangalore',
-          phone: '+91 98765 43210',
-          email: 'contact@quickprint.com',
-          isActive: true,
-          createdAt: new Date()
-        },
-        {
-          id: '2',
-          name: 'Campus Copy Center',
-          address: 'Near College Gate, Whitefield',
-          phone: '+91 87654 32109',
-          email: 'info@campuscopy.com',
-          isActive: true,
-          createdAt: new Date()
-        }
-      ];
-
-      setStats(mockStats);
-      setUsers(mockUsers);
-      setShops(mockShops);
+      setStats(statsResponse.stats);
+      setUsers(usersResponse.users || []);
+      setShops(shopsResponse.shops || []);
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
       toast.error('Failed to load dashboard data');
@@ -142,8 +95,9 @@ const ProductionAdminDashboard: React.FC = () => {
   };
 
   const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         user.phone?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = userFilter === 'all' || user.role === userFilter;
     return matchesSearch && matchesFilter;
   });
@@ -152,23 +106,23 @@ const ProductionAdminDashboard: React.FC = () => {
     try {
       switch (action) {
         case 'activate':
-          // Implement user activation
+          await apiService.updateUserStatus(userId, true);
           toast.success('User activated successfully');
           break;
         case 'deactivate':
-          // Implement user deactivation
+          await apiService.updateUserStatus(userId, false);
           toast.success('User deactivated successfully');
           break;
         case 'delete':
-          // Implement user deletion
+          await apiService.deleteUser(userId);
           toast.success('User deleted successfully');
           break;
         default:
           break;
       }
       loadDashboardData();
-    } catch (error) {
-      toast.error('Action failed');
+    } catch (error: any) {
+      toast.error(error.message || 'Action failed');
     }
   };
 
@@ -195,7 +149,10 @@ const ProductionAdminDashboard: React.FC = () => {
             <p className="text-neutral-600 mt-1">Manage users, shops, and platform operations</p>
           </div>
           <div className="flex gap-3">
-            <Button className="bg-gradient-to-r from-golden-500 to-golden-600 hover:from-golden-600 hover:to-golden-700">
+            <Button 
+              onClick={() => window.location.href = '/admin/add-shop'}
+              className="bg-gradient-to-r from-golden-500 to-golden-600 hover:from-golden-600 hover:to-golden-700"
+            >
               <Plus className="w-4 h-4 mr-2" />
               Add Shop
             </Button>
@@ -268,7 +225,7 @@ const ProductionAdminDashboard: React.FC = () => {
                   <div className="relative flex-1">
                     <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" />
                     <Input
-                      placeholder="Search users by name or email..."
+                      placeholder="Search users by name, email, or phone..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10"
@@ -304,13 +261,13 @@ const ProductionAdminDashboard: React.FC = () => {
                         </div>
                         <div>
                           <h4 className="font-semibold text-neutral-900">{user.name}</h4>
-                          <p className="text-sm text-neutral-600">{user.email}</p>
+                          <p className="text-sm text-neutral-600">{user.email || user.phone}</p>
                           <div className="flex items-center space-x-2 mt-1">
                             <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
                               {user.role.replace('_', ' ')}
                             </Badge>
-                            <Badge variant={user.isActive ? 'default' : 'destructive'}>
-                              {user.isActive ? 'Active' : 'Inactive'}
+                            <Badge variant={user.is_active ? 'default' : 'destructive'}>
+                              {user.is_active ? 'Active' : 'Inactive'}
                             </Badge>
                           </div>
                         </div>
@@ -355,8 +312,11 @@ const ProductionAdminDashboard: React.FC = () => {
                           <h4 className="font-semibold text-neutral-900">{shop.name}</h4>
                           <p className="text-sm text-neutral-600">{shop.address}</p>
                           <p className="text-xs text-neutral-500">{shop.email} • {shop.phone}</p>
-                          <Badge variant={shop.isActive ? 'default' : 'destructive'} className="mt-1">
-                            {shop.isActive ? 'Active' : 'Inactive'}
+                          {shop.owner && (
+                            <p className="text-xs text-neutral-500">Owner: {shop.owner.name}</p>
+                          )}
+                          <Badge variant={shop.is_active ? 'default' : 'destructive'} className="mt-1">
+                            {shop.is_active ? 'Active' : 'Inactive'}
                           </Badge>
                         </div>
                       </div>

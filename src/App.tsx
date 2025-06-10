@@ -81,7 +81,7 @@ function App() {
                   } 
                 />
                 <Route 
-                  path="/customer/new" 
+                  path="/customer/order/new" 
                   element={
                     <ProtectedRoute allowedRoles={['customer']}>
                       <NewOrder />

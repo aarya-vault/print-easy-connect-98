@@ -6,50 +6,52 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { ArrowLeft, Store } from 'lucide-react';
+import apiService from '@/services/api';
 
 const AddShop: React.FC = () => {
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     address: '',
     phone: '',
     email: '',
+    description: '',
     ownerName: '',
     ownerEmail: '',
-    ownerPassword: '',
-    allowsOfflineOrders: true,
-    isActive: true
+    ownerPassword: ''
   });
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.address || !formData.phone || !formData.ownerEmail) {
+    // Validate required fields
+    const requiredFields = ['name', 'address', 'phone', 'email', 'ownerName', 'ownerEmail', 'ownerPassword'];
+    const emptyFields = requiredFields.filter(field => !formData[field as keyof typeof formData]);
+    
+    if (emptyFields.length > 0) {
       toast.error('Please fill in all required fields');
       return;
     }
 
     setIsLoading(true);
     try {
-      // Mock API call - replace with actual implementation
-      console.log('Creating shop:', formData);
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await apiService.createShop(formData);
       toast.success('Shop created successfully!');
       navigate('/admin/dashboard', { replace: true });
     } catch (error: any) {
       console.error('Shop creation failed:', error);
-      toast.error('Failed to create shop');
+      toast.error(error.message || 'Failed to create shop');
     } finally {
       setIsLoading(false);
     }
@@ -71,117 +73,119 @@ const AddShop: React.FC = () => {
 
         <Card className="shadow-xl">
           <CardHeader>
-            <div className="flex items-center gap-3">
+            <CardTitle className="text-2xl font-bold text-center flex items-center justify-center gap-3">
               <Store className="w-8 h-8 text-golden-600" />
-              <CardTitle className="text-2xl font-bold">Add New Shop</CardTitle>
-            </div>
+              Add New Shop
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-neutral-900">Shop Information</h3>
+                
                 <div>
                   <Label htmlFor="name">Shop Name *</Label>
                   <Input
                     id="name"
+                    name="name"
                     value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    onChange={handleInputChange}
                     placeholder="Enter shop name"
                     required
                   />
                 </div>
+
                 <div>
-                  <Label htmlFor="phone">Shop Phone *</Label>
-                  <Input
-                    id="phone"
-                    value={formData.phone}
-                    onChange={(e) => handleInputChange('phone', e.target.value)}
-                    placeholder="Enter phone number"
+                  <Label htmlFor="address">Address *</Label>
+                  <Textarea
+                    id="address"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    placeholder="Enter complete shop address"
                     required
+                    rows={3}
                   />
                 </div>
-              </div>
 
-              <div>
-                <Label htmlFor="address">Shop Address *</Label>
-                <Textarea
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) => handleInputChange('address', e.target.value)}
-                  placeholder="Enter complete shop address"
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="email">Shop Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  placeholder="Enter shop email"
-                />
-              </div>
-
-              <div className="border-t pt-6">
-                <h3 className="text-lg font-semibold mb-4">Owner Details</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="ownerName">Owner Name</Label>
+                    <Label htmlFor="phone">Phone *</Label>
                     <Input
-                      id="ownerName"
-                      value={formData.ownerName}
-                      onChange={(e) => handleInputChange('ownerName', e.target.value)}
-                      placeholder="Enter owner name"
+                      id="phone"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      placeholder="+91 98765 43210"
+                      required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="ownerEmail">Owner Email *</Label>
+                    <Label htmlFor="email">Email *</Label>
                     <Input
-                      id="ownerEmail"
+                      id="email"
+                      name="email"
                       type="email"
-                      value={formData.ownerEmail}
-                      onChange={(e) => handleInputChange('ownerEmail', e.target.value)}
-                      placeholder="Enter owner email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      placeholder="shop@example.com"
                       required
                     />
                   </div>
                 </div>
-                <div className="mt-4">
-                  <Label htmlFor="ownerPassword">Owner Password</Label>
-                  <Input
-                    id="ownerPassword"
-                    type="password"
-                    value={formData.ownerPassword}
-                    onChange={(e) => handleInputChange('ownerPassword', e.target.value)}
-                    placeholder="Enter temporary password"
+
+                <div>
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    placeholder="Brief description of services offered"
+                    rows={3}
                   />
                 </div>
               </div>
 
-              <div className="border-t pt-6">
-                <h3 className="text-lg font-semibold mb-4">Shop Settings</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Allow Offline Orders</Label>
-                      <p className="text-sm text-neutral-600">Enable walk-in order management</p>
-                    </div>
-                    <Switch
-                      checked={formData.allowsOfflineOrders}
-                      onCheckedChange={(checked) => handleInputChange('allowsOfflineOrders', checked)}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Active Status</Label>
-                      <p className="text-sm text-neutral-600">Shop is active and accepting orders</p>
-                    </div>
-                    <Switch
-                      checked={formData.isActive}
-                      onCheckedChange={(checked) => handleInputChange('isActive', checked)}
-                    />
-                  </div>
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-neutral-900">Owner Information</h3>
+                
+                <div>
+                  <Label htmlFor="ownerName">Owner Name *</Label>
+                  <Input
+                    id="ownerName"
+                    name="ownerName"
+                    value={formData.ownerName}
+                    onChange={handleInputChange}
+                    placeholder="Enter owner's full name"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="ownerEmail">Owner Email *</Label>
+                  <Input
+                    id="ownerEmail"
+                    name="ownerEmail"
+                    type="email"
+                    value={formData.ownerEmail}
+                    onChange={handleInputChange}
+                    placeholder="owner@example.com"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="ownerPassword">Owner Password *</Label>
+                  <Input
+                    id="ownerPassword"
+                    name="ownerPassword"
+                    type="password"
+                    value={formData.ownerPassword}
+                    onChange={handleInputChange}
+                    placeholder="Enter secure password"
+                    required
+                  />
                 </div>
               </div>
 

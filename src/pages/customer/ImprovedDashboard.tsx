@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -308,39 +307,24 @@ const ImprovedCustomerDashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cream-50 via-white to-cream-100 font-poppins">
-      {/* Header - Unified Theme */}
-      <div className="bg-white/95 backdrop-blur-sm border-b border-cream-200/50 sticky top-0 z-10 shadow-sm">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-neutral-900">
-                Print<span className="text-golden-600">Easy</span>
-              </h1>
-              <p className="text-sm text-neutral-600">Welcome back, {user?.name || 'Customer'}!</p>
-            </div>
-            <div className="flex items-center space-x-3">
-              <Button
-                onClick={() => navigate('/customer/order/new')}
-                className="bg-gradient-to-r from-golden-500 to-golden-600 hover:from-golden-600 hover:to-golden-700 text-white font-semibold shadow-md"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                New Order
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleLogout}
-                disabled={isLoading}
-                className="border-neutral-300 hover:bg-neutral-50 shadow-sm"
-              >
-                {isLoading ? 'Signing out...' : 'Sign Out'}
-              </Button>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-golden-50 via-white to-golden-100 p-6">
+      <div className="max-w-6xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-neutral-900">Welcome back, {user?.name}!</h1>
+            <p className="text-neutral-600 mt-1">Manage your print orders and discover local shops</p>
           </div>
+          <Button 
+            onClick={() => navigate('/customer/order/new')}
+            className="bg-gradient-to-r from-golden-500 to-golden-600 hover:from-golden-600 hover:to-golden-700"
+            size="lg"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            New Order
+          </Button>
         </div>
-      </div>
 
-      <div className="container mx-auto px-6 py-6">
         {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <Card className="border-2 border-neutral-200 shadow-md bg-white hover:shadow-lg transition-all duration-300">
