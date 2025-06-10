@@ -18,7 +18,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (phone: string) => Promise<void>;
+  login: (phone: string) => Promise<{ isNewUser: boolean }>;
   loginWithEmail: (email: string, password: string) => Promise<void>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
@@ -71,7 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initializeAuth();
   }, []);
 
-  const login = async (phone: string) => {
+  const login = async (phone: string): Promise<{ isNewUser: boolean }> => {
     try {
       setIsLoading(true);
       const response = await apiService.phoneLogin(phone);
@@ -83,6 +83,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Store in localStorage for persistence
       localStorage.setItem('auth_token', authToken);
       localStorage.setItem('auth_user', JSON.stringify(userData));
+      
+      // Check if user name needs to be collected
+      const isNewUser = userData.name?.includes('Customer') || !userData.name;
+      
+      return { isNewUser };
       
     } catch (error: any) {
       console.error('Phone login error:', error);

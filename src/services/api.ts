@@ -50,17 +50,31 @@ class ApiService {
 
   // Auth methods
   async phoneLogin(phone: string) {
-    return this.makeRequest('/auth/phone-login', {
+    const response = await this.makeRequest('/auth/phone-login', {
       method: 'POST',
       body: JSON.stringify({ phone }),
     });
+    
+    // Normalize user data from backend
+    if (response.user) {
+      response.user = this.normalizeUserData(response.user);
+    }
+    
+    return response;
   }
 
   async emailLogin(email: string, password: string) {
-    return this.makeRequest('/auth/email-login', {
+    const response = await this.makeRequest('/auth/email-login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
+    
+    // Normalize user data from backend
+    if (response.user) {
+      response.user = this.normalizeUserData(response.user);
+    }
+    
+    return response;
   }
 
   async updateProfile(name: string) {
@@ -71,7 +85,14 @@ class ApiService {
   }
 
   async getCurrentUser() {
-    return this.makeRequest('/auth/me');
+    const response = await this.makeRequest('/auth/me');
+    
+    // Normalize user data from backend
+    if (response.user) {
+      response.user = this.normalizeUserData(response.user);
+    }
+    
+    return response;
   }
 
   async logout() {
@@ -82,11 +103,25 @@ class ApiService {
 
   // Shop methods
   async getShops() {
-    return this.makeRequest('/shops');
+    const response = await this.makeRequest('/shops');
+    
+    // Normalize shops data
+    if (response.shops) {
+      response.shops = response.shops.map((shop: any) => this.normalizeShopData(shop));
+    }
+    
+    return response;
   }
 
   async getShop(shopId: string) {
-    return this.makeRequest(`/shops/${shopId}`);
+    const response = await this.makeRequest(`/shops/${shopId}`);
+    
+    // Normalize shop data
+    if (response.shop) {
+      response.shop = this.normalizeShopData(response.shop);
+    }
+    
+    return response;
   }
 
   // Order methods
@@ -111,15 +146,36 @@ class ApiService {
       throw error;
     }
 
-    return await response.json();
+    const data = await response.json();
+    
+    // Normalize order data
+    if (data.order) {
+      data.order = this.normalizeOrderData(data.order);
+    }
+    
+    return data;
   }
 
   async getCustomerOrders() {
-    return this.makeRequest('/orders/customer');
+    const response = await this.makeRequest('/orders/customer');
+    
+    // Normalize orders data
+    if (response.orders) {
+      response.orders = response.orders.map((order: any) => this.normalizeOrderData(order));
+    }
+    
+    return response;
   }
 
   async getShopOrders() {
-    return this.makeRequest('/orders/shop');
+    const response = await this.makeRequest('/orders/shop');
+    
+    // Normalize orders data
+    if (response.orders) {
+      response.orders = response.orders.map((order: any) => this.normalizeOrderData(order));
+    }
+    
+    return response;
   }
 
   async updateOrderStatus(orderId: string, status: string) {
@@ -211,6 +267,59 @@ class ApiService {
   async getUnreadMessageCount() {
     const response = await this.makeRequest('/chat/unread-count');
     return response.unreadCount || 0;
+  }
+
+  // Data normalization helpers
+  private normalizeUserData(user: any) {
+    return {
+      id: user.id,
+      phone: user.phone,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      is_active: user.is_active,
+      shop_id: user.shop_id,
+      shop_name: user.shop_name,
+      created_at: user.created_at,
+      updated_at: user.updated_at
+    };
+  }
+
+  private normalizeShopData(shop: any) {
+    return {
+      id: shop.id,
+      name: shop.name,
+      address: shop.address,
+      phone: shop.phone,
+      email: shop.email,
+      description: shop.description,
+      ownerId: shop.owner_id,
+      rating: shop.rating,
+      isActive: shop.is_active,
+      allowsOfflineOrders: shop.allows_offline_orders,
+      createdAt: shop.created_at,
+      updatedAt: shop.updated_at
+    };
+  }
+
+  private normalizeOrderData(order: any) {
+    return {
+      id: order.id,
+      customerId: order.customer_id,
+      shopId: order.shop_id,
+      orderType: order.order_type,
+      status: order.status,
+      description: order.description,
+      customerName: order.customer_name,
+      customerPhone: order.customer_phone,
+      totalPages: order.total_pages,
+      urgent: order.urgent,
+      createdAt: order.created_at,
+      updatedAt: order.updated_at,
+      shop: order.shop ? this.normalizeShopData(order.shop) : null,
+      customer: order.customer ? this.normalizeUserData(order.customer) : null,
+      files: order.files || []
+    };
   }
 }
 

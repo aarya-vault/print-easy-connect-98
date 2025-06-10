@@ -11,10 +11,20 @@ import UniversalHeader from '@/components/layout/UniversalHeader';
 // Pages
 import Home from '@/pages/Home';
 import Login from '@/pages/Login';
-import CustomerDashboard from '@/pages/customer/Dashboard';
-import ShopDashboard from '@/pages/shop/Dashboard';
-import AdminDashboard from '@/pages/admin/Dashboard';
 import NotFound from '@/pages/NotFound';
+import Notifications from '@/pages/Notifications';
+import Profile from '@/pages/Profile';
+
+// Customer Pages
+import CustomerDashboard from '@/pages/customer/Dashboard';
+import NewOrder from '@/pages/customer/NewOrder';
+
+// Shop Pages
+import ShopDashboard from '@/pages/shop/Dashboard';
+
+// Admin Pages
+import AdminDashboard from '@/pages/admin/Dashboard';
+import AddShop from '@/pages/admin/AddShop';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -34,8 +44,27 @@ function App() {
           <Router>
             <div className="min-h-screen bg-neutral-50">
               <Routes>
+                {/* Public Routes */}
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
+                
+                {/* Protected Routes with Shared Components */}
+                <Route 
+                  path="/notifications" 
+                  element={
+                    <ProtectedRoute>
+                      <Notifications />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/profile" 
+                  element={
+                    <ProtectedRoute>
+                      <Profile />
+                    </ProtectedRoute>
+                  } 
+                />
                 
                 {/* Customer Routes */}
                 <Route 
@@ -48,6 +77,14 @@ function App() {
                           <CustomerDashboard />
                         </main>
                       </div>
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/customer/new" 
+                  element={
+                    <ProtectedRoute allowedRoles={['customer']}>
+                      <NewOrder />
                     </ProtectedRoute>
                   } 
                 />
@@ -81,7 +118,16 @@ function App() {
                     </ProtectedRoute>
                   } 
                 />
+                <Route 
+                  path="/admin/add-shop" 
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AddShop />
+                    </ProtectedRoute>
+                  } 
+                />
                 
+                {/* 404 Route */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <Toaster />

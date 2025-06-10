@@ -37,7 +37,7 @@ module.exports = (sequelize) => {
       allowNull: false
     }
   }, {
-    tableName: 'files',
+    tableName: 'files', // Fixed table name
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at'
