@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileUpload } from '@/components/ui/file-upload';
+import FileUpload from '@/components/ui/file-upload';
 import { toast } from 'sonner';
 import { Upload, Store, FileText, User, Phone } from 'lucide-react';
 import apiService from '@/services/api';
@@ -196,9 +196,8 @@ const ShopUploadPage: React.FC = () => {
                   <div>
                     <Label>Upload Your Files *</Label>
                     <FileUpload
-                      onFilesChange={handleFileUpload}
+                      onFilesSelected={handleFileUpload}
                       maxFiles={10}
-                      accept="*"
                       className="mt-2"
                     />
                     <p className="text-xs text-neutral-500 mt-1">
