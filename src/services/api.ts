@@ -20,7 +20,7 @@ api.interceptors.request.use((config) => {
 
 // Response interceptor for error handling
 api.interceptors.response.use(
-  (response) => response.data,
+  (response) => response.data, // Return only the data
   (error) => {
     console.error('API Error:', error.response?.data || error.message);
     throw error;
