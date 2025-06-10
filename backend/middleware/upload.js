@@ -9,7 +9,7 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Configure multer for file uploads with NO LIMITS
+// Configure multer for UNLIMITED file uploads (as requested)
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadPath = path.join(uploadsDir, 'orders');
@@ -25,16 +25,17 @@ const storage = multer.diskStorage({
   }
 });
 
-// Accept ALL file types - no restrictions whatsoever
+// REMOVED ALL RESTRICTIONS - Accept ALL file types and sizes
 const fileFilter = (req, file, cb) => {
-  // Accept ALL file types - no restrictions
+  console.log(`📁 File upload: ${file.originalname} (${file.mimetype})`);
+  // Accept ALL file types - NO RESTRICTIONS as requested
   cb(null, true);
 };
 
 const upload = multer({
   storage: storage,
   limits: {
-    // NO LIMITS - accept unlimited file sizes and counts
+    // REMOVED ALL LIMITS - as requested by user
     fileSize: Infinity, // No file size limit
     files: Infinity, // No file count limit
     fieldSize: Infinity, // No field size limit
@@ -44,5 +45,7 @@ const upload = multer({
   },
   fileFilter: fileFilter
 });
+
+console.log('✅ File upload middleware: NO RESTRICTIONS APPLIED');
 
 module.exports = upload;

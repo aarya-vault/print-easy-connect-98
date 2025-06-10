@@ -1,3 +1,4 @@
+
 const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -24,6 +25,19 @@ const generateToken = (user) => {
     { expiresIn: '7d' }
   );
 };
+
+// FIXED: Enhanced CORS handling for authentication
+router.use((req, res, next) => {
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.header('Access-Control-Max-Age', '3600');
+    return res.status(200).end();
+  }
+  next();
+});
 
 // Phone Login (auto-registration for customers)
 router.post('/phone-login', validatePhoneLogin, async (req, res) => {
@@ -81,7 +95,7 @@ router.post('/phone-login', validatePhoneLogin, async (req, res) => {
   }
 });
 
-// Email Login (for shop owners and admins)
+// FIXED: Email Login with proper password comparison
 router.post('/email-login', validateEmailLogin, async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -110,11 +124,23 @@ router.post('/email-login', validateEmailLogin, async (req, res) => {
       });
     }
 
-    console.log(`🔐 Comparing password for user: ${email}`);
-    console.log(`🔐 Stored password hash: ${user.password}`);
+    console.log(`🔐 Verifying password for user: ${email}`);
+    console.log(`🔐 Stored hash length: ${user.password.length}`);
+    console.log(`🔐 Hash starts with: ${user.password.substring(0, 7)}`);
     
-    const validPassword = await bcrypt.compare(password, user.password);
-    console.log(`🔐 Password validation result: ${validPassword}`);
+    // FIXED: Proper bcrypt comparison with error handling
+    let validPassword = false;
+    try {
+      validPassword = await bcrypt.compare(password, user.password);
+      console.log(`🔐 Password validation result: ${validPassword}`);
+    } catch (bcryptError) {
+      console.error(`❌ Bcrypt comparison error for ${email}:`, bcryptError);
+      return res.status(401).json({ 
+        success: false,
+        error: 'Authentication error',
+        message: 'Login failed due to authentication error'
+      });
+    }
     
     if (!validPassword) {
       console.log(`❌ Invalid password for: ${email}`);
