@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -35,12 +36,12 @@ const NewOrder: React.FC = () => {
   const { data: allShopsData } = useQuery({
     queryKey: ['all-shops'],
     queryFn: apiService.getShops,
-    enabled: !visitedShopsData?.shops?.length
+    enabled: !visitedShopsData?.length
   });
 
-  // Handle both nested and direct response structures
-  const visitedShops = visitedShopsData?.shops || visitedShopsData || [];
-  const allShops = allShopsData?.shops || allShopsData || [];
+  // API service interceptor returns data directly, so response is the actual data
+  const visitedShops = Array.isArray(visitedShopsData) ? visitedShopsData : (visitedShopsData?.shops || []);
+  const allShops = Array.isArray(allShopsData) ? allShopsData : (allShopsData?.shops || []);
   const shops = visitedShops.length > 0 ? visitedShops : allShops;
   const showingVisitedShops = visitedShops.length > 0;
 

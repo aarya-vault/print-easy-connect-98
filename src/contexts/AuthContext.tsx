@@ -76,9 +76,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(true);
       const response = await apiService.phoneLogin(phone);
       
-      // Handle both nested and direct response structures
-      const authToken = response?.token || response;
-      const userData = response?.user || response;
+      // API service interceptor returns data directly, so response is the actual data
+      const authToken = response?.token || response?.data?.token;
+      const userData = response?.user || response?.data?.user || response;
       
       setToken(authToken);
       setUser(userData);
@@ -105,9 +105,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(true);
       const response = await apiService.emailLogin(email, password);
       
-      // Handle both nested and direct response structures
-      const authToken = response?.token || response;
-      const userData = response?.user || response;
+      // API service interceptor returns data directly, so response is the actual data
+      const authToken = response?.token || response?.data?.token;
+      const userData = response?.user || response?.data?.user || response;
       
       setToken(authToken);
       setUser(userData);

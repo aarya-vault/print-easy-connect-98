@@ -34,8 +34,8 @@ const RealTimeChat: React.FC<RealTimeChatProps> = ({ orderId, recipientId }) => 
   const loadMessages = async () => {
     try {
       const response = await apiService.getOrderMessages(orderId);
-      // Handle both direct array and nested object responses
-      const messagesData = response?.messages || response || [];
+      // API service interceptor returns data directly, so response is the actual data
+      const messagesData = Array.isArray(response) ? response : (response?.messages || []);
       setMessages(messagesData);
     } catch (error) {
       console.error('Error loading messages:', error);

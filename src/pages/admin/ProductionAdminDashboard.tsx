@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,10 +18,13 @@ import {
   Trash2,
   Eye,
   Filter,
-  MoreHorizontal
+  MoreHorizontal,
+  Activity,
+  BarChart3
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import apiService from '@/services/api';
+import RealTimeAnalytics from '@/components/admin/RealTimeAnalytics';
 
 interface User {
   id: number;
@@ -67,9 +71,14 @@ const ProductionAdminDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [userFilter, setUserFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('analytics');
 
   useEffect(() => {
     loadDashboardData();
+    
+    // Set up auto-refresh for real-time data every 2 minutes
+    const interval = setInterval(loadDashboardData, 120000);
+    return () => clearInterval(interval);
   }, []);
 
   const loadDashboardData = async () => {
@@ -82,10 +91,10 @@ const ProductionAdminDashboard: React.FC = () => {
         apiService.getAdminShops()
       ]);
 
-      // Handle both nested and direct response structures
-      setStats(statsResponse?.stats || statsResponse);
-      setUsers(usersResponse?.users || usersResponse || []);
-      setShops(shopsResponse?.shops || shopsResponse || []);
+      // Handle response data properly since interceptor returns data directly
+      setStats(statsResponse || { totalUsers: 0, totalShops: 0, totalOrders: 0, activeUsers: 0 });
+      setUsers(usersResponse || []);
+      setShops(shopsResponse || []);
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
       toast.error('Failed to load dashboard data');
@@ -146,7 +155,7 @@ const ProductionAdminDashboard: React.FC = () => {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-neutral-900">Admin Dashboard</h1>
-            <p className="text-neutral-600 mt-1">Manage users, shops, and platform operations</p>
+            <p className="text-neutral-600 mt-1">Real-time platform analytics and management</p>
           </div>
           <div className="flex gap-3">
             <Button 
@@ -159,7 +168,7 @@ const ProductionAdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Stats Cards */}
+        {/* Quick Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card>
             <CardContent className="p-6">
@@ -210,12 +219,26 @@ const ProductionAdminDashboard: React.FC = () => {
           </Card>
         </div>
 
-        {/* Main Content */}
-        <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="users">User Management</TabsTrigger>
-            <TabsTrigger value="shops">Shop Management</TabsTrigger>
+        {/* Main Content Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              Real-Time Analytics
+            </TabsTrigger>
+            <TabsTrigger value="users" className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              User Management
+            </TabsTrigger>
+            <TabsTrigger value="shops" className="flex items-center gap-2">
+              <Store className="w-4 h-4" />
+              Shop Management
+            </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="analytics" className="space-y-6">
+            <RealTimeAnalytics />
+          </TabsContent>
 
           <TabsContent value="users" className="space-y-6">
             {/* Search and Filters */}

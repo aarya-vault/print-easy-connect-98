@@ -22,7 +22,7 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => {
     console.log('API Response:', response.data);
-    return response.data;
+    return response.data; // Return data directly
   },
   (error) => {
     console.error('API Error:', error.response?.data || error.message);
@@ -32,27 +32,27 @@ api.interceptors.response.use(
 
 const apiService = {
   // Authentication
-  phoneLogin: (phone: string) => api.post('/auth/phone-login', { phone }),
-  emailLogin: (email: string, password: string) => api.post('/auth/email-login', { email, password }),
-  getCurrentUser: () => api.get('/auth/me'),
-  updateProfile: (name: string) => api.patch('/auth/update-profile', { name }),
-  logout: () => api.post('/auth/logout'),
+  phoneLogin: (phone: string): Promise<any> => api.post('/auth/phone-login', { phone }),
+  emailLogin: (email: string, password: string): Promise<any> => api.post('/auth/email-login', { email, password }),
+  getCurrentUser: (): Promise<any> => api.get('/auth/me'),
+  updateProfile: (name: string): Promise<any> => api.patch('/auth/update-profile', { name }),
+  logout: (): Promise<any> => api.post('/auth/logout'),
 
   // Orders
-  createOrder: (orderData: any) => api.post('/orders', orderData),
-  getCustomerOrders: () => api.get('/orders/customer'),
-  getShopOrders: (filters?: any) => api.get('/orders/shop', { params: filters }),
-  updateOrderStatus: (orderId: string, status: string) => api.patch(`/orders/${orderId}/status`, { status }),
-  toggleOrderUrgency: (orderId: string) => api.patch(`/orders/${orderId}/urgency`),
-  getOrderById: (orderId: string) => api.get(`/orders/${orderId}`),
+  createOrder: (orderData: any): Promise<any> => api.post('/orders', orderData),
+  getCustomerOrders: (): Promise<any> => api.get('/orders/customer'),
+  getShopOrders: (filters?: any): Promise<any> => api.get('/orders/shop', { params: filters }),
+  updateOrderStatus: (orderId: string, status: string): Promise<any> => api.patch(`/orders/${orderId}/status`, { status }),
+  toggleOrderUrgency: (orderId: string): Promise<any> => api.patch(`/orders/${orderId}/urgency`),
+  getOrderById: (orderId: string): Promise<any> => api.get(`/orders/${orderId}`),
 
   // Shops
-  getShops: (params?: any) => api.get('/shops', { params }),
-  getShopBySlug: (slug: string) => api.get(`/shops/slug/${slug}`),
-  getVisitedShops: () => api.get('/shops/visited'),
+  getShops: (params?: any): Promise<any> => api.get('/shops', { params }),
+  getShopBySlug: (slug: string): Promise<any> => api.get(`/shops/slug/${slug}`),
+  getVisitedShops: (): Promise<any> => api.get('/shops/visited'),
 
   // Files
-  uploadFiles: (files: File[], orderId: string) => {
+  uploadFiles: (files: File[], orderId: string): Promise<any> => {
     const formData = new FormData();
     files.forEach(file => formData.append('files', file));
     formData.append('orderId', orderId);
@@ -64,20 +64,26 @@ const apiService = {
   },
 
   // Chat
-  sendMessage: (orderId: string, message: string, recipientId: number) => 
+  sendMessage: (orderId: string, message: string, recipientId: number): Promise<any> => 
     api.post('/chat/send', { orderId, message, recipientId }),
-  getOrderMessages: (orderId: string) => api.get(`/chat/${orderId}`),
+  getOrderMessages: (orderId: string): Promise<any> => api.get(`/chat/${orderId}`),
 
   // Admin
-  getAdminStats: () => api.get('/admin/stats'),
-  getAllUsers: (params?: any) => api.get('/admin/users', { params }),
-  getAdminUsers: (params?: any) => api.get('/admin/users', { params }),
-  getAllShops: () => api.get('/admin/shops'),
-  getAdminShops: () => api.get('/admin/shops'),
-  createShop: (shopData: any) => api.post('/admin/shops', shopData),
-  updateUserStatus: (userId: number, isActive: boolean) => 
+  getAdminStats: (): Promise<any> => api.get('/admin/stats'),
+  getAllUsers: (params?: any): Promise<any> => api.get('/admin/users', { params }),
+  getAdminUsers: (params?: any): Promise<any> => api.get('/admin/users', { params }),
+  getAllShops: (): Promise<any> => api.get('/admin/shops'),
+  getAdminShops: (): Promise<any> => api.get('/admin/shops'),
+  createShop: (shopData: any): Promise<any> => api.post('/admin/shops', shopData),
+  updateUserStatus: (userId: number, isActive: boolean): Promise<any> => 
     api.patch(`/admin/users/${userId}/status`, { isActive }),
-  deleteUser: (userId: number) => api.delete(`/admin/users/${userId}`),
+  deleteUser: (userId: number): Promise<any> => api.delete(`/admin/users/${userId}`),
+
+  // Real-time analytics endpoints
+  getOrderAnalytics: (): Promise<any> => api.get('/admin/analytics/orders'),
+  getShopAnalytics: (): Promise<any> => api.get('/admin/analytics/shops'),
+  getUserAnalytics: (): Promise<any> => api.get('/admin/analytics/users'),
+  getRealtimeMetrics: (): Promise<any> => api.get('/admin/analytics/realtime'),
 };
 
 export default apiService;
