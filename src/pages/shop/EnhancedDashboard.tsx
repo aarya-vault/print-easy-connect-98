@@ -16,11 +16,12 @@ import {
 import MinimalOrderCard from '@/components/shop/MinimalOrderCard';
 import DashboardStats from '@/components/shop/DashboardStats';
 import OrderDetailsModal from '@/components/shop/OrderDetailsModal';
-import { ShopOrder } from '@/types/order';
+import { ShopOrder, ApiShopOrder } from '@/types/order';
+import { convertShopOrderToApi } from '@/utils/orderUtils';
 
 const EnhancedDashboard: React.FC = () => {
   const { user, logout } = useAuth();
-  const [selectedOrder, setSelectedOrder] = useState<ShopOrder | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<ApiShopOrder | null>(null);
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('active');
@@ -158,7 +159,10 @@ const EnhancedDashboard: React.FC = () => {
 
   const handleViewDetails = useCallback((orderId: string) => {
     const order = orders.find(o => o.id === orderId);
-    setSelectedOrder(order || null);
+    if (order) {
+      const apiOrder = convertShopOrderToApi(order);
+      setSelectedOrder(apiOrder);
+    }
   }, [orders]);
 
   // Calculate stats for active orders only
@@ -368,3 +372,5 @@ const EnhancedDashboard: React.FC = () => {
 };
 
 export default EnhancedDashboard;
+
+</initial_code>

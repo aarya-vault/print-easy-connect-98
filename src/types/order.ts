@@ -1,4 +1,26 @@
 
+export interface OrderFile {
+  id: string;
+  original_name: string;
+  file_size: number;
+  mime_type: string;
+  file_path: string;
+}
+
+export interface ApiShopOrder {
+  id: string;
+  customer: {
+    name: string;
+    phone: string;
+  };
+  order_type: 'uploaded-files' | 'walk-in';
+  description: string;
+  status: 'received' | 'started' | 'completed';
+  is_urgent: boolean;
+  created_at: string;
+  files?: OrderFile[];
+}
+
 export interface ShopOrder {
   id: string;
   customerName: string;

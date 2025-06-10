@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -14,11 +15,12 @@ import RedesignedOrderCard from '@/components/shop/RedesignedOrderCard';
 import DashboardStats from '@/components/shop/DashboardStats';
 import OrderDetailsModal from '@/components/shop/OrderDetailsModal';
 import OrderChat from '@/components/shop/OrderChat';
-import { ShopOrder } from '@/types/order';
+import { ShopOrder, ApiShopOrder } from '@/types/order';
+import { convertShopOrderToApi } from '@/utils/orderUtils';
 
 const ModernDashboard: React.FC = () => {
   const { user, logout } = useAuth();
-  const [selectedOrder, setSelectedOrder] = useState<ShopOrder | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<ApiShopOrder | null>(null);
   const [chatOrderId, setChatOrderId] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [searchQuery, setSearchQuery] = useState('');

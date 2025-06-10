@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,13 +24,14 @@ import {
   Zap
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { ShopOrder } from '@/types/order';
+import { ShopOrder, ApiShopOrder } from '@/types/order';
+import { convertShopOrderToApi } from '@/utils/orderUtils';
 
 const OptimizedDashboard: React.FC = () => {
   const [orders, setOrders] = useState<ShopOrder[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('orders');
-  const [selectedOrder, setSelectedOrder] = useState<ShopOrder | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<ApiShopOrder | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
