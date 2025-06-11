@@ -113,13 +113,13 @@ const Dashboard: React.FC = () => {
     window.open(`tel:${phone}`, '_self');
   };
 
-  // Handle order selection - Use Order type consistently
+  // Handle order selection
   const handleOrderSelect = (order: Order) => {
     setSelectedOrder(order);
     setShowOrderDetails(true);
   };
 
-  // Handle opening chat - Use Order type consistently
+  // Handle opening chat
   const handleOpenChat = (order: Order) => {
     setSelectedOrder(order);
     setShowOrderChat(true);
