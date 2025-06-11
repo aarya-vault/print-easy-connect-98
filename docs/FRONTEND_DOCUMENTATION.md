@@ -2,12 +2,12 @@
 # PrintEasy Frontend Documentation
 
 ## Overview
-PrintEasy is a React-based web application built with TypeScript, Vite, and Tailwind CSS. It serves as a digital platform connecting customers with local print shops.
+PrintEasy is a React-based web application built with TypeScript, Vite, and Tailwind CSS. It serves as a digital platform connecting customers with local print shops following the PRD specifications.
 
 ## Technology Stack
 - **Framework**: React 18 with TypeScript
 - **Build Tool**: Vite
-- **Styling**: Tailwind CSS with custom design system
+- **Styling**: Tailwind CSS with golden/black/white theme
 - **UI Components**: Shadcn/UI
 - **State Management**: React Context API + TanStack Query
 - **Routing**: React Router v6
@@ -21,64 +21,63 @@ src/
 ├── components/          # Reusable UI components
 │   ├── ui/             # Base UI components (Shadcn/UI)
 │   ├── auth/           # Authentication components
-│   ├── layout/         # Layout components
+│   ├── layout/         # Layout components (UniversalHeader)
 │   ├── shop/           # Shop-specific components
-│   ├── admin/          # Admin-specific components
+│   ├── admin/          # Admin-specific components (RealTimeAnalytics)
 │   ├── customer/       # Customer-specific components
 │   ├── qr/             # QR code components
-│   └── order/          # Order-related components
+│   └── chat/           # Chat components
 ├── pages/              # Page components
-│   ├── admin/          # Admin dashboard pages
+│   ├── admin/          # Admin dashboard
 │   ├── shop/           # Shop owner pages
 │   ├── customer/       # Customer pages
 │   └── *.tsx           # General pages
-├── contexts/           # React contexts
-├── services/           # API services
-├── hooks/              # Custom hooks
+├── contexts/           # React contexts (AuthContext, SocketContext)
+├── services/           # API services (apiService)
 ├── types/              # TypeScript type definitions
-├── utils/              # Utility functions
 └── lib/                # Library configurations
 ```
 
 ## Core Features
 
 ### 1. Authentication System
-- **Phone-based authentication** for customers
+- **Phone-based authentication** for customers (no password required)
 - **Email/password authentication** for shop owners and admins
 - **Role-based access control** (customer, shop_owner, admin)
-- **Context-based user state management**
+- **JWT token management** with automatic refresh
 
 ### 2. User Roles & Dashboards
 
 #### Customer Dashboard
 - Browse nearby print shops
-- Place orders (upload files or walk-in bookings)
-- Track order status
+- Place orders (digital files or walk-in bookings)
+- Track order status in real-time
 - View order history
 
 #### Shop Owner Dashboard
-- **4-Column Layout**:
-  - Upload Orders - New
-  - Upload Orders - In Progress
-  - Walk-in Orders - New
-  - Walk-in Orders - In Progress
-- Order management with status updates
-- Customer communication tools
-- QR code generation for shop access
-- Order history tab for completed orders
+- **4-Column Layout for Active Orders**:
+  - Digital New Orders (status: pending)
+  - Digital In Progress Orders (status: in_progress, ready)
+  - Walk-in New Orders (status: pending)
+  - Walk-in In Progress Orders (status: in_progress, ready)
+- **Order History Tab** for completed/cancelled orders
+- **QR Code Generation** for customer direct access
+- **Order Management**: Status updates, urgency flagging
+- **Customer Communication**: Direct calling integration
 
 #### Admin Dashboard
-- User management (CRUD operations)
-- Shop management with settings control
-- Real-time analytics
-- System monitoring
+- **Real-time Analytics** with live data from PostgreSQL
+- **User Management**: CRUD operations for all users
+- **Shop Management**: Create, edit, activate/deactivate shops
+- **Offline Access Control**: Toggle walk-in order availability per shop
+- **System Monitoring**: Order trends, shop performance metrics
 
 ### 3. Order Management System
-- **Order Types**: Upload files, Walk-in bookings
-- **Order Status**: received → started → completed
-- **Priority System**: Urgent order flagging
-- **File Upload**: Multiple file support with preview
-- **Order Specifications**: Pages, copies, paper type, binding, color options
+- **Order Types**: Digital (file upload), Walk-in (text description)
+- **Order Status Flow**: pending → in_progress → ready → completed
+- **Priority System**: Urgent order flagging and filtering
+- **File Management**: Multiple file upload with secure storage
+- **Dynamic Visibility**: Walk-in orders only shown if shop allows offline access
 
 ## API Integration
 
@@ -87,92 +86,103 @@ src/
 const API_BASE_URL = 'http://localhost:3001/api'
 ```
 
-### Key Endpoints
+### Key Endpoints (as per PRD)
 - `POST /auth/phone-login` - Customer authentication
 - `POST /auth/email-login` - Shop owner/admin authentication
-- `GET /orders/shop` - Shop orders
-- `GET /orders/customer` - Customer orders
+- `GET /shops/my-shop` - Shop owner's shop details
+- `GET /orders/shop` - Shop active orders
+- `GET /orders/shop/history` - Shop completed orders
 - `PATCH /orders/:id/status` - Update order status
-- `GET /admin/stats` - Admin statistics
+- `GET /admin/analytics/dashboard` - Real-time analytics
 - `GET /admin/users` - User management
 - `GET /admin/shops` - Shop management
+- `POST /admin/shops` - Create new shop
 
-## Data Models
+## Data Models (TypeScript Interfaces)
 
 ### User
 ```typescript
 interface User {
-  id: number;
+  id: string;                    // UUID
   name: string;
-  email?: string;
-  phone: string;
+  email?: string;               // Required for shop_owner/admin
+  phone?: string;               // Required for customers
   role: 'customer' | 'shop_owner' | 'admin';
   is_active: boolean;
   created_at: string;
+  updated_at: string;
 }
 ```
 
 ### Shop
 ```typescript
 interface Shop {
-  id: number;
+  id: string;                   // UUID
+  owner_user_id: string;        // UUID reference to users
   name: string;
   address: string;
-  phone: string;
+  contact_number: string;
   email: string;
-  is_active: boolean;
-  allows_offline_orders: boolean;
+  is_active: boolean;           // Controls shop visibility
+  allow_offline_access: boolean; // Controls walk-in order availability
   shop_timings: string;
-  owner: User;
+  slug: string;                 // Unique URL identifier
+  qr_code_url?: string;         // Generated QR code image URL
+  owner?: User;
   created_at: string;
+  updated_at: string;
 }
 ```
 
 ### Order
 ```typescript
 interface Order {
-  id: string;
+  id: string;                   // UUID
+  customer_id: string;          // UUID reference to users
+  shop_id: string;              // UUID reference to shops
   customer_name: string;
   customer_phone: string;
-  order_type: 'uploaded-files' | 'walk-in';
-  description: string;
-  status: 'received' | 'started' | 'completed';
-  is_urgent: boolean;
-  created_at: string;
+  customer_email?: string;
+  order_type: 'digital' | 'walkin';
+  notes: string;                // Unified description/instructions
+  status: 'pending' | 'in_progress' | 'ready' | 'completed' | 'cancelled';
+  is_urgent?: boolean;
   files?: OrderFile[];
-  pages?: number;
-  copies?: number;
-  paperType?: string;
-  binding?: string;
-  color?: boolean;
+  customer?: User;
+  shop?: Shop;
+  created_at: string;
+  updated_at: string;
 }
 ```
 
 ### OrderFile
 ```typescript
 interface OrderFile {
-  id: string;
-  name: string;
-  type: string;
-  size: number;
-  url: string;
-  original_name?: string;
+  id: string;                   // UUID
+  order_id: string;             // UUID reference to orders
+  file_name: string;            // Unique filename for storage
+  original_name?: string;       // User's original filename
+  mime_type: string;
+  file_url: string;             // Public access URL
+  backend_file_path: string;    // Internal server path
+  restrict_download: boolean;
+  created_at: string;
+  updated_at: string;
 }
 ```
 
 ## Backend API Requirements
 
-Based on the frontend implementation, the backend should provide:
-
-### Database Schema (Sequelize ORM)
+### Database Schema (PostgreSQL/Sequelize)
 
 #### Users Table
 ```sql
 CREATE TABLE users (
-  id SERIAL PRIMARY KEY,
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR(255) NOT NULL,
   email VARCHAR(255) UNIQUE,
-  phone VARCHAR(20) UNIQUE NOT NULL,
+  phone VARCHAR(20) UNIQUE,
+  password VARCHAR(255),
   role ENUM('customer', 'shop_owner', 'admin') DEFAULT 'customer',
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -183,16 +193,17 @@ CREATE TABLE users (
 #### Shops Table
 ```sql
 CREATE TABLE shops (
-  id SERIAL PRIMARY KEY,
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_user_id UUID REFERENCES users(id) UNIQUE NOT NULL,
   name VARCHAR(255) NOT NULL,
   address TEXT NOT NULL,
-  phone VARCHAR(20) NOT NULL,
+  contact_number VARCHAR(20) NOT NULL,
   email VARCHAR(255),
-  owner_id INTEGER REFERENCES users(id),
   is_active BOOLEAN DEFAULT true,
-  allows_offline_orders BOOLEAN DEFAULT false,
-  shop_timings VARCHAR(255),
-  slug VARCHAR(255) UNIQUE,
+  allow_offline_access BOOLEAN DEFAULT true,
+  shop_timings VARCHAR(255) DEFAULT 'Mon-Sat 9 AM - 8 PM',
+  slug VARCHAR(255) UNIQUE NOT NULL,
+  qr_code_url TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -202,21 +213,15 @@ CREATE TABLE shops (
 ```sql
 CREATE TABLE orders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  customer_id INTEGER REFERENCES users(id),
-  shop_id INTEGER REFERENCES shops(id),
+  customer_id UUID REFERENCES users(id) NOT NULL,
+  shop_id UUID REFERENCES shops(id) NOT NULL,
   customer_name VARCHAR(255) NOT NULL,
   customer_phone VARCHAR(20) NOT NULL,
   customer_email VARCHAR(255),
-  order_type ENUM('uploaded-files', 'walk-in') NOT NULL,
-  description TEXT NOT NULL,
-  status ENUM('received', 'started', 'completed') DEFAULT 'received',
+  order_type ENUM('digital', 'walkin') NOT NULL,
+  notes TEXT NOT NULL,
+  status ENUM('pending', 'in_progress', 'ready', 'completed', 'cancelled') DEFAULT 'pending',
   is_urgent BOOLEAN DEFAULT false,
-  instructions TEXT,
-  pages INTEGER,
-  copies INTEGER DEFAULT 1,
-  paper_type VARCHAR(100),
-  binding VARCHAR(100),
-  color BOOLEAN DEFAULT false,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -226,233 +231,172 @@ CREATE TABLE orders (
 ```sql
 CREATE TABLE files (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  order_id UUID REFERENCES orders(id),
-  name VARCHAR(255) NOT NULL,
-  original_name VARCHAR(255) NOT NULL,
-  type VARCHAR(100) NOT NULL,
-  size INTEGER NOT NULL,
-  url TEXT NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  order_id UUID REFERENCES orders(id) NOT NULL,
+  file_name VARCHAR(255) NOT NULL,
+  original_name VARCHAR(255),
+  mime_type VARCHAR(100),
+  file_url TEXT NOT NULL,
+  backend_file_path TEXT UNIQUE NOT NULL,
+  restrict_download BOOLEAN DEFAULT false,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
 ### Required API Endpoints
 
 #### Authentication
-- `POST /api/auth/phone-login` - Phone OTP login
-- `POST /api/auth/email-login` - Email/password login
-- `GET /api/auth/me` - Get current user
-- `PATCH /api/auth/profile` - Update user profile
+- `POST /api/auth/phone-login` - { phone: string } → { success, token, user }
+- `POST /api/auth/email-login` - { email, password } → { success, token, user }
+- `GET /api/auth/me` - → { user }
+- `PATCH /api/auth/profile` - { name } → { success, user }
 
-#### Shop Management
-- `GET /api/shops` - List all shops
-- `GET /api/shops/:slug` - Get shop by slug
-- `GET /api/shops/qr-code` - Generate shop QR code
-- `GET /api/orders/shop` - Get shop orders
-- `PATCH /api/orders/:id/status` - Update order status
-- `PATCH /api/orders/:id/urgency` - Toggle order urgency
+#### Shop Operations
+- `GET /api/shops/my-shop` - → { shop }
+- `POST /api/shops/:shopId/generate-qr` - → { success, qrCodeUrl }
+- `GET /api/shops/slug/:slug` - → { shop }
+- `GET /api/orders/shop` - → { orders }
+- `GET /api/orders/shop/history` - → { orders }
+- `PATCH /api/orders/:orderId/status` - { status } → { success, order }
+- `PATCH /api/orders/:orderId/urgency` - → { success, order }
 
 #### Customer Operations
-- `GET /api/orders/customer` - Get customer orders
-- `POST /api/orders` - Create new order
-- `GET /api/orders/customer/history` - Order history
+- `GET /api/shops` - → { shops }
+- `POST /api/orders` - { shopId, orderType, notes } → { success, order }
+- `GET /api/orders/customer` - → { orders }
+- `GET /api/orders/customer/history` - → { orders }
 
 #### File Management
-- `POST /api/files/upload` - Upload files
-- `GET /api/files/:id/download` - Download file
+- `POST /api/files/upload/:orderId` - FormData → { success, files }
+- `GET /api/files/order/:orderId` - → { files }
+- `GET /api/files/download/:fileId` - → File stream
 
 #### Admin Operations
-- `GET /api/admin/stats` - System statistics
-- `GET /api/admin/users` - List users with search
-- `GET /api/admin/shops` - List all shops
-- `PATCH /api/admin/shops/:id` - Update shop settings
-- `POST /api/admin/shops` - Create new shop
+- `GET /api/admin/analytics/dashboard` - → { stats, orderTrends, ... }
+- `GET /api/admin/users` - → { users, pagination }
+- `GET /api/admin/shops` - → { shops }
+- `POST /api/admin/shops` - { shopName, ownerEmail, ... } → { success, shop, owner }
+- `PATCH /api/admin/shops/:shopId` - { is_active, allow_offline_access, ... } → { success, shop }
 
 ## Design System
 
-### Colors
-- **Primary**: Golden (#D4AF37 variants)
-- **Neutral**: Gray scale (#F5F5F5 to #1F1F1F)
+### Color Scheme (Golden/Black/White Theme)
+- **Primary**: Golden (#D4AF37, #B8941F, #9A7B1A)
+- **Neutral**: White to Black (#FFFFFF to #000000)
 - **Success**: Green (#10B981)
-- **Warning**: Orange (#F59E0B)
+- **Warning**: Orange/Golden variants
 - **Error**: Red (#EF4444)
 
 ### Typography
-- **Headings**: Inter font family
-- **Body**: System font stack
-- **Code**: Monospace
+- **Headings**: Inter font family, bold weights
+- **Body**: System font stack, medium/regular weights
+- **Code**: Monospace for IDs and technical text
 
-### Spacing
-- **Base unit**: 4px (0.25rem)
-- **Components**: Consistent padding and margins
-- **Grid**: 12-column responsive grid
+### Component Patterns
+- **Cards**: Consistent padding, hover effects, rounded corners
+- **Buttons**: Golden primary, outline variants, proper loading states
+- **Badges**: Status-specific colors, consistent sizing
+- **Forms**: Clear validation, accessible labels
 
 ## State Management
 
 ### Context Providers
-1. **AuthContext**: User authentication state
-2. **SocketContext**: Real-time updates (WebSocket)
+1. **AuthContext**: User authentication state, login/logout methods
+2. **SocketContext**: Real-time updates (future WebSocket integration)
 
 ### TanStack Query
-- **Cache management** for API calls
-- **Automatic refetching** with intervals
-- **Error handling** and retry logic
-- **Query invalidation** on mutations
+- **Query Keys**: Hierarchical structure for cache management
+- **Mutations**: Status updates, order creation, user management
+- **Automatic Refetching**: 30-second intervals for real-time data
+- **Error Handling**: Toast notifications, retry logic
 
 ## Routing Structure
 
 ```
 /                           # Home page
-/login                      # Authentication
-/shop/:slug                 # Shop upload page
-/shop/:slug/upload          # Shop upload page (alias)
+/login                      # Authentication page
+/shop/:slug                 # Public shop order page (QR code destination)
 /customer/dashboard         # Customer dashboard
 /customer/order/new         # New order creation
-/shop/dashboard             # Shop owner dashboard
-/admin/dashboard            # Admin dashboard
-/admin/add-shop             # Add new shop
+/shop/dashboard             # Shop owner dashboard (4-column + history)
+/admin/dashboard            # Admin dashboard (analytics + management)
+/admin/add-shop             # Add new shop form
 /notifications              # User notifications
-/profile                    # User profile
+/profile                    # User profile management
 ```
 
-## Component Guidelines
+## Critical Implementation Notes
 
-### File Organization
-- **One component per file**
-- **Co-locate related components**
-- **Index files for barrel exports**
-- **TypeScript interfaces in same file**
+### 1. Data Consistency
+- All API responses return data objects, not full Axios responses
+- TypeScript interfaces strictly match database schema
+- No dummy data - all information from PostgreSQL
 
-### Props Interface
-```typescript
-interface ComponentProps {
-  // Required props first
-  title: string;
-  onAction: () => void;
-  
-  // Optional props with defaults
-  variant?: 'primary' | 'secondary';
-  className?: string;
-  children?: React.ReactNode;
-}
-```
+### 2. Role-Based Access
+- Frontend routes protected by user role
+- API endpoints enforce role-based permissions
+- Dynamic UI rendering based on user capabilities
 
-### Error Handling
-- **User-friendly error messages**
-- **Toast notifications** for feedback
-- **Fallback UI** for failed states
-- **Retry mechanisms** where appropriate
+### 3. Shop-Specific Features
+- QR codes link directly to shop's order page
+- Walk-in orders only visible if `allow_offline_access = true`
+- Shop owners see only their shop's orders
 
-## Build & Deployment
+### 4. Order Management
+- 4-column dashboard layout as specified in PRD
+- Clear status progression with action buttons
+- Real-time updates with query invalidation
 
-### Development
-```bash
-npm run dev        # Start development server
-npm run build      # Build for production
-npm run preview    # Preview production build
-npm run lint       # Run ESLint
-```
-
-### Environment Variables
-```env
-VITE_API_URL=http://localhost:3001/api
-```
+### 5. Admin Capabilities
+- Complete CRUD for users and shops
+- Real-time analytics with live PostgreSQL data
+- Shop activation/deactivation controls
+- Offline access toggles per shop
 
 ## Performance Considerations
 
-### Code Splitting
-- **Lazy loading** for routes
-- **Dynamic imports** for heavy components
-- **Bundle analysis** for optimization
+### Frontend Optimization
+- React.memo for order cards to prevent unnecessary re-renders
+- Lazy loading for non-critical components
+- Efficient query invalidation strategies
+- Optimistic updates for status changes
 
-### Caching Strategy
-- **TanStack Query** for API responses
-- **Browser caching** for static assets
-- **Service worker** for offline functionality
-
-### Image Optimization
-- **WebP format** support
-- **Responsive images** with srcset
-- **Lazy loading** for images
+### API Efficiency
+- Pagination for large data sets
+- Selective data fetching with Sequelize includes
+- Proper database indexing on foreign keys
+- Connection pooling for PostgreSQL
 
 ## Security Measures
 
 ### Authentication
-- **JWT tokens** in localStorage
-- **Automatic logout** on token expiry
-- **Role-based route protection**
+- JWT tokens with expiration
+- Role-based route protection
+- Automatic logout on token expiry
 
-### API Security
-- **Request interceptors** for auth headers
-- **Response interceptors** for error handling
-- **CSRF protection** (backend requirement)
-
-### Data Validation
-- **Frontend validation** for UX
-- **Backend validation** for security
-- **TypeScript** for type safety
+### Data Protection
+- Input validation on all forms
+- Sanitized database queries
+- File upload restrictions
+- CORS configuration
 
 ## Testing Strategy
 
 ### Unit Testing
-- **Component testing** with React Testing Library
-- **Hook testing** for custom hooks
-- **Utility function testing**
+- Component rendering with React Testing Library
+- API service method testing
+- Utility function validation
 
 ### Integration Testing
-- **API integration** tests
-- **User flow** testing
-- **Cross-browser** compatibility
+- Auth flow testing
+- Order creation and status update flows
+- Admin management operations
 
 ### E2E Testing
-- **Critical user journeys**
-- **Order placement flow**
-- **Dashboard functionality**
-
-## Accessibility
-
-### WCAG Compliance
-- **Semantic HTML** structure
-- **ARIA labels** for screen readers
-- **Keyboard navigation** support
-- **Color contrast** compliance
-
-### Responsive Design
-- **Mobile-first** approach
-- **Touch-friendly** interactions
-- **Flexible layouts** with CSS Grid/Flexbox
-
-## Future Enhancements
-
-### Planned Features
-- **Real-time chat** between customers and shops
-- **Payment integration** with Stripe
-- **Push notifications** via service workers
-- **Progressive Web App** capabilities
-- **Advanced analytics** dashboard
-- **Multi-language support**
-
-### Technical Improvements
-- **State management** with Redux Toolkit
-- **Server-side rendering** with Next.js migration
-- **GraphQL** API integration
-- **Advanced caching** strategies
+- Complete user journeys for each role
+- QR code scanning simulation
+- Cross-browser compatibility
 
 ---
 
-## Backend Implementation Notes
-
-The backend should implement all the API endpoints listed above using Node.js, Express, and Sequelize ORM with PostgreSQL. Key implementation requirements:
-
-1. **Authentication middleware** for protected routes
-2. **File upload handling** with multer
-3. **Role-based access control** middleware
-4. **Input validation** with express-validator
-5. **Error handling** middleware
-6. **Rate limiting** for security
-7. **CORS configuration** for frontend integration
-8. **Database migrations** for schema management
-9. **Seed data** for development environment
-10. **API documentation** with Swagger/OpenAPI
-
-This documentation serves as a comprehensive guide for both frontend maintenance and backend API development.
+This documentation reflects the current clean state of the frontend application, ready for backend implementation according to the PRD specifications.

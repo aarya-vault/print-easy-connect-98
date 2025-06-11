@@ -1,95 +1,86 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import apiService from '@/services/api';
-import { Message } from '@/types/chat';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Send } from 'lucide-react';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useQuery } from '@tanstack/react-query';
+import { Send, MessageCircle } from 'lucide-react';
+import apiService from '@/services/api';
+import { ChatMessage } from '@/types/api';
 
 interface RealTimeChatProps {
   orderId: string;
-  recipientId: string;
 }
 
-const RealTimeChat: React.FC<RealTimeChatProps> = ({ orderId, recipientId }) => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState('');
-  const { user } = useAuth();
-  const scrollRef = useRef<HTMLDivElement>(null);
+const RealTimeChat: React.FC<RealTimeChatProps> = ({ orderId }) => {
+  const [message, setMessage] = useState('');
+  const [sending, setSending] = useState(false);
 
-  useEffect(() => {
-    loadMessages();
-  }, [orderId]);
+  const { data: messagesData, refetch } = useQuery<{ messages: ChatMessage[] }>({
+    queryKey: ['order-messages', orderId],
+    queryFn: () => apiService.getOrderMessages(orderId),
+    refetchInterval: 5000,
+  });
 
-  useEffect(() => {
-    // Scroll to bottom on new messages
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages]);
+  const messages = messagesData?.messages || [];
 
-  const loadMessages = async () => {
+  const handleSendMessage = async () => {
+    if (!message.trim() || sending) return;
+
+    setSending(true);
     try {
-      const response = await apiService.getOrderMessages(orderId);
-      // API service interceptor returns data directly, so response is the actual data
-      const messagesData = Array.isArray(response) ? response : (response?.messages || []);
-      setMessages(messagesData);
+      await apiService.sendMessage(orderId, message);
+      setMessage('');
+      refetch();
     } catch (error) {
-      console.error('Error loading messages:', error);
-    }
-  };
-
-  const sendMessage = async () => {
-    if (!newMessage.trim() || !user) return;
-
-    try {
-      await apiService.sendMessage(orderId, newMessage, Number(recipientId));
-      setNewMessage('');
-      await loadMessages();
-    } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('Failed to send message:', error);
+    } finally {
+      setSending(false);
     }
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto p-4" ref={scrollRef}>
-        {messages.map((msg) => (
-          <div key={msg.id} className={`mb-2 flex flex-col ${msg.sender_id === user?.id ? 'items-end' : 'items-start'}`}>
-            <div className="flex items-center space-x-2">
-              {msg.sender_id !== user?.id && (
-                <Avatar className="w-6 h-6">
-                  <AvatarImage src={`https://avatar.vercel.sh/${msg.sender_id}.png`} alt={`Avatar of ${msg.sender_id}`} />
-                  <AvatarFallback>{msg.sender_id}</AvatarFallback>
-                </Avatar>
-              )}
-              <div className={`rounded-lg p-2 max-w-xs break-words ${msg.sender_id === user?.id ? 'bg-blue-100 text-right' : 'bg-gray-100'}`}>
-                <p className="text-sm">{msg.message}</p>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <MessageCircle className="w-5 h-5" />
+          Order Chat
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="h-64 overflow-y-auto space-y-2 p-2 bg-gray-50 rounded">
+          {messages.length === 0 ? (
+            <p className="text-center text-gray-500 py-8">No messages yet</p>
+          ) : (
+            messages.map((msg) => (
+              <div key={msg.id} className="bg-white p-2 rounded shadow-sm">
+                <div className="text-sm font-medium">{msg.sender_name}</div>
+                <div className="text-gray-700">{msg.message}</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {new Date(msg.created_at).toLocaleString()}
+                </div>
               </div>
-            </div>
-            <span className="text-xs text-gray-500">{new Date(msg.created_at).toLocaleTimeString()}</span>
-          </div>
-        ))}
-      </div>
-
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center space-x-2">
+            ))
+          )}
+        </div>
+        
+        <div className="flex gap-2">
           <Input
-            type="text"
-            placeholder="Type your message..."
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            className="flex-1 rounded-full py-2 px-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Type a message..."
+            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
           />
-          <Button onClick={sendMessage} disabled={!newMessage.trim()} className="bg-blue-500 text-white rounded-full p-2 hover:bg-blue-600">
-            <Send className="h-4 w-4" />
+          <Button 
+            onClick={handleSendMessage}
+            disabled={!message.trim() || sending}
+            size="sm"
+          >
+            <Send className="w-4 h-4" />
           </Button>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

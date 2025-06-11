@@ -1,10 +1,10 @@
 
 // User Types
 export interface User {
-  id: number;
+  id: string;
   name: string;
   email?: string;
-  phone: string;
+  phone?: string;
   role: 'customer' | 'shop_owner' | 'admin';
   is_active: boolean;
   created_at: string;
@@ -13,17 +13,18 @@ export interface User {
 
 // Shop Types
 export interface Shop {
-  id: number;
+  id: string;
+  owner_user_id: string;
   name: string;
   address: string;
-  phone: string;
+  contact_number: string;
   email: string;
-  owner_id: number;
   is_active: boolean;
-  allows_offline_orders: boolean;
+  allow_offline_access: boolean;
   shop_timings: string;
   slug: string;
-  owner: User;
+  qr_code_url?: string;
+  owner?: User;
   created_at: string;
   updated_at: string;
 }
@@ -31,22 +32,18 @@ export interface Shop {
 // Order Types
 export interface Order {
   id: string;
-  customer_id: number;
-  shop_id: number;
+  customer_id: string;
+  shop_id: string;
   customer_name: string;
   customer_phone: string;
   customer_email?: string;
-  order_type: 'uploaded-files' | 'walk-in';
-  description: string;
-  status: 'received' | 'started' | 'completed';
-  is_urgent: boolean;
-  instructions?: string;
-  pages?: number;
-  copies?: number;
-  paper_type?: string;
-  binding?: string;
-  color?: boolean;
+  order_type: 'digital' | 'walkin';
+  notes: string;
+  status: 'pending' | 'in_progress' | 'ready' | 'completed' | 'cancelled';
+  is_urgent?: boolean;
   files?: OrderFile[];
+  customer?: User;
+  shop?: Shop;
   created_at: string;
   updated_at: string;
 }
@@ -55,12 +52,14 @@ export interface Order {
 export interface OrderFile {
   id: string;
   order_id: string;
-  name: string;
-  original_name: string;
-  type: string;
-  size: number;
-  url: string;
+  file_name: string;
+  original_name?: string;
+  mime_type: string;
+  file_url: string;
+  backend_file_path: string;
+  restrict_download: boolean;
   created_at: string;
+  updated_at: string;
 }
 
 // API Response Types
@@ -91,92 +90,84 @@ export interface AdminStats {
   todayOrders: number;
 }
 
-// API Request Types
+// Analytics Types
+export interface AnalyticsData {
+  stats: AdminStats;
+  orderTrends: Array<{
+    date: string;
+    count: number;
+    digital: number;
+    walkin: number;
+  }>;
+  ordersByStatus: Array<{
+    status: string;
+    count: number;
+  }>;
+  shopPerformance: Array<{
+    shop_name: string;
+    total_orders: number;
+    avg_completion_time: number;
+  }>;
+  realtimeMetrics: {
+    activeUsers: number;
+    ordersToday: number;
+    urgentOrders: number;
+    pendingOrders: number;
+    avgProcessingTime: number;
+    completionRate: number;
+  };
+}
+
+// Request Types
 export interface LoginRequest {
   phone?: string;
   email?: string;
   password?: string;
 }
 
-export interface UpdateProfileRequest {
-  name: string;
-}
-
 export interface CreateOrderRequest {
-  shop_id: number;
-  customer_name: string;
-  customer_phone: string;
-  customer_email?: string;
-  order_type: 'uploaded-files' | 'walk-in';
-  description: string;
-  instructions?: string;
-  pages?: number;
-  copies?: number;
-  paper_type?: string;
-  binding?: string;
-  color?: boolean;
-  files?: File[];
-}
-
-export interface UpdateOrderStatusRequest {
-  status: 'received' | 'started' | 'completed';
+  shopId: string;
+  orderType: 'digital' | 'walkin';
+  notes: string;
+  fileIds?: string[];
 }
 
 export interface CreateShopRequest {
-  name: string;
+  shopName: string;
+  ownerName: string;
+  ownerEmail: string;
+  ownerPassword: string;
+  contactNumber: string;
   address: string;
-  phone: string;
-  email: string;
-  owner_id: number;
-  shop_timings?: string;
-  allows_offline_orders?: boolean;
+  preferredSlug?: string;
+  allowOfflineAccess: boolean;
+  shopTimings: string;
 }
 
 export interface UpdateShopRequest {
   name?: string;
   address?: string;
-  phone?: string;
-  email?: string;
+  contact_number?: string;
+  is_active?: boolean;
+  allow_offline_access?: boolean;
   shop_timings?: string;
-  is_active?: boolean;
-  allows_offline_orders?: boolean;
+  slug?: string;
 }
 
-// Query Parameters
-export interface GetUsersParams {
-  search?: string;
-  role?: string;
-  is_active?: boolean;
-  page?: number;
-  limit?: number;
-}
-
-export interface GetOrdersParams {
-  status?: string;
-  order_type?: string;
-  is_urgent?: boolean;
-  page?: number;
-  limit?: number;
-}
-
-// WebSocket Message Types
-export interface SocketMessage {
-  type: 'order_update' | 'new_order' | 'status_change' | 'chat_message';
-  data: any;
-  timestamp: string;
-}
-
-export interface OrderUpdateMessage {
-  order_id: string;
-  status: string;
-  updated_by: number;
-}
-
+// Chat Message Types
 export interface ChatMessage {
   id: string;
   order_id: string;
-  sender_id: number;
+  sender_id: string;
   sender_name: string;
   message: string;
+  is_read: boolean;
   created_at: string;
+}
+
+// QR Code Types
+export interface QRCodeData {
+  qrCodeUrl: string;
+  shopUrl: string;
+  message: string;
 }

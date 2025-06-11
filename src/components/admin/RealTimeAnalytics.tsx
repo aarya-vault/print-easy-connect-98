@@ -1,73 +1,73 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, PieChart, Pie, Cell, AreaChart, Area
-} from 'recharts';
 import { 
   TrendingUp, 
-  TrendingDown, 
-  Activity, 
-  Clock, 
   Users, 
-  Package, 
-  RefreshCw,
-  Calendar,
-  Filter
+  ShoppingBag, 
+  Clock,
+  AlertCircle,
+  CheckCircle
 } from 'lucide-react';
 import apiService from '@/services/api';
+import { AnalyticsData } from '@/types/api';
 
 const RealTimeAnalytics: React.FC = () => {
-  const [lastRefresh, setLastRefresh] = useState(new Date());
-
-  // Fetch real-time analytics data from backend
-  const { data: analyticsData, refetch, isLoading } = useQuery({
-    queryKey: ['admin-realtime-analytics'],
-    queryFn: async () => {
-      const response = await apiService.getAdminAnalytics();
-      return response.analytics;
-    },
+  const { data: analyticsData, isLoading, error } = useQuery<AnalyticsData>({
+    queryKey: ['admin-analytics'],
+    queryFn: apiService.getAdminAnalytics,
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
-  const handleManualRefresh = () => {
-    refetch();
-    setLastRefresh(new Date());
-  };
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[1, 2, 3].map(i => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-6">
+                <div className="h-20 bg-gray-200 rounded"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
-  const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
+  if (error) {
+    return (
+      <Card className="border-red-200">
+        <CardContent className="p-6 text-center">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-red-700 mb-2">Analytics Error</h3>
+          <p className="text-red-600">Failed to load analytics data. Please try again.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const analytics = analyticsData;
+  if (!analytics) return null;
 
   const MetricCard: React.FC<{ 
     title: string; 
-    value: string | number; 
-    change?: number; 
-    icon: React.ReactNode;
+    value: number; 
+    icon: React.ReactNode; 
     color: string;
-  }> = ({ title, value, change, icon, color }) => (
+    subtitle?: string;
+  }> = ({ title, value, icon, color, subtitle }) => (
     <Card>
-      <CardContent className="p-4">
+      <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-gray-600">{title}</p>
-            <p className="text-2xl font-bold text-gray-900">{value}</p>
-            {change !== undefined && (
-              <div className="flex items-center mt-1">
-                {change > 0 ? (
-                  <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-                ) : (
-                  <TrendingDown className="w-4 h-4 text-red-500 mr-1" />
-                )}
-                <span className={`text-sm ${change > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {Math.abs(change)}%
-                </span>
-              </div>
-            )}
+            <p className="text-2xl font-bold text-gray-900">{value.toLocaleString()}</p>
+            {subtitle && <p className="text-xs text-gray-500 mt-1">{subtitle}</p>}
           </div>
-          <div className={`p-3 rounded-full ${color}`}>
+          <div className={`p-3 rounded-lg ${color}`}>
             {icon}
           </div>
         </div>
@@ -75,192 +75,109 @@ const RealTimeAnalytics: React.FC = () => {
     </Card>
   );
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setLastRefresh(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-center py-12">
-          <RefreshCw className="w-8 h-8 animate-spin text-blue-500" />
-          <span className="ml-2 text-gray-600">Loading real-time analytics...</span>
-        </div>
-      </div>
-    );
-  }
-
-  const metrics = analyticsData?.realtimeMetrics || {
-    activeUsers: 0,
-    ordersToday: 0,
-    urgentOrders: 0,
-    pendingOrders: 0,
-    avgProcessingTime: 0,
-    completionRate: 0
-  };
-
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Real-Time Analytics</h2>
-          <p className="text-gray-600">Live system metrics and data visualization</p>
-        </div>
-        <div className="flex items-center space-x-3">
-          <Badge variant="secondary" className="bg-green-100 text-green-800">
-            <Activity className="w-3 h-3 mr-1" />
-            Live
-          </Badge>
-          <Button onClick={handleManualRefresh} size="sm" variant="outline">
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
-          </Button>
-        </div>
-      </div>
-
-      {/* Last Updated */}
-      <div className="text-sm text-gray-500">
-        Last updated: {lastRefresh.toLocaleTimeString()}
-      </div>
-
       {/* Real-time Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <MetricCard
-          title="Active Users"
-          value={metrics.activeUsers}
-          change={5}
-          icon={<Users className="w-6 h-6 text-blue-600" />}
-          color="bg-blue-100"
-        />
-        <MetricCard
-          title="Orders Today"
-          value={metrics.ordersToday}
-          change={12}
-          icon={<Package className="w-6 h-6 text-green-600" />}
-          color="bg-green-100"
-        />
-        <MetricCard
-          title="Urgent Orders"
-          value={metrics.urgentOrders}
-          icon={<Clock className="w-6 h-6 text-red-600" />}
-          color="bg-red-100"
-        />
-        <MetricCard
-          title="Pending Orders"
-          value={metrics.pendingOrders}
-          icon={<TrendingUp className="w-6 h-6 text-purple-600" />}
-          color="bg-purple-100"
-        />
+      <div>
+        <h3 className="text-lg font-semibold mb-4">Real-time Metrics</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <MetricCard
+            title="Active Users"
+            value={analytics.realtimeMetrics?.activeUsers || 0}
+            icon={<Users className="w-6 h-6 text-blue-600" />}
+            color="bg-blue-100"
+            subtitle="Currently online"
+          />
+          <MetricCard
+            title="Orders Today"
+            value={analytics.realtimeMetrics?.ordersToday || 0}
+            icon={<ShoppingBag className="w-6 h-6 text-green-600" />}
+            color="bg-green-100"
+            subtitle="24h volume"
+          />
+          <MetricCard
+            title="Urgent Orders"
+            value={analytics.realtimeMetrics?.urgentOrders || 0}
+            icon={<AlertCircle className="w-6 h-6 text-red-600" />}
+            color="bg-red-100"
+            subtitle="Needs attention"
+          />
+        </div>
       </div>
 
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Order Trends */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5" />
-              Order Trends (Last 7 Days)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={analyticsData?.orders || []}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Area 
-                  type="monotone" 
-                  dataKey="count" 
-                  stackId="1"
-                  stroke="#3B82F6" 
-                  fill="#3B82F6" 
-                  fillOpacity={0.6}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+      {/* Order Status Distribution */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="w-5 h-5" />
+            Order Status Distribution
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            {analytics.ordersByStatus?.map((status) => (
+              <div key={status.status} className="text-center">
+                <div className="text-2xl font-bold text-gray-900">{status.count}</div>
+                <Badge variant="outline" className="text-xs capitalize">
+                  {status.status}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
-        {/* Order Status Distribution */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="w-5 h-5" />
-              Order Status Distribution
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={analyticsData?.ordersByStatus || []}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ status, percent }) => `${status} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="count"
-                >
-                  {(analyticsData?.ordersByStatus || []).map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+      {/* Shop Performance */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CheckCircle className="w-5 h-5" />
+            Top Performing Shops
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {analytics.shopPerformance?.slice(0, 5).map((shop, index) => (
+              <div key={shop.shop_name} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Badge variant="outline" className="w-6 h-6 rounded-full p-0 flex items-center justify-center text-xs">
+                    {index + 1}
+                  </Badge>
+                  <span className="font-medium">{shop.shop_name}</span>
+                </div>
+                <div className="text-right">
+                  <div className="font-semibold">{shop.total_orders} orders</div>
+                  <div className="text-xs text-gray-500">
+                    <Clock className="w-3 h-3 inline mr-1" />
+                    {shop.avg_completion_time}min avg
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
-        {/* Order Type Comparison */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="w-5 h-5" />
-              Upload vs Walk-in Orders
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={analyticsData?.orders || []}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="uploaded_files" fill="#3B82F6" name="Upload Orders" />
-                <Bar dataKey="walk_in" fill="#10B981" name="Walk-in Orders" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Shop Performance */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5" />
-              Top Shop Performance
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={analyticsData?.shopPerformance || []}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="shop_name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="total_orders" fill="#8B5CF6" name="Total Orders" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Order Trends (Last 7 days) */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Order Trends (Last 7 Days)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {analytics.orderTrends?.map((trend) => (
+              <div key={trend.date} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
+                <span className="text-sm font-medium">{trend.date}</span>
+                <div className="flex items-center gap-4 text-sm">
+                  <span className="text-blue-600">Digital: {trend.digital}</span>
+                  <span className="text-purple-600">Walk-in: {trend.walkin}</span>
+                  <span className="font-semibold">Total: {trend.count}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

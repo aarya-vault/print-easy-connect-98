@@ -1,29 +1,15 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import apiService from '@/services/api';
-
-export type UserRole = 'customer' | 'shop_owner' | 'admin';
-
-interface User {
-  id: number;
-  phone?: string;
-  name?: string;
-  email?: string;
-  role: UserRole;
-  is_active: boolean;
-  shop_id?: number;
-  shop_name?: string;
-}
+import { User } from '@/types/api';
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
-  login: (phone: string) => Promise<{ isNewUser: boolean }>;
-  loginWithEmail: (email: string, password: string) => Promise<void>;
+  loading: boolean;
+  login: (phone: string) => Promise<void>;
+  emailLogin: (email: string, password: string) => Promise<void>;
   logout: () => void;
-  updateUser: (userData: Partial<User>) => void;
-  updateUserName: (name: string) => Promise<void>;
-  isLoading: boolean;
+  updateProfile: (name: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,140 +22,99 @@ export const useAuth = () => {
   return context;
 };
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        const storedToken = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
-        const storedUser = localStorage.getItem('auth_user') || sessionStorage.getItem('auth_user');
-        
-        if (storedToken && storedUser) {
-          const userData = JSON.parse(storedUser);
-          setToken(storedToken);
-          setUser(userData);
-          
-          // Verify token is still valid
-          try {
-            await apiService.getCurrentUser();
-          } catch (error) {
-            console.warn('Stored token invalid, clearing auth state');
-            logout();
-          }
+    const initAuth = async () => {
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        try {
+          const response = await apiService.getCurrentUser();
+          setUser(response.user);
+        } catch (error) {
+          console.error('Failed to get current user:', error);
+          localStorage.removeItem('authToken');
         }
-      } catch (error) {
-        console.error('Error initializing auth:', error);
-        logout();
-      } finally {
-        setIsLoading(false);
       }
+      setLoading(false);
     };
 
-    initializeAuth();
+    initAuth();
   }, []);
 
-  const login = async (phone: string): Promise<{ isNewUser: boolean }> => {
+  const login = async (phone: string) => {
     try {
-      setIsLoading(true);
+      setLoading(true);
       const response = await apiService.phoneLogin(phone);
       
-      // API service interceptor returns data directly, so response is the actual data
-      const authToken = response?.token || response?.data?.token;
-      const userData = response?.user || response?.data?.user || response;
-      
-      setToken(authToken);
-      setUser(userData);
-      
-      // Store in localStorage for persistence
-      localStorage.setItem('auth_token', authToken);
-      localStorage.setItem('auth_user', JSON.stringify(userData));
-      
-      // Check if user name needs to be collected
-      const isNewUser = userData.name?.includes('Customer') || !userData.name;
-      
-      return { isNewUser };
-      
-    } catch (error: any) {
-      console.error('Phone login error:', error);
-      throw new Error(error.response?.data?.message || error.message || 'Phone login failed');
+      if (response.success && response.token && response.user) {
+        localStorage.setItem('authToken', response.token);
+        setUser(response.user);
+      } else {
+        throw new Error('Invalid login response');
+      }
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const loginWithEmail = async (email: string, password: string) => {
+  const emailLogin = async (email: string, password: string) => {
     try {
-      setIsLoading(true);
+      setLoading(true);
       const response = await apiService.emailLogin(email, password);
       
-      // API service interceptor returns data directly, so response is the actual data
-      const authToken = response?.token || response?.data?.token;
-      const userData = response?.user || response?.data?.user || response;
-      
-      setToken(authToken);
-      setUser(userData);
-      
-      // Store in localStorage for persistence
-      localStorage.setItem('auth_token', authToken);
-      localStorage.setItem('auth_user', JSON.stringify(userData));
-      
-    } catch (error: any) {
-      console.error('Email login error:', error);
-      throw new Error(error.response?.data?.message || error.message || 'Email login failed');
+      if (response.success && response.token && response.user) {
+        localStorage.setItem('authToken', response.token);
+        setUser(response.user);
+      } else {
+        throw new Error('Invalid login response');
+      }
+    } catch (error) {
+      console.error('Email login failed:', error);
+      throw error;
     } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const updateUserName = async (name: string) => {
-    try {
-      await apiService.updateProfile(name);
-      updateUser({ name });
-    } catch (error: any) {
-      console.error('Update name error:', error);
-      throw new Error('Failed to update name');
+      setLoading(false);
     }
   };
 
   const logout = () => {
+    localStorage.removeItem('authToken');
     setUser(null);
-    setToken(null);
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_user');
-    sessionStorage.removeItem('auth_token');
-    sessionStorage.removeItem('auth_user');
   };
 
-  const updateUser = (userData: Partial<User>) => {
-    if (user) {
-      const updatedUser = { ...user, ...userData };
-      setUser(updatedUser);
-      
-      // Update stored user data
-      const storedToken = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
-      if (storedToken) {
-        if (localStorage.getItem('auth_token')) {
-          localStorage.setItem('auth_user', JSON.stringify(updatedUser));
-        } else {
-          sessionStorage.setItem('auth_user', JSON.stringify(updatedUser));
-        }
+  const updateProfile = async (name: string) => {
+    try {
+      const response = await apiService.updateProfile(name);
+      if (response.success && response.user) {
+        setUser(response.user);
       }
+    } catch (error) {
+      console.error('Profile update failed:', error);
+      throw error;
     }
   };
 
   const value: AuthContextType = {
     user,
-    token,
+    loading,
     login,
-    loginWithEmail,
+    emailLogin,
     logout,
-    updateUser,
-    updateUserName,
-    isLoading,
+    updateProfile,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };

@@ -17,9 +17,9 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor for error handling
+// Response interceptor for error handling and data extraction
 apiClient.interceptors.response.use(
-  (response) => response.data,
+  (response) => response.data, // Return only data, not full response
   (error) => {
     console.error('API Error:', error);
     
@@ -41,33 +41,44 @@ const apiService = {
 
   // Shop Operations
   getShops: () => apiClient.get('/shops'),
-  getShopBySlug: (slug: string) => apiClient.get(`/shops/${slug}`),
+  getShopBySlug: (slug: string) => apiClient.get(`/shops/slug/${slug}`),
+  getMyShop: () => apiClient.get('/shops/my-shop'),
   getShopOrders: () => apiClient.get('/orders/shop'),
+  getShopOrderHistory: () => apiClient.get('/orders/shop/history'),
   updateOrderStatus: (orderId: string, status: string) => apiClient.patch(`/orders/${orderId}/status`, { status }),
   toggleOrderUrgency: (orderId: string) => apiClient.patch(`/orders/${orderId}/urgency`),
-  generateShopQRCode: () => apiClient.get('/shops/qr-code'),
+  generateShopQRCode: (shopId: string) => apiClient.post(`/shops/${shopId}/generate-qr`),
 
   // Customer Operations
   getCustomerOrders: () => apiClient.get('/orders/customer'),
-  createOrder: (orderData: any) => apiClient.post('/orders', orderData),
   getCustomerOrderHistory: () => apiClient.get('/orders/customer/history'),
+  createOrder: (orderData: any) => apiClient.post('/orders', orderData),
+  getVisitedShops: () => apiClient.get('/shops/visited'),
+  getOrderById: (orderId: string) => apiClient.get(`/orders/${orderId}`),
 
   // File Operations
-  uploadFiles: (files: FormData) => apiClient.post('/files/upload', files, {
+  uploadFiles: (orderId: string, files: FormData) => apiClient.post(`/files/upload/${orderId}`, files, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
-  downloadFile: (fileId: string) => apiClient.get(`/files/${fileId}/download`, { responseType: 'blob' }),
+  getOrderFiles: (orderId: string) => apiClient.get(`/files/order/${orderId}`),
+  downloadFile: (fileId: string) => apiClient.get(`/files/download/${fileId}`, { responseType: 'blob' }),
 
   // Admin Operations
   getAdminStats: () => apiClient.get('/admin/stats'),
-  getAllUsers: (params?: { search?: string }) => apiClient.get('/admin/users', { params }),
+  getAdminAnalytics: () => apiClient.get('/admin/analytics/dashboard'),
+  getAllUsers: (params?: { search?: string; role?: string; page?: number; limit?: number }) => 
+    apiClient.get('/admin/users', { params }),
   getAllShops: () => apiClient.get('/admin/shops'),
   updateShopSettings: (shopId: number, settings: any) => apiClient.patch(`/admin/shops/${shopId}`, settings),
   createShop: (shopData: any) => apiClient.post('/admin/shops', shopData),
+  createUser: (userData: any) => apiClient.post('/admin/users', userData),
+  updateUser: (userId: number, userData: any) => apiClient.patch(`/admin/users/${userId}`, userData),
+  deleteUser: (userId: number) => apiClient.delete(`/admin/users/${userId}`),
 
   // Order Chat
   getOrderMessages: (orderId: string) => apiClient.get(`/orders/${orderId}/messages`),
   sendOrderMessage: (orderId: string, message: string) => apiClient.post(`/orders/${orderId}/messages`, { message }),
+  sendMessage: (orderId: string, message: string) => apiClient.post(`/orders/${orderId}/messages`, { message }),
 };
 
 export default apiService;
