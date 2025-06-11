@@ -21,6 +21,8 @@ interface OrderCardProps {
   onToggleUrgency: (orderId: string) => void;
   onUpdateStatus: (orderId: string, status: Order['status']) => void;
   onViewDetails: (orderId: string) => void;
+  onCallCustomer: () => void;
+  onOpenChat: () => void;
   onPrintFile?: (file: OrderFile) => void;
 }
 
@@ -29,6 +31,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
   onToggleUrgency,
   onUpdateStatus,
   onViewDetails,
+  onCallCustomer,
+  onOpenChat,
   onPrintFile
 }) => {
   const getStatusColor = (status: string) => {
@@ -150,7 +154,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => window.open(`tel:${order.customer_phone}`)}
+                onClick={onCallCustomer}
                 className="flex-1 text-xs h-7"
               >
                 <Phone className="w-3 h-3" />

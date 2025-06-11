@@ -63,6 +63,10 @@ export interface Order {
   customer_phone: string;
   order_type: 'digital' | 'walkin';
   notes: string; // Unified field for description/instructions
+  description?: string; // Added for compatibility
+  pages?: number; // Added for printing specifications
+  copies?: number; // Added for printing specifications
+  color?: boolean; // Added for printing specifications
   status: 'pending' | 'in_progress' | 'ready' | 'completed' | 'cancelled';
   is_urgent: boolean;
   files?: OrderFile[];

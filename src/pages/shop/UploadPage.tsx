@@ -38,7 +38,7 @@ const UploadPage: React.FC = () => {
 
         console.log('🔍 Fetching shop data for slug:', shopSlug);
         const response = await apiService.getShopBySlug(shopSlug);
-        // Handle both possible response structures
+        // Extract shop data properly from response
         const shopData = response?.shop || response;
         setShop(shopData);
         console.log('✅ Shop data loaded:', shopData);
