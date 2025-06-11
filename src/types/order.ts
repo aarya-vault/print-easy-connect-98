@@ -6,4 +6,5 @@ import { Order as BaseOrder, OrderFile as BaseOrderFile } from './api';
 export type ShopOrder = BaseOrder;
 export type OrderFile = BaseOrderFile;
 
-// Remove ApiShopOrder completely - use Order from api.ts instead
+// Removed ApiShopOrder completely - use Order from api.ts instead
+// All order-related components should now use Order from './api'
