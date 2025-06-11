@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -112,13 +113,13 @@ const Dashboard: React.FC = () => {
     window.open(`tel:${phone}`, '_self');
   };
 
-  // Handle order selection - Fix: Use Order type instead of ApiShopOrder
+  // Handle order selection - Use Order type consistently
   const handleOrderSelect = (order: Order) => {
     setSelectedOrder(order);
     setShowOrderDetails(true);
   };
 
-  // Handle opening chat - Fix: Use Order type instead of ApiShopOrder
+  // Handle opening chat - Use Order type consistently
   const handleOpenChat = (order: Order) => {
     setSelectedOrder(order);
     setShowOrderChat(true);
