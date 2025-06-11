@@ -19,9 +19,9 @@ import {
   Store,
   AlertCircle
 } from 'lucide-react';
-import { VisitedShop } from '@/types/shop';
+import { Shop } from '@/types/api';
 
-type OrderType = 'digital' | 'physical' | null;
+type OrderType = 'digital' | 'walkin' | null;
 
 interface FileWithId {
   id: string;
@@ -38,8 +38,8 @@ const OrderCreationFlow: React.FC = () => {
   const [orderId, setOrderId] = useState<string | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [showAddFiles, setShowAddFiles] = useState(false);
-  const [selectedShop, setSelectedShop] = useState<VisitedShop | null>(null);
-  const [visitedShops, setVisitedShops] = useState<VisitedShop[]>([]);
+  const [selectedShop, setSelectedShop] = useState<Shop | null>(null);
+  const [visitedShops, setVisitedShops] = useState<Shop[]>([]);
   const [showNoVisitedShopsWarning, setShowNoVisitedShopsWarning] = useState(false);
   
   const navigate = useNavigate();
@@ -51,66 +51,78 @@ const OrderCreationFlow: React.FC = () => {
     const shopId = queryParams.get('shopId');
     
     // Fetch visited shops (in real app, this would be an API call)
-    const mockVisitedShops: VisitedShop[] = [
+    const mockVisitedShops: Shop[] = [
       {
         id: 'shop1',
+        owner_id: 'owner1',
         name: 'Quick Print Solutions',
+        slug: 'quick-print-solutions',
         address: 'Shop 12, MG Road, Bangalore',
         phone: '+91 98765 43210',
         email: 'contact@quickprint.com',
+        description: 'Professional printing services',
+        is_active: true,
+        allows_offline_orders: true,
+        shop_timings: 'Mon-Sat: 9:00 AM - 6:00 PM',
+        qr_code_url: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        // Additional frontend properties
         rating: 4.8,
         totalReviews: 245,
-        services: ['Color Printing', 'Black & White', 'Binding', 'Scanning'],
-        equipment: ['Laser Printer', 'Scanner', 'Binding Machine'],
-        operatingHours: {
-          monday: { open: '9:00', close: '18:00', isOpen: true },
-          tuesday: { open: '9:00', close: '18:00', isOpen: true },
-          wednesday: { open: '9:00', close: '18:00', isOpen: true },
-          thursday: { open: '9:00', close: '18:00', isOpen: true },
-          friday: { open: '9:00', close: '18:00', isOpen: true },
-          saturday: { open: '10:00', close: '16:00', isOpen: true },
-          sunday: { open: '10:00', close: '16:00', isOpen: false }
-        },
-        images: [],
         verified: true,
+        averageCompletionTime: '15-20 mins',
+        services: ['Color Printing', 'Black & White', 'Binding', 'Scanning'],
+        operatingHours: {
+          monday: { isOpen: true, open: '9:00', close: '18:00' },
+          tuesday: { isOpen: true, open: '9:00', close: '18:00' },
+          wednesday: { isOpen: true, open: '9:00', close: '18:00' },
+          thursday: { isOpen: true, open: '9:00', close: '18:00' },
+          friday: { isOpen: true, open: '9:00', close: '18:00' },
+          saturday: { isOpen: true, open: '10:00', close: '16:00' },
+          sunday: { isOpen: false, open: '10:00', close: '16:00' }
+        },
         lastVisited: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
         visitCount: 8,
-        averageCompletionTime: '15-20 mins',
-        uploadSlug: 'quick-print-solutions',
-        isActive: true,
         orderHistory: [
-          { orderId: 'PE123456', date: new Date(), status: 'completed', orderType: 'uploaded-files' },
-          { orderId: 'PE123455', date: new Date(), status: 'completed', orderType: 'walk-in' }
+          { orderId: 'PE123456', date: new Date(), status: 'completed', orderType: 'digital' },
+          { orderId: 'PE123455', date: new Date(), status: 'completed', orderType: 'walkin' }
         ]
       },
       {
         id: 'shop2',
+        owner_id: 'owner2',
         name: 'Campus Copy Center',
+        slug: 'campus-copy-center',
         address: 'Near College Gate, Whitefield',
         phone: '+91 87654 32109',
         email: 'info@campuscopy.com',
+        description: 'Student-friendly printing services',
+        is_active: true,
+        allows_offline_orders: true,
+        shop_timings: 'Mon-Sun: 8:00 AM - 8:00 PM',
+        qr_code_url: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        // Additional frontend properties
         rating: 4.5,
         totalReviews: 189,
-        services: ['Photocopying', 'Scanning', 'Lamination'],
-        equipment: ['Xerox Machine', 'High-speed Scanner'],
-        operatingHours: {
-          monday: { open: '8:00', close: '20:00', isOpen: true },
-          tuesday: { open: '8:00', close: '20:00', isOpen: true },
-          wednesday: { open: '8:00', close: '20:00', isOpen: true },
-          thursday: { open: '8:00', close: '20:00', isOpen: true },
-          friday: { open: '8:00', close: '20:00', isOpen: true },
-          saturday: { open: '9:00', close: '18:00', isOpen: true },
-          sunday: { open: '10:00', close: '16:00', isOpen: true }
-        },
-        images: [],
         verified: true,
+        averageCompletionTime: '10-15 mins',
+        services: ['Photocopying', 'Scanning', 'Lamination'],
+        operatingHours: {
+          monday: { isOpen: true, open: '8:00', close: '20:00' },
+          tuesday: { isOpen: true, open: '8:00', close: '20:00' },
+          wednesday: { isOpen: true, open: '8:00', close: '20:00' },
+          thursday: { isOpen: true, open: '8:00', close: '20:00' },
+          friday: { isOpen: true, open: '8:00', close: '20:00' },
+          saturday: { isOpen: true, open: '9:00', close: '18:00' },
+          sunday: { isOpen: true, open: '10:00', close: '16:00' }
+        },
         lastVisited: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
         visitCount: 3,
-        averageCompletionTime: '10-15 mins',
-        uploadSlug: 'campus-copy-center',
-        isActive: true,
         orderHistory: [
-          { orderId: 'PE123454', date: new Date(), status: 'completed', orderType: 'walk-in' }
+          { orderId: 'PE123454', date: new Date(), status: 'completed', orderType: 'walkin' }
         ]
       }
     ];
@@ -169,7 +181,7 @@ const OrderCreationFlow: React.FC = () => {
     }, 3000);
   };
 
-  const handleShopSelect = (shop: VisitedShop) => {
+  const handleShopSelect = (shop: Shop) => {
     setSelectedShop(shop);
     setShowNoVisitedShopsWarning(false);
   };
@@ -484,12 +496,12 @@ const OrderCreationFlow: React.FC = () => {
                             </div>
                           </div>
                           <div className="flex flex-wrap gap-2">
-                            {shop.services.slice(0, 3).map((service, index) => (
+                            {shop.services?.slice(0, 3).map((service, index) => (
                               <Badge key={index} variant="secondary" className="text-xs">
                                 {service}
                               </Badge>
                             ))}
-                            {shop.services.length > 3 && (
+                            {shop.services && shop.services.length > 3 && (
                               <Badge variant="secondary" className="text-xs">
                                 +{shop.services.length - 3} more
                               </Badge>
@@ -535,14 +547,14 @@ const OrderCreationFlow: React.FC = () => {
 
               <Card 
                 className="border-0 shadow-glass bg-white/60 backdrop-blur-lg hover:shadow-premium transition-all duration-300 cursor-pointer group"
-                onClick={() => setOrderType('physical')}
+                onClick={() => setOrderType('walkin')}
               >
                 <CardContent className="p-8 text-center">
                   <div className="w-20 h-20 bg-neutral-100 rounded-3xl mx-auto mb-6 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <FileText className="w-10 h-10 text-neutral-600" />
                   </div>
                   <CardTitle className="text-2xl font-semibold text-neutral-900 mb-4">
-                    Physical Item Description
+                    Walk-in Order
                   </CardTitle>
                   <CardDescription className="text-neutral-600 leading-relaxed text-base font-medium">
                     Describe books, documents, or photos you want copied, scanned, or processed

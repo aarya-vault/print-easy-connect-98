@@ -10,16 +10,7 @@ import { toast } from 'sonner';
 import { Upload, ArrowLeft, Store, MapPin, Phone, Mail, QrCode } from 'lucide-react';
 import apiService from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
-
-interface Shop {
-  id: number;
-  name: string;
-  address: string;
-  phone: string;
-  email: string;
-  description?: string;
-  allows_offline_orders: boolean;
-}
+import { Shop } from '@/types/api';
 
 const UploadPage: React.FC = () => {
   const { shopSlug } = useParams<{ shopSlug: string }>();
@@ -29,7 +20,7 @@ const UploadPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    description: '',
+    notes: '',
     customerName: user?.name || '',
     customerPhone: user?.phone || ''
   });
@@ -48,7 +39,6 @@ const UploadPage: React.FC = () => {
 
         console.log('🔍 Fetching shop data for slug:', shopSlug);
         const response = await apiService.getShopBySlug(shopSlug);
-        // API service interceptor returns data directly, so response is the actual data
         const shopData = response?.shop || response;
         setShop(shopData);
         console.log('✅ Shop data loaded:', shopData);
@@ -79,7 +69,7 @@ const UploadPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.description.trim()) {
+    if (!formData.notes.trim()) {
       toast.error('Please describe your printing requirements');
       return;
     }
@@ -98,21 +88,20 @@ const UploadPage: React.FC = () => {
     try {
       console.log('📤 Submitting order...');
 
-      const orderData = new FormData();
-      orderData.append('shopId', shop.id.toString());
-      orderData.append('orderType', 'uploaded-files');
-      orderData.append('description', formData.description);
-      orderData.append('customerName', formData.customerName);
-      orderData.append('customerPhone', formData.customerPhone);
+      const orderFormData = new FormData();
+      orderFormData.append('shopId', shop.id);
+      orderFormData.append('orderType', 'digital');
+      orderFormData.append('notes', formData.notes);
+      orderFormData.append('customerName', formData.customerName);
+      orderFormData.append('customerPhone', formData.customerPhone);
 
       Array.from(selectedFiles).forEach(file => {
-        orderData.append('files', file);
+        orderFormData.append('files', file);
       });
 
-      const orderResponse = await apiService.createOrder(orderData);
-      // API service interceptor returns data directly, so response is the actual data
-      const orderData2 = orderResponse?.order || orderResponse;
-      const orderId = orderData2?.id || orderResponse?.id;
+      const orderResponse = await apiService.createOrder(orderFormData);
+      const orderData = orderResponse?.data;
+      const orderId = orderData?.id;
 
       console.log('✅ Order created:', orderId);
 
@@ -258,13 +247,13 @@ const UploadPage: React.FC = () => {
 
                   {/* Description */}
                   <div>
-                    <Label htmlFor="description" className="text-neutral-900 font-medium">
+                    <Label htmlFor="notes" className="text-neutral-900 font-medium">
                       Printing Requirements *
                     </Label>
                     <Textarea
-                      id="description"
-                      name="description"
-                      value={formData.description}
+                      id="notes"
+                      name="notes"
+                      value={formData.notes}
                       onChange={handleInputChange}
                       placeholder="Describe your printing needs (e.g., 10 copies, double-sided, color printing, binding, paper size)"
                       required

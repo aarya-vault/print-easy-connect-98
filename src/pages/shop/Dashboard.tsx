@@ -1,546 +1,380 @@
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { toast } from 'sonner';
 import { 
+  Store, 
   Package, 
   Clock, 
   CheckCircle, 
   Phone, 
+  MessageCircle, 
   AlertTriangle,
-  Search,
-  Filter,
-  QrCode,
   Settings,
-  MoreVertical,
+  QrCode,
+  Download,
   Eye,
-  History,
-  RefreshCw,
-  Upload,
-  UserCheck
+  User,
+  LogOut
 } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { toast } from 'sonner';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import apiService from '@/services/api';
+
 import UniversalHeader from '@/components/layout/UniversalHeader';
-import QRCodeModal from '@/components/qr/QRCodeModal';
+import OrderSection from '@/components/shop/OrderSection';
+import OrderDetailsModal from '@/components/shop/OrderDetailsModal';
+import OrderChatModal from '@/components/shop/OrderChatModal';
+import QRCodeModal from '@/components/shop/QRCodeModal';
+import OrderFilters from '@/components/shop/OrderFilters';
+import apiService from '@/services/api';
+import { useAuth } from '@/contexts/AuthContext';
 import { Order, Shop } from '@/types/api';
 
-const OrderCard: React.FC<{ 
-  order: Order; 
-  onStatusUpdate: (orderId: string, status: string) => void; 
-  onToggleUrgency: (orderId: string) => void;
-  onViewDetails: (order: Order) => void;
-}> = ({ order, onStatusUpdate, onToggleUrgency, onViewDetails }) => {
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const callCustomer = () => {
-    window.open(`tel:${order.customer_phone}`);
-  };
-
-  const getNextStatus = () => {
-    switch (order.status) {
-      case 'pending': return 'in_progress';
-      case 'in_progress': return 'ready';
-      case 'ready': return 'completed';
-      default: return null;
-    }
-  };
-
-  const getStatusAction = () => {
-    switch (order.status) {
-      case 'pending': return 'Start Work';
-      case 'in_progress': return 'Mark Ready';
-      case 'ready': return 'Complete';
-      default: return null;
-    }
-  };
-
-  const nextStatus = getNextStatus();
-  const statusAction = getStatusAction();
-
-  return (
-    <Card className={`border transition-all hover:shadow-md ${
-      order.is_urgent ? 'border-red-300 bg-red-50/20' : 'border-gray-200'
-    }`}>
-      <CardContent className="p-4">
-        <div className="space-y-3">
-          {/* Header */}
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <p className="font-semibold text-sm">#{order.id.slice(0, 8)}</p>
-                {order.is_urgent && (
-                  <Badge variant="destructive" className="text-xs">Urgent</Badge>
-                )}
-              </div>
-              <Badge variant="outline" className="text-xs">
-                {order.order_type === 'digital' ? (
-                  <><Upload className="w-3 h-3 mr-1" />Digital</>
-                ) : (
-                  <><UserCheck className="w-3 h-3 mr-1" />Walk-in</>
-                )}
-              </Badge>
-            </div>
-            <Badge className={`text-xs px-2 py-1 ${
-              order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-              order.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-              order.status === 'ready' ? 'bg-green-100 text-green-800' :
-              'bg-gray-100 text-gray-800'
-            }`}>
-              {order.status.replace('_', ' ').toUpperCase()}
-            </Badge>
-          </div>
-
-          {/* Customer Info */}
-          <div>
-            <p className="font-medium text-sm">{order.customer_name}</p>
-            <p className="text-xs text-gray-600">{order.customer_phone}</p>
-          </div>
-
-          {/* Description */}
-          <p className="text-sm text-gray-700 line-clamp-2">
-            {order.notes}
-          </p>
-
-          {/* Files info for digital orders */}
-          {order.order_type === 'digital' && order.files && order.files.length > 0 && (
-            <div className="text-xs text-gray-600">
-              <Package className="w-3 h-3 inline mr-1" />
-              {order.files.length} file(s) attached
-            </div>
-          )}
-
-          {/* Time */}
-          <p className="text-xs text-gray-500">
-            {formatDate(order.created_at)}
-          </p>
-
-          {/* Actions */}
-          <div className="space-y-2">
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={callCustomer}
-                className="flex-1 text-xs h-7"
-              >
-                <Phone className="w-3 h-3" />
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => onViewDetails(order)}
-                className="flex-1 text-xs h-7"
-              >
-                <Eye className="w-3 h-3" />
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => onToggleUrgency(order.id)}
-                className={`flex-1 text-xs h-7 ${order.is_urgent ? 'bg-red-100' : ''}`}
-              >
-                <AlertTriangle className="w-3 h-3" />
-              </Button>
-            </div>
-
-            {nextStatus && statusAction && (
-              <Button
-                size="sm"
-                onClick={() => onStatusUpdate(order.id, nextStatus)}
-                className="w-full text-xs h-7 bg-golden-500 hover:bg-golden-600"
-              >
-                {statusAction}
-              </Button>
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
+interface OrderCounts {
+  total: number;
+  pending: number;
+  in_progress: number;
+  ready: number;
+  completed: number;
+  urgent: number;
+}
 
 const Dashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('active');
-  const [searchTerm, setSearchTerm] = useState('');
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [showQRModal, setShowQRModal] = useState(false);
   const [showOrderDetails, setShowOrderDetails] = useState(false);
-
-  const queryClient = useQueryClient();
-
-  // Fetch active orders
-  const { data: ordersResponse, isLoading, refetch } = useQuery({
-    queryKey: ['shop-orders'],
-    queryFn: apiService.getShopOrders,
-    refetchInterval: 30000,
+  const [showOrderChat, setShowOrderChat] = useState(false);
+  const [showQRCode, setShowQRCode] = useState(false);
+  const [activeFilters, setActiveFilters] = useState({
+    status: 'all',
+    orderType: 'all',
+    urgent: false
   });
 
-  // Fetch order history
-  const { data: historyResponse } = useQuery({
-    queryKey: ['shop-order-history'],
-    queryFn: apiService.getShopOrderHistory,
-    enabled: activeTab === 'history',
-  });
-
-  // Fetch shop info
-  const { data: shopResponse } = useQuery({
+  // Fetch shop data
+  const { data: shopData, isLoading: shopLoading, error: shopError } = useQuery({
     queryKey: ['my-shop'],
-    queryFn: apiService.getMyShop,
+    queryFn: () => apiService.getMyShop(),
+    retry: 1
   });
 
-  const orders: Order[] = ordersResponse?.orders || [];
-  const historyOrders: Order[] = historyResponse?.orders || [];
-  const shop: Shop | null = shopResponse?.shop || null;
+  const shop = shopData?.shop;
 
-  // Status update mutation
-  const statusMutation = useMutation({
-    mutationFn: ({ orderId, status }: { orderId: string; status: string }) =>
-      apiService.updateOrderStatus(orderId, status),
-    onSuccess: () => {
-      toast.success('Order status updated');
-      queryClient.invalidateQueries({ queryKey: ['shop-orders'] });
-    },
-    onError: () => {
+  // Fetch orders with filters
+  const { data: ordersData, isLoading: ordersLoading, refetch: refetchOrders } = useQuery({
+    queryKey: ['shop-orders', activeFilters],
+    queryFn: () => apiService.getShopOrders(),
+    enabled: !!shop
+  });
+
+  const orders: Order[] = ordersData?.orders || [];
+
+  // Calculate order counts
+  const orderCounts: OrderCounts = React.useMemo(() => {
+    return {
+      total: orders.length,
+      pending: orders.filter(o => o.status === 'pending').length,
+      in_progress: orders.filter(o => o.status === 'in_progress').length,
+      ready: orders.filter(o => o.status === 'ready').length,
+      completed: orders.filter(o => o.status === 'completed').length,
+      urgent: orders.filter(o => o.is_urgent).length
+    };
+  }, [orders]);
+
+  // Handle order status update
+  const handleStatusUpdate = async (orderId: string, newStatus: string) => {
+    try {
+      await apiService.updateOrderStatus(orderId, newStatus);
+      toast.success('Order status updated successfully');
+      refetchOrders();
+    } catch (error) {
+      console.error('Status update failed:', error);
       toast.error('Failed to update order status');
-    },
-  });
+    }
+  };
 
-  // Urgency toggle mutation
-  const urgencyMutation = useMutation({
-    mutationFn: (orderId: string) => apiService.toggleOrderUrgency(orderId),
-    onSuccess: () => {
+  // Handle urgency toggle
+  const handleUrgencyToggle = async (orderId: string) => {
+    try {
+      await apiService.toggleOrderUrgency(orderId);
       toast.success('Order urgency updated');
-      queryClient.invalidateQueries({ queryKey: ['shop-orders'] });
-    },
-    onError: () => {
-      toast.error('Failed to update order urgency');
-    },
-  });
-
-  const handleStatusUpdate = (orderId: string, status: string) => {
-    statusMutation.mutate({ orderId, status });
+      refetchOrders();
+    } catch (error) {
+      console.error('Urgency toggle failed:', error);
+      toast.error('Failed to update urgency');
+    }
   };
 
-  const handleToggleUrgency = (orderId: string) => {
-    urgencyMutation.mutate(orderId);
+  // Handle calling customer
+  const handleCallCustomer = (phone: string) => {
+    window.open(`tel:${phone}`, '_self');
   };
 
-  const handleViewDetails = (order: Order) => {
+  // Handle order selection
+  const handleOrderSelect = (order: Order) => {
     setSelectedOrder(order);
     setShowOrderDetails(true);
   };
 
-  const handleRefresh = () => {
-    refetch();
-    toast.success('Orders refreshed');
+  // Handle opening chat
+  const handleOpenChat = (order: Order) => {
+    setSelectedOrder(order);
+    setShowOrderChat(true);
   };
 
-  // Filter and categorize orders
-  const filteredOrders = orders.filter(order =>
-    order.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.notes.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Handle file download
+  const handleFileDownload = async (fileId: string, filename: string) => {
+    try {
+      const blob = await apiService.downloadFile(fileId);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Download failed:', error);
+      toast.error('Failed to download file');
+    }
+  };
 
-  const digitalNewOrders = filteredOrders.filter(order => 
-    order.order_type === 'digital' && order.status === 'pending'
-  );
-  const digitalInProgressOrders = filteredOrders.filter(order => 
-    order.order_type === 'digital' && (order.status === 'in_progress' || order.status === 'ready')
-  );
-  const walkinNewOrders = filteredOrders.filter(order => 
-    order.order_type === 'walkin' && order.status === 'pending'
-  );
-  const walkinInProgressOrders = filteredOrders.filter(order => 
-    order.order_type === 'walkin' && (order.status === 'in_progress' || order.status === 'ready')
-  );
+  if (shopError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-neutral-100">
+        <UniversalHeader title="Shop Dashboard" />
+        <div className="container mx-auto px-6 py-12">
+          <Card className="max-w-md mx-auto">
+            <CardContent className="p-8 text-center">
+              <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+              <h2 className="text-xl font-semibold text-neutral-900 mb-2">
+                Shop Not Found
+              </h2>
+              <p className="text-neutral-600 mb-6">
+                No shop is associated with your account. Please contact support.
+              </p>
+              <Button onClick={() => navigate('/login')} variant="outline">
+                <LogOut className="w-4 h-4 mr-2" />
+                Logout
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-golden-50 via-white to-golden-100">
-      <UniversalHeader />
-      
-      <div className="container mx-auto px-4 py-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Shop Dashboard</h1>
-            <p className="text-gray-600">
-              {shop?.name || 'Your Shop'} - Manage your orders efficiently
-            </p>
-          </div>
-          
-          <div className="flex items-center space-x-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={isLoading}
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowQRModal(true)}
-            >
-              <QrCode className="w-4 h-4 mr-2" />
-              QR Code
-            </Button>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Settings
-                  <MoreVertical className="w-4 h-4 ml-2" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem>Shop Settings</DropdownMenuItem>
-                <DropdownMenuItem>Notifications</DropdownMenuItem>
-                <DropdownMenuItem>Analytics</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+  if (shopLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-neutral-100">
+        <UniversalHeader title="Shop Dashboard" />
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-neutral-600">Loading shop dashboard...</p>
           </div>
         </div>
-
-        {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="active" className="flex items-center gap-2">
-              <Package className="w-4 h-4" />
-              Active Orders ({filteredOrders.length})
-            </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center gap-2">
-              <History className="w-4 h-4" />
-              Order History
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="active" className="space-y-6">
-            {/* Search */}
-            <div className="flex items-center space-x-4">
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  placeholder="Search orders..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
-            {/* 4-Column Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              {/* Digital New Orders */}
-              <div className="space-y-4">
-                <Card className="bg-blue-50 border-blue-200">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Upload className="w-5 h-5 text-blue-600" />
-                      Digital New
-                      <Badge variant="secondary">{digitalNewOrders.length}</Badge>
-                    </CardTitle>
-                  </CardHeader>
-                </Card>
-                <div className="space-y-3">
-                  {digitalNewOrders.map((order) => (
-                    <OrderCard
-                      key={order.id}
-                      order={order}
-                      onStatusUpdate={handleStatusUpdate}
-                      onToggleUrgency={handleToggleUrgency}
-                      onViewDetails={handleViewDetails}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Digital In Progress */}
-              <div className="space-y-4">
-                <Card className="bg-blue-50 border-blue-200">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Clock className="w-5 h-5 text-blue-600" />
-                      Digital Progress
-                      <Badge variant="secondary">{digitalInProgressOrders.length}</Badge>
-                    </CardTitle>
-                  </CardHeader>
-                </Card>
-                <div className="space-y-3">
-                  {digitalInProgressOrders.map((order) => (
-                    <OrderCard
-                      key={order.id}
-                      order={order}
-                      onStatusUpdate={handleStatusUpdate}
-                      onToggleUrgency={handleToggleUrgency}
-                      onViewDetails={handleViewDetails}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Walk-in New Orders */}
-              <div className="space-y-4">
-                <Card className="bg-purple-50 border-purple-200">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <UserCheck className="w-5 h-5 text-purple-600" />
-                      Walk-in New
-                      <Badge variant="secondary">{walkinNewOrders.length}</Badge>
-                    </CardTitle>
-                  </CardHeader>
-                </Card>
-                <div className="space-y-3">
-                  {walkinNewOrders.map((order) => (
-                    <OrderCard
-                      key={order.id}
-                      order={order}
-                      onStatusUpdate={handleStatusUpdate}
-                      onToggleUrgency={handleToggleUrgency}
-                      onViewDetails={handleViewDetails}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Walk-in In Progress */}
-              <div className="space-y-4">
-                <Card className="bg-purple-50 border-purple-200">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <CheckCircle className="w-5 h-5 text-purple-600" />
-                      Walk-in Progress
-                      <Badge variant="secondary">{walkinInProgressOrders.length}</Badge>
-                    </CardTitle>
-                  </CardHeader>
-                </Card>
-                <div className="space-y-3">
-                  {walkinInProgressOrders.map((order) => (
-                    <OrderCard
-                      key={order.id}
-                      order={order}
-                      onStatusUpdate={handleStatusUpdate}
-                      onToggleUrgency={handleToggleUrgency}
-                      onViewDetails={handleViewDetails}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="history" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Completed Orders</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {historyOrders.length === 0 ? (
-                    <p className="text-gray-500 text-center py-8">No completed orders yet</p>
-                  ) : (
-                    historyOrders.map((order) => (
-                      <div key={order.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div>
-                          <p className="font-medium">#{order.id.slice(0, 8)} - {order.customer_name}</p>
-                          <p className="text-sm text-gray-600">{order.notes}</p>
-                        </div>
-                        <div className="text-right">
-                          <Badge className="mb-1">{order.status}</Badge>
-                          <p className="text-xs text-gray-500">
-                            {new Date(order.updated_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-
-        {/* QR Code Modal */}
-        <QRCodeModal
-          isOpen={showQRModal}
-          onClose={() => setShowQRModal(false)}
-          shopId={shop?.id}
-        />
-
-        {/* Order Details Modal */}
-        <Dialog open={showOrderDetails} onOpenChange={setShowOrderDetails}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Order Details</DialogTitle>
-            </DialogHeader>
-            {selectedOrder && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="font-medium">Order ID</h4>
-                    <p className="text-gray-600">#{selectedOrder.id}</p>
-                  </div>
-                  <div>
-                    <h4 className="font-medium">Status</h4>
-                    <Badge>{selectedOrder.status}</Badge>
-                  </div>
-                  <div>
-                    <h4 className="font-medium">Customer</h4>
-                    <p className="text-gray-600">{selectedOrder.customer_name}</p>
-                    <p className="text-gray-600">{selectedOrder.customer_phone}</p>
-                  </div>
-                  <div>
-                    <h4 className="font-medium">Order Type</h4>
-                    <p className="text-gray-600 capitalize">{selectedOrder.order_type}</p>
-                  </div>
-                </div>
-                <div>
-                  <h4 className="font-medium mb-2">Description</h4>
-                  <p className="text-gray-600">{selectedOrder.notes}</p>
-                </div>
-                {selectedOrder.files && selectedOrder.files.length > 0 && (
-                  <div>
-                    <h4 className="font-medium mb-2">Files</h4>
-                    <div className="space-y-2">
-                      {selectedOrder.files.map((file) => (
-                        <div key={file.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                          <span className="text-sm">{file.file_name}</span>
-                          <Button size="sm" variant="outline">
-                            Download
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
       </div>
+    );
+  }
+
+  // Filter orders based on active filters
+  const filteredOrders = orders.filter(order => {
+    if (activeFilters.status !== 'all' && order.status !== activeFilters.status) {
+      return false;
+    }
+    if (activeFilters.orderType !== 'all' && order.order_type !== activeFilters.orderType) {
+      return false;
+    }
+    if (activeFilters.urgent && !order.is_urgent) {
+      return false;
+    }
+    return true;
+  });
+
+  // Group orders by status and type
+  const groupedOrders = {
+    digitalNew: filteredOrders.filter(o => o.order_type === 'digital' && ['pending', 'in_progress'].includes(o.status)),
+    digitalReady: filteredOrders.filter(o => o.order_type === 'digital' && ['ready', 'completed'].includes(o.status)),
+    walkinNew: filteredOrders.filter(o => o.order_type === 'walkin' && ['pending', 'in_progress'].includes(o.status)),
+    walkinReady: filteredOrders.filter(o => o.order_type === 'walkin' && ['ready', 'completed'].includes(o.status))
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-neutral-100">
+      <UniversalHeader 
+        title="Shop Dashboard"
+        user={user}
+        onLogout={logout}
+        userMenuItems={[
+          { 
+            label: 'Profile', 
+            icon: User, 
+            onClick: () => navigate('/profile') 
+          },
+          { 
+            label: 'Settings', 
+            icon: Settings, 
+            onClick: () => navigate('/shop/settings') 
+          }
+        ]}
+      />
+
+      <div className="container mx-auto px-6 py-8">
+        {/* Shop Header */}
+        <div className="mb-8">
+          <Card className="shadow-lg border-blue-200">
+            <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <Store className="w-8 h-8" />
+                  <div>
+                    <CardTitle className="text-2xl font-bold">{shop?.name}</CardTitle>
+                    <p className="text-blue-100">{shop?.address}</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => setShowQRCode(true)}
+                    variant="outline"
+                    className="border-white/20 text-white hover:bg-white/10"
+                  >
+                    <QrCode className="w-4 h-4 mr-2" />
+                    QR Code
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-neutral-900">{orderCounts.total}</div>
+                  <div className="text-sm text-neutral-600">Total Orders</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-yellow-600">{orderCounts.pending}</div>
+                  <div className="text-sm text-neutral-600">Pending</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-600">{orderCounts.in_progress}</div>
+                  <div className="text-sm text-neutral-600">In Progress</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">{orderCounts.ready}</div>
+                  <div className="text-sm text-neutral-600">Ready</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-red-600">{orderCounts.urgent}</div>
+                  <div className="text-sm text-neutral-600">Urgent</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filters */}
+        <div className="mb-6">
+          <OrderFilters
+            activeFilters={activeFilters}
+            onFiltersChange={setActiveFilters}
+            orderCounts={orderCounts}
+          />
+        </div>
+
+        {/* Orders Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+          <OrderSection
+            title="Digital - New & Confirmed"
+            orders={groupedOrders.digitalNew}
+            onOrderSelect={handleOrderSelect}
+            onStatusUpdate={handleStatusUpdate}
+            onUrgencyToggle={handleUrgencyToggle}
+            onCallCustomer={handleCallCustomer}
+            onOpenChat={handleOpenChat}
+            isLoading={ordersLoading}
+          />
+
+          <OrderSection
+            title="Digital - Started & Ready"
+            orders={groupedOrders.digitalReady}
+            onOrderSelect={handleOrderSelect}
+            onStatusUpdate={handleStatusUpdate}
+            onUrgencyToggle={handleUrgencyToggle}
+            onCallCustomer={handleCallCustomer}
+            onOpenChat={handleOpenChat}
+            isLoading={ordersLoading}
+          />
+
+          <OrderSection
+            title="Walk-in - New & Confirmed"
+            orders={groupedOrders.walkinNew}
+            onOrderSelect={handleOrderSelect}
+            onStatusUpdate={handleStatusUpdate}
+            onUrgencyToggle={handleUrgencyToggle}
+            onCallCustomer={handleCallCustomer}
+            onOpenChat={handleOpenChat}
+            isLoading={ordersLoading}
+          />
+
+          <OrderSection
+            title="Walk-in - Started & Ready"
+            orders={groupedOrders.walkinReady}
+            onOrderSelect={handleOrderSelect}
+            onStatusUpdate={handleStatusUpdate}
+            onUrgencyToggle={handleUrgencyToggle}
+            onCallCustomer={handleCallCustomer}
+            onOpenChat={handleOpenChat}
+            isLoading={ordersLoading}
+          />
+        </div>
+      </div>
+
+      {/* Modals */}
+      {selectedOrder && (
+        <>
+          <OrderDetailsModal
+            order={selectedOrder}
+            isOpen={showOrderDetails}
+            onClose={() => {
+              setShowOrderDetails(false);
+              setSelectedOrder(null);
+            }}
+            onStatusUpdate={handleStatusUpdate}
+            onUrgencyToggle={handleUrgencyToggle}
+            onCallCustomer={handleCallCustomer}
+            onOpenChat={() => {
+              setShowOrderDetails(false);
+              setShowOrderChat(true);
+            }}
+            onFileAction={(action, fileId, filename) => {
+              if (action === 'download') {
+                handleFileDownload(fileId, filename || selectedOrder.files?.find(f => f.id === fileId)?.filename || 'file');
+              }
+            }}
+          />
+
+          <OrderChatModal
+            order={selectedOrder}
+            isOpen={showOrderChat}
+            onClose={() => {
+              setShowOrderChat(false);
+              setSelectedOrder(null);
+            }}
+          />
+        </>
+      )}
+
+      {shop && (
+        <QRCodeModal
+          shop={shop}
+          isOpen={showQRCode}
+          onClose={() => setShowQRCode(false)}
+        />
+      )}
     </div>
   );
 };

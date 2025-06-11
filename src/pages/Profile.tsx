@@ -12,7 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const Profile: React.FC = () => {
   const navigate = useNavigate();
-  const { user, updateUserName } = useAuth();
+  const { user, updateProfile } = useAuth();
   const [name, setName] = useState(user?.name || '');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -26,7 +26,7 @@ const Profile: React.FC = () => {
 
     setIsLoading(true);
     try {
-      await updateUserName(name.trim());
+      await updateProfile(name.trim());
       toast.success('Profile updated successfully!');
     } catch (error) {
       toast.error('Failed to update profile');
@@ -116,17 +116,6 @@ const Profile: React.FC = () => {
                 </div>
               </div>
 
-              {user?.shop_name && (
-                <div>
-                  <Label>Shop Name</Label>
-                  <Input
-                    value={user.shop_name}
-                    disabled
-                    className="bg-neutral-50"
-                  />
-                </div>
-              )}
-
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <Label htmlFor="name">Display Name *</Label>
@@ -164,9 +153,7 @@ const Profile: React.FC = () => {
                 <div className="text-sm text-neutral-600 space-y-1">
                   <p><strong>User ID:</strong> {user?.id}</p>
                   <p><strong>Role:</strong> {getRoleLabel(user?.role || '')}</p>
-                  {user?.shop_id && (
-                    <p><strong>Shop ID:</strong> {user.shop_id}</p>
-                  )}
+                  <p><strong>Account Created:</strong> {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}</p>
                 </div>
               </div>
             </div>
