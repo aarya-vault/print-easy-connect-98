@@ -1,5 +1,20 @@
 
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
+import { 
+  User, 
+  Shop, 
+  Order, 
+  OrderFile, 
+  ApiResponse, 
+  PaginatedResponse, 
+  AdminStats, 
+  AnalyticsData, 
+  ChatMessage,
+  QRCodeData,
+  CreateOrderRequest,
+  CreateShopRequest,
+  UpdateShopRequest
+} from '@/types/api';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
@@ -32,53 +47,165 @@ apiClient.interceptors.response.use(
   }
 );
 
+// Authentication API responses
+interface AuthResponse {
+  success: boolean;
+  message: string;
+  token: string;
+  user: User;
+}
+
+interface CurrentUserResponse {
+  user: User;
+}
+
+interface ProfileUpdateResponse {
+  success: boolean;
+  user: User;
+}
+
+// Chat API responses
+interface ChatMessagesResponse {
+  messages: ChatMessage[];
+}
+
+interface SendMessageResponse {
+  success: boolean;
+  message: ChatMessage;
+}
+
+// Shop API responses
+interface ShopsResponse {
+  shops: Shop[];
+}
+
+interface MyShopResponse {
+  shop: Shop;
+}
+
+interface OrdersResponse {
+  orders: Order[];
+}
+
+// File API responses
+interface FilesResponse {
+  files: OrderFile[];
+}
+
+interface FileUploadResponse {
+  success: boolean;
+  files: OrderFile[];
+}
+
+// Admin API responses
+interface AdminStatsResponse {
+  stats: AdminStats;
+}
+
 const apiService = {
   // Authentication
-  phoneLogin: (phone: string) => apiClient.post('/auth/phone-login', { phone }),
-  emailLogin: (email: string, password: string) => apiClient.post('/auth/email-login', { email, password }),
-  getCurrentUser: () => apiClient.get('/auth/me'),
-  updateProfile: (name: string) => apiClient.patch('/auth/profile', { name }),
+  phoneLogin: async (phone: string): Promise<AuthResponse> => 
+    apiClient.post('/auth/phone-login', { phone }),
+    
+  emailLogin: async (email: string, password: string): Promise<AuthResponse> => 
+    apiClient.post('/auth/email-login', { email, password }),
+    
+  getCurrentUser: async (): Promise<CurrentUserResponse> => 
+    apiClient.get('/auth/me'),
+    
+  updateProfile: async (name: string): Promise<ProfileUpdateResponse> => 
+    apiClient.patch('/auth/profile', { name }),
 
   // Shop Operations
-  getShops: () => apiClient.get('/shops'),
-  getShopBySlug: (slug: string) => apiClient.get(`/shops/slug/${slug}`),
-  getMyShop: () => apiClient.get('/shops/my-shop'),
-  getShopOrders: () => apiClient.get('/orders/shop'),
-  getShopOrderHistory: () => apiClient.get('/orders/shop/history'),
-  updateOrderStatus: (orderId: string, status: string) => apiClient.patch(`/orders/${orderId}/status`, { status }),
-  toggleOrderUrgency: (orderId: string) => apiClient.patch(`/orders/${orderId}/urgency`),
-  generateShopQRCode: (shopId: string) => apiClient.post(`/shops/${shopId}/generate-qr`),
+  getShops: async (): Promise<ShopsResponse> => 
+    apiClient.get('/shops'),
+    
+  getShopBySlug: async (slug: string): Promise<{ shop: Shop }> => 
+    apiClient.get(`/shops/slug/${slug}`),
+    
+  getMyShop: async (): Promise<MyShopResponse> => 
+    apiClient.get('/shops/my-shop'),
+    
+  getShopOrders: async (): Promise<OrdersResponse> => 
+    apiClient.get('/orders/shop'),
+    
+  getShopOrderHistory: async (): Promise<OrdersResponse> => 
+    apiClient.get('/orders/shop/history'),
+    
+  updateOrderStatus: async (orderId: string, status: string): Promise<ApiResponse<Order>> => 
+    apiClient.patch(`/orders/${orderId}/status`, { status }),
+    
+  toggleOrderUrgency: async (orderId: string): Promise<ApiResponse<Order>> => 
+    apiClient.patch(`/orders/${orderId}/urgency`),
+    
+  generateShopQRCode: async (shopId: string): Promise<QRCodeData> => 
+    apiClient.post(`/shops/${shopId}/generate-qr`),
 
   // Customer Operations
-  getCustomerOrders: () => apiClient.get('/orders/customer'),
-  getCustomerOrderHistory: () => apiClient.get('/orders/customer/history'),
-  createOrder: (orderData: any) => apiClient.post('/orders', orderData),
-  getVisitedShops: () => apiClient.get('/shops/visited'),
-  getOrderById: (orderId: string) => apiClient.get(`/orders/${orderId}`),
+  getCustomerOrders: async (): Promise<OrdersResponse> => 
+    apiClient.get('/orders/customer'),
+    
+  getCustomerOrderHistory: async (): Promise<OrdersResponse> => 
+    apiClient.get('/orders/customer/history'),
+    
+  createOrder: async (orderData: CreateOrderRequest): Promise<ApiResponse<Order>> => 
+    apiClient.post('/orders', orderData),
+    
+  getVisitedShops: async (): Promise<ShopsResponse> => 
+    apiClient.get('/shops/visited'),
+    
+  getOrderById: async (orderId: string): Promise<{ order: Order }> => 
+    apiClient.get(`/orders/${orderId}`),
 
   // File Operations
-  uploadFiles: (orderId: string, files: FormData) => apiClient.post(`/files/upload/${orderId}`, files, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  }),
-  getOrderFiles: (orderId: string) => apiClient.get(`/files/order/${orderId}`),
-  downloadFile: (fileId: string) => apiClient.get(`/files/download/${fileId}`, { responseType: 'blob' }),
+  uploadFiles: async (orderId: string, files: FormData): Promise<FileUploadResponse> => 
+    apiClient.post(`/files/upload/${orderId}`, files, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    }),
+    
+  getOrderFiles: async (orderId: string): Promise<FilesResponse> => 
+    apiClient.get(`/files/order/${orderId}`),
+    
+  downloadFile: async (fileId: string): Promise<Blob> => 
+    apiClient.get(`/files/download/${fileId}`, { responseType: 'blob' }),
 
   // Admin Operations
-  getAdminStats: () => apiClient.get('/admin/stats'),
-  getAdminAnalytics: () => apiClient.get('/admin/analytics/dashboard'),
-  getAllUsers: (params?: { search?: string; role?: string; page?: number; limit?: number }) => 
+  getAdminStats: async (): Promise<AdminStatsResponse> => 
+    apiClient.get('/admin/stats'),
+    
+  getAdminAnalytics: async (): Promise<AnalyticsData> => 
+    apiClient.get('/admin/analytics/dashboard'),
+    
+  getAllUsers: async (params?: { search?: string; role?: string; page?: number; limit?: number }): Promise<{ users: User[] }> => 
     apiClient.get('/admin/users', { params }),
-  getAllShops: () => apiClient.get('/admin/shops'),
-  updateShopSettings: (shopId: number, settings: any) => apiClient.patch(`/admin/shops/${shopId}`, settings),
-  createShop: (shopData: any) => apiClient.post('/admin/shops', shopData),
-  createUser: (userData: any) => apiClient.post('/admin/users', userData),
-  updateUser: (userId: number, userData: any) => apiClient.patch(`/admin/users/${userId}`, userData),
-  deleteUser: (userId: number) => apiClient.delete(`/admin/users/${userId}`),
+    
+  getAllShops: async (): Promise<{ shops: Shop[] }> => 
+    apiClient.get('/admin/shops'),
+    
+  updateShopSettings: async (shopId: number, settings: UpdateShopRequest): Promise<ApiResponse<Shop>> => 
+    apiClient.patch(`/admin/shops/${shopId}`, settings),
+    
+  createShop: async (shopData: CreateShopRequest): Promise<ApiResponse<{ shop: Shop; owner: User }>> => 
+    apiClient.post('/admin/shops', shopData),
+    
+  createUser: async (userData: any): Promise<ApiResponse<User>> => 
+    apiClient.post('/admin/users', userData),
+    
+  updateUser: async (userId: number, userData: any): Promise<ApiResponse<User>> => 
+    apiClient.patch(`/admin/users/${userId}`, userData),
+    
+  deleteUser: async (userId: number): Promise<ApiResponse<void>> => 
+    apiClient.delete(`/admin/users/${userId}`),
 
   // Order Chat
-  getOrderMessages: (orderId: string) => apiClient.get(`/orders/${orderId}/messages`),
-  sendOrderMessage: (orderId: string, message: string) => apiClient.post(`/orders/${orderId}/messages`, { message }),
-  sendMessage: (orderId: string, message: string) => apiClient.post(`/orders/${orderId}/messages`, { message }),
+  getOrderMessages: async (orderId: string): Promise<ChatMessagesResponse> => 
+    apiClient.get(`/orders/${orderId}/messages`),
+    
+  sendOrderMessage: async (orderId: string, message: string): Promise<SendMessageResponse> => 
+    apiClient.post(`/orders/${orderId}/messages`, { message }),
+    
+  sendMessage: async (orderId: string, message: string): Promise<SendMessageResponse> => 
+    apiClient.post(`/orders/${orderId}/messages`, { message }),
 };
 
 export default apiService;

@@ -49,8 +49,7 @@ const RealTimeAnalytics: React.FC = () => {
     );
   }
 
-  const analytics = analyticsData;
-  if (!analytics) return null;
+  if (!analyticsData) return null;
 
   const MetricCard: React.FC<{ 
     title: string; 
@@ -83,21 +82,21 @@ const RealTimeAnalytics: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <MetricCard
             title="Active Users"
-            value={analytics.realtimeMetrics?.activeUsers || 0}
+            value={analyticsData.realtimeMetrics?.activeUsers || 0}
             icon={<Users className="w-6 h-6 text-blue-600" />}
             color="bg-blue-100"
             subtitle="Currently online"
           />
           <MetricCard
             title="Orders Today"
-            value={analytics.realtimeMetrics?.ordersToday || 0}
+            value={analyticsData.realtimeMetrics?.ordersToday || 0}
             icon={<ShoppingBag className="w-6 h-6 text-green-600" />}
             color="bg-green-100"
             subtitle="24h volume"
           />
           <MetricCard
             title="Urgent Orders"
-            value={analytics.realtimeMetrics?.urgentOrders || 0}
+            value={analyticsData.realtimeMetrics?.urgentOrders || 0}
             icon={<AlertCircle className="w-6 h-6 text-red-600" />}
             color="bg-red-100"
             subtitle="Needs attention"
@@ -115,14 +114,14 @@ const RealTimeAnalytics: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            {analytics.ordersByStatus?.map((status) => (
+            {analyticsData.ordersByStatus?.map((status) => (
               <div key={status.status} className="text-center">
                 <div className="text-2xl font-bold text-gray-900">{status.count}</div>
                 <Badge variant="outline" className="text-xs capitalize">
                   {status.status}
                 </Badge>
               </div>
-            ))}
+            )) || <div className="text-center text-gray-500">No data available</div>}
           </div>
         </CardContent>
       </Card>
@@ -137,7 +136,7 @@ const RealTimeAnalytics: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {analytics.shopPerformance?.slice(0, 5).map((shop, index) => (
+            {analyticsData.shopPerformance?.slice(0, 5).map((shop, index) => (
               <div key={shop.shop_name} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center gap-3">
                   <Badge variant="outline" className="w-6 h-6 rounded-full p-0 flex items-center justify-center text-xs">
@@ -153,7 +152,7 @@ const RealTimeAnalytics: React.FC = () => {
                   </div>
                 </div>
               </div>
-            ))}
+            )) || <div className="text-center text-gray-500">No data available</div>}
           </div>
         </CardContent>
       </Card>
@@ -165,7 +164,7 @@ const RealTimeAnalytics: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {analytics.orderTrends?.map((trend) => (
+            {analyticsData.orderTrends?.map((trend) => (
               <div key={trend.date} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
                 <span className="text-sm font-medium">{trend.date}</span>
                 <div className="flex items-center gap-4 text-sm">
@@ -174,7 +173,7 @@ const RealTimeAnalytics: React.FC = () => {
                   <span className="font-semibold">Total: {trend.count}</span>
                 </div>
               </div>
-            ))}
+            )) || <div className="text-center text-gray-500">No data available</div>}
           </div>
         </CardContent>
       </Card>

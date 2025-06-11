@@ -3,13 +3,17 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import apiService from '@/services/api';
 import { User } from '@/types/api';
 
+export type UserRole = 'customer' | 'shop_owner' | 'admin';
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  isLoading: boolean; // Alias for compatibility
   login: (phone: string) => Promise<void>;
   emailLogin: (email: string, password: string) => Promise<void>;
   logout: () => void;
   updateProfile: (name: string) => Promise<void>;
+  updateUserName: (name: string) => Promise<void>; // Alias for compatibility
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -103,13 +107,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  // Alias for compatibility
+  const updateUserName = updateProfile;
+
   const value: AuthContextType = {
     user,
     loading,
+    isLoading: loading, // Alias for compatibility
     login,
     emailLogin,
     logout,
     updateProfile,
+    updateUserName,
   };
 
   return (
