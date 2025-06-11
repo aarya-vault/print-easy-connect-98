@@ -23,32 +23,7 @@ import apiService from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import RealTimeAnalytics from '@/components/admin/RealTimeAnalytics';
-
-interface Shop {
-  id: number;
-  name: string;
-  address: string;
-  phone: string;
-  email: string;
-  is_active: boolean;
-  allows_offline_orders: boolean;
-  shop_timings: string;
-  owner: {
-    name: string;
-    email: string;
-  };
-  created_at: string;
-}
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  role: string;
-  is_active: boolean;
-  created_at: string;
-}
+import { User, Shop } from '@/types/api';
 
 const AdminDashboard: React.FC = () => {
   const { logout } = useAuth();
@@ -74,7 +49,17 @@ const AdminDashboard: React.FC = () => {
     enabled: activeTab === 'shops',
   });
 
-  const stats = statsData?.stats || {};
+  const stats = statsData?.stats || {
+    totalUsers: 0,
+    activeUsers: 0,
+    totalShops: 0,
+    activeShops: 0,
+    totalOrders: 0,
+    pendingOrders: 0,
+    completedOrders: 0,
+    todayOrders: 0
+  };
+  
   const users: User[] = usersData?.users || [];
   const shops: Shop[] = shopsData?.shops || [];
 
@@ -90,7 +75,7 @@ const AdminDashboard: React.FC = () => {
     navigate('/login');
   };
 
-  const handleToggleOfflineAccess = async (shopId: number, currentValue: boolean) => {
+  const handleToggleOfflineAccess = async (shopId: string, currentValue: boolean) => {
     try {
       await apiService.updateShopSettings(shopId, {
         allows_offline_orders: !currentValue
@@ -102,7 +87,7 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const handleToggleShopStatus = async (shopId: number, currentValue: boolean) => {
+  const handleToggleShopStatus = async (shopId: string, currentValue: boolean) => {
     try {
       await apiService.updateShopSettings(shopId, {
         is_active: !currentValue

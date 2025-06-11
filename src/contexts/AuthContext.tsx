@@ -1,16 +1,14 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import apiService from '@/services/api';
-import { User } from '@/types/api';
-
-export type UserRole = 'customer' | 'shop_owner' | 'admin';
+import { User, UserRole } from '@/types/api';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   isLoading: boolean; // Alias for compatibility
-  token: string | null; // Added missing property
-  login: (phone: string) => Promise<void>;
+  token: string | null;
+  login: (phone: string) => Promise<{ isNewUser?: boolean }>;
   emailLogin: (email: string, password: string) => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<void>; // Alias for compatibility
   logout: () => void;
@@ -66,6 +64,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         localStorage.setItem('authToken', response.token);
         setToken(response.token);
         setUser(response.user);
+        return { isNewUser: response.isNewUser };
       } else {
         throw new Error('Invalid login response');
       }
@@ -140,3 +139,5 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+
+export type { UserRole };

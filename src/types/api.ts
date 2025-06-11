@@ -7,7 +7,7 @@ export interface User {
   id: string; // UUID
   name: string;
   email?: string;
-  phone?: string;
+  phone: string;
   role: 'customer' | 'shop_owner' | 'admin';
   is_active: boolean;
   created_at: string;
@@ -21,25 +21,47 @@ export interface Shop {
   name: string;
   slug: string;
   address: string;
-  phone: string; // Renamed from contact_number
+  phone: string;
   email: string;
+  description?: string;
   is_active: boolean;
-  allows_offline_orders: boolean; // Renamed from allow_offline_access
+  allows_offline_orders: boolean;
   shop_timings: string;
   qr_code_url?: string;
   owner?: User;
   created_at: string;
   updated_at: string;
+  // Additional frontend properties for VisitedShop compatibility
+  rating?: number;
+  totalReviews?: number;
+  verified?: boolean;
+  averageCompletionTime?: string;
+  services?: string[];
+  operatingHours?: {
+    [key: string]: {
+      isOpen: boolean;
+      open: string;
+      close: string;
+    };
+  };
+  lastVisited?: Date;
+  visitCount?: number;
+  orderHistory?: Array<{
+    orderId: string;
+    date: Date;
+    status: string;
+    orderType: 'digital' | 'walkin';
+  }>;
 }
 
 // Order Types - Matching backend exactly
 export interface Order {
   id: string; // UUID
-  customer_id: string; // UUID
+  customer_id: string | null; // UUID
   shop_id: string; // UUID
   customer_name: string;
   customer_phone: string;
-  order_type: 'digital' | 'walkin'; // NOT 'uploaded-files'
+  order_type: 'digital' | 'walkin';
   notes: string; // Unified field for description/instructions
   status: 'pending' | 'in_progress' | 'ready' | 'completed' | 'cancelled';
   is_urgent: boolean;
@@ -54,8 +76,8 @@ export interface Order {
 export interface OrderFile {
   id: string; // UUID
   order_id: string; // UUID
-  filename: string; // Backend field name
-  original_name: string; // Backend field name
+  filename: string;
+  original_name: string;
   file_path: string;
   file_size: number;
   mime_type: string;
@@ -127,29 +149,30 @@ export interface CreateOrderRequest {
   notes: string;
   customerName?: string;
   customerPhone?: string;
-  fileIds?: string[];
 }
 
 export interface CreateShopRequest {
-  shopName: string; // Maps to name
+  shopName: string;
   ownerName: string;
   ownerEmail: string;
   ownerPassword: string;
-  contactNumber: string; // Maps to phone
+  contactNumber: string;
   address: string;
-  preferredSlug?: string; // Maps to slug
-  allowOfflineAccess: boolean; // Maps to allows_offline_orders
-  shopTimings: string; // Maps to shop_timings
+  preferredSlug?: string;
+  allowOfflineAccess: boolean;
+  shopTimings: string;
+  description?: string;
 }
 
 export interface UpdateShopRequest {
   name?: string;
   address?: string;
-  phone?: string; // Renamed from contact_number
+  phone?: string;
   is_active?: boolean;
-  allows_offline_orders?: boolean; // Renamed from allow_offline_access
+  allows_offline_orders?: boolean;
   shop_timings?: string;
   slug?: string;
+  description?: string;
 }
 
 // Chat Message Types
@@ -176,6 +199,7 @@ export interface AuthResponse {
   message: string;
   token: string;
   user: User;
+  isNewUser?: boolean;
 }
 
 export interface CurrentUserResponse {
@@ -196,3 +220,7 @@ export interface SendMessageResponse {
   success: boolean;
   message: ChatMessage;
 }
+
+// Export all types as named exports
+export type VisitedShop = Shop;
+export type UserRole = 'customer' | 'shop_owner' | 'admin';

@@ -6,7 +6,7 @@ import { Order as BaseOrder, OrderFile as BaseOrderFile } from './api';
 export type ShopOrder = BaseOrder;
 export type OrderFile = BaseOrderFile;
 
-// Transformation helpers if needed
+// Transformation helpers if needed (deprecated - use API types directly)
 export interface ApiShopOrder {
   id: string;
   customer: {
@@ -14,7 +14,7 @@ export interface ApiShopOrder {
     phone: string;
   };
   order_type: 'digital' | 'walkin';
-  description: string;
+  description: string; // maps to notes in new schema
   status: 'pending' | 'in_progress' | 'ready' | 'completed' | 'cancelled';
   is_urgent: boolean;
   created_at: string;
