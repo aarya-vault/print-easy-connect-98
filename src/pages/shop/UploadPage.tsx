@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,12 +39,12 @@ const UploadPage: React.FC = () => {
 
         console.log('🔍 Fetching shop data for slug:', shopSlug);
         const response = await apiService.getShopBySlug(shopSlug);
-        // Properly extract shop data - ensure we get the Shop object directly
-        const shopData = response?.shop || response;
         
-        // Type guard to ensure we have a proper Shop object
-        if (shopData && typeof shopData === 'object' && 'id' in shopData) {
-          setShop(shopData as Shop);
+        // Handle the response structure correctly
+        const shopData = response.shop;
+        
+        if (shopData && shopData.id) {
+          setShop(shopData);
           console.log('✅ Shop data loaded:', shopData);
         } else {
           throw new Error('Invalid shop data structure');

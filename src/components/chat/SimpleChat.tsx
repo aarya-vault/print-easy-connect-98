@@ -38,6 +38,13 @@ const SimpleChat: React.FC<SimpleChatProps> = ({ orderId }) => {
     }
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
   return (
     <Card>
       <CardContent className="p-4 space-y-4">
@@ -53,8 +60,9 @@ const SimpleChat: React.FC<SimpleChatProps> = ({ orderId }) => {
           <Input
             value={message}
             onChange={(e) => setMessage(e.target.value)}
+            onKeyPress={handleKeyPress}
             placeholder="Send a message..."
-            size="sm"
+            className="flex-1"
           />
           <Button 
             onClick={handleSendMessage}

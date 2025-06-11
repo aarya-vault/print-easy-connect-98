@@ -47,6 +47,7 @@ async function createTestData() {
     // FIXED: Real shop owners with properly hashed passwords
     const shopOwner1 = await User.create({
       email: 'shop@printeasy.com',
+      phone: '9876543215',
       name: 'Ramesh Kumar',
       password: hashedShopPassword,
       role: 'shop_owner',
@@ -55,6 +56,7 @@ async function createTestData() {
 
     const shopOwner2 = await User.create({
       email: 'digitalhub@printeasy.com',
+      phone: '9876543216',
       name: 'Suresh Gupta',
       password: hashedShopPassword,
       role: 'shop_owner',
@@ -63,6 +65,7 @@ async function createTestData() {
 
     const shopOwner3 = await User.create({
       email: 'quickprint@printeasy.com',
+      phone: '9876543217',
       name: 'Mahesh Verma',
       password: hashedShopPassword,
       role: 'shop_owner',
@@ -72,6 +75,7 @@ async function createTestData() {
     // FIXED: Admin with properly hashed password
     const admin = await User.create({
       email: 'admin@printeasy.com',
+      phone: '9876543218',
       name: 'PrintEasy Admin',
       password: hashedAdminPassword,
       role: 'admin',
@@ -90,7 +94,6 @@ async function createTestData() {
         email: 'contact@quickprint.com',
         description: 'Professional printing services with same-day delivery. We specialize in document printing, binding, lamination, business cards, and promotional materials.',
         owner_id: shopOwner1.id,
-        rating: 4.8,
         is_active: true,
         allows_offline_orders: true
       },
@@ -102,7 +105,6 @@ async function createTestData() {
         email: 'info@digitalhub.com',
         description: 'Modern digital printing solutions with high-quality color prints. We offer large format printing, photo printing, and custom design services.',
         owner_id: shopOwner2.id,
-        rating: 4.5,
         is_active: true,
         allows_offline_orders: true
       },
@@ -114,7 +116,6 @@ async function createTestData() {
         email: 'orders@expresscopy.com',
         description: 'Fast and reliable copying services. Open 24/7 for urgent requirements. Bulk printing, scanning, and document services available.',
         owner_id: shopOwner3.id,
-        rating: 4.3,
         is_active: true,
         allows_offline_orders: false
       }
@@ -128,59 +129,54 @@ async function createTestData() {
 
     console.log('✅ Created real shops with proper slugs');
 
-    // Create real orders with meaningful data
+    // FIXED: Create real orders with CORRECT enum values matching backend
     const realOrders = [
       {
-        id: 'UF000001',
         customer_id: createdCustomers[0].id,
         shop_id: createdShops[0].id,
-        order_type: 'uploaded-files',
+        order_type: 'digital', // FIXED: Use 'digital' not 'uploaded-files'
         status: 'completed',
-        description: 'Print 50 copies of project report with spiral binding and color cover page',
+        notes: 'Print 50 copies of project report with spiral binding and color cover page',
         customer_name: createdCustomers[0].name,
         customer_phone: createdCustomers[0].phone,
         is_urgent: false
       },
       {
-        id: 'WI000001', 
         customer_id: createdCustomers[1].id,
         shop_id: createdShops[0].id,
-        order_type: 'walk-in',
-        status: 'started',
-        description: 'Resume printing on premium paper - 10 copies with plastic sleeves',
+        order_type: 'walkin', // FIXED: Use 'walkin' not 'walk-in'
+        status: 'in_progress',
+        notes: 'Resume printing on premium paper - 10 copies with plastic sleeves',
         customer_name: createdCustomers[1].name,
         customer_phone: createdCustomers[1].phone,
         is_urgent: true
       },
       {
-        id: 'UF000002',
         customer_id: createdCustomers[2].id,
         shop_id: createdShops[1].id,
-        order_type: 'uploaded-files', 
-        status: 'received',
-        description: 'Business presentation slides - 20 sets with color printing and binding',
+        order_type: 'digital',
+        status: 'pending',
+        notes: 'Business presentation slides - 20 sets with color printing and binding',
         customer_name: createdCustomers[2].name,
         customer_phone: createdCustomers[2].phone,
         is_urgent: false
       },
       {
-        id: 'WI000002',
         customer_id: createdCustomers[3].id,
         shop_id: createdShops[1].id,
-        order_type: 'walk-in',
+        order_type: 'walkin',
         status: 'completed',
-        description: 'Passport photos - 8 copies with matte finish',
+        notes: 'Passport photos - 8 copies with matte finish',
         customer_name: createdCustomers[3].name,
         customer_phone: createdCustomers[3].phone,
         is_urgent: false
       },
       {
-        id: 'UF000003',
         customer_id: createdCustomers[4].id,
         shop_id: createdShops[2].id,
-        order_type: 'uploaded-files',
-        status: 'started',
-        description: 'Wedding invitation cards - 200 copies with gold foil printing',
+        order_type: 'digital',
+        status: 'ready',
+        notes: 'Wedding invitation cards - 200 copies with gold foil printing',
         customer_name: createdCustomers[4].name,
         customer_phone: createdCustomers[4].phone,
         is_urgent: true
@@ -193,50 +189,46 @@ async function createTestData() {
       createdOrders.push(order);
     }
 
-    console.log('✅ Created real orders with meaningful descriptions');
+    console.log('✅ Created real orders with FIXED enum values');
 
-    // Create real file records for upload orders
-    const uploadOrders = createdOrders.filter(order => order.order_type === 'uploaded-files');
-    for (const order of uploadOrders) {
+    // Create real file records for digital orders
+    const digitalOrders = createdOrders.filter(order => order.order_type === 'digital');
+    for (const order of digitalOrders) {
       await File.create({
         order_id: order.id,
         filename: `document_${order.id}_${Date.now()}.pdf`,
-        original_name: `${order.description.split('-')[0].trim().toLowerCase().replace(/\s+/g, '_')}.pdf`,
+        original_name: `${order.notes.split('-')[0].trim().toLowerCase().replace(/\s+/g, '_')}.pdf`,
         file_path: `/uploads/${order.id}/document_${order.id}_${Date.now()}.pdf`,
         file_size: Math.floor(Math.random() * 10000000) + 500000, // 0.5MB to 10MB
         mime_type: 'application/pdf'
       });
     }
 
-    console.log('✅ Created real file records for upload orders');
+    console.log('✅ Created real file records for digital orders');
 
     // Create real chat messages
     const realMessages = [
       {
-        order_id: 'UF000001',
+        order_id: createdOrders[0].id,
         sender_id: createdCustomers[0].id,
-        recipient_id: shopOwner1.id,
         message: 'Hi, I need the spiral binding to be blue color please',
         is_read: true
       },
       {
-        order_id: 'UF000001', 
+        order_id: createdOrders[0].id,
         sender_id: shopOwner1.id,
-        recipient_id: createdCustomers[0].id,
         message: 'Sure, blue spiral binding is available. Your order will be ready in 2 hours.',
         is_read: true
       },
       {
-        order_id: 'WI000001',
+        order_id: createdOrders[1].id,
         sender_id: createdCustomers[1].id,
-        recipient_id: shopOwner1.id,
         message: 'When can I come to collect my resume prints?',
         is_read: false
       },
       {
-        order_id: 'UF000003',
+        order_id: createdOrders[4].id,
         sender_id: shopOwner3.id,
-        recipient_id: createdCustomers[4].id,
         message: 'Your wedding invitations are looking beautiful! Gold foil work is in progress.',
         is_read: false
       }
@@ -248,7 +240,7 @@ async function createTestData() {
 
     console.log('✅ Created real chat messages');
 
-    console.log('\n🎉 REAL PRODUCTION DATA CREATED SUCCESSFULLY!');
+    console.log('\n🎉 COMPREHENSIVE REAL PRODUCTION DATA CREATED SUCCESSFULLY!');
     console.log('\n📋 REAL Test Credentials:');
     console.log('   👤 Customers:');
     console.log('      - 9876543210 (Rajesh Kumar)');
@@ -265,19 +257,24 @@ async function createTestData() {
     console.log('   • /shop/quick-print-solutions (QR Code + Upload)');
     console.log('   • /shop/digital-print-hub (QR Code + Upload)');
     console.log('   • /shop/express-copy-center (QR Code + Upload)');
-    console.log('\n📊 Real Business Data:');
-    console.log('   • 5 real customers with Indian names');
-    console.log('   • 3 real shops with proper addresses and services');
-    console.log('   • 5 meaningful orders across all types and statuses');
-    console.log('   • Real file uploads with proper names');
-    console.log('   • Actual chat conversations between customers and shops');
+    console.log('\n📊 FIXED Business Data:');
+    console.log('   • 5 real customers with Indian names and phone numbers');
+    console.log('   • 3 real shops with proper addresses and UUID owners');
+    console.log('   • 5 meaningful orders with CORRECT enum values (digital/walkin)');
+    console.log('   • Real file uploads with proper UUID references');
+    console.log('   • Actual chat conversations with proper UUID IDs');
     console.log('\n🔐 AUTHENTICATION FIXED:');
     console.log('   • Proper bcrypt hashing with salt rounds 12');
     console.log('   • All login credentials work with real backend');
     console.log('   • No more 401 unauthorized errors');
+    console.log('\n🎯 TYPE SYSTEM FIXED:');
+    console.log('   • All IDs are proper UUIDs (strings)');
+    console.log('   • Order types use correct enums: digital/walkin');
+    console.log('   • All foreign key relationships properly established');
+    console.log('   • Chat messages use UUID IDs consistently');
 
   } catch (error) {
-    console.error('❌ Error creating real production data:', error);
+    console.error('❌ Error creating comprehensive production data:', error);
     throw error;
   }
 }
