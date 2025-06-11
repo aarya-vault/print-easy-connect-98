@@ -7,48 +7,19 @@ import {
   Clock, 
   CheckCircle, 
   Bell, 
-  Package, 
-  X, 
-  Zap, 
   Upload, 
   UserCheck, 
   Phone, 
   Eye,
-  FileText
+  FileText,
+  Zap
 } from 'lucide-react';
-
-interface OrderFile {
-  id: string;
-  name: string;
-  type: string;
-  size: number;
-  url: string;
-  original_name?: string;
-}
-
-interface ShopOrder {
-  id: string;
-  customer_name: string;
-  customer_phone: string;
-  customer_email?: string;
-  order_type: 'walk-in' | 'uploaded-files';
-  description: string;
-  status: 'received' | 'started' | 'completed';
-  is_urgent: boolean;
-  created_at: string;
-  files?: OrderFile[];
-  instructions?: string;
-  pages?: number;
-  copies?: number;
-  paperType?: string;
-  binding?: string;
-  color?: boolean;
-}
+import { Order, OrderFile } from '@/types/api';
 
 interface OrderCardProps {
-  order: ShopOrder;
+  order: Order;
   onToggleUrgency: (orderId: string) => void;
-  onUpdateStatus: (orderId: string, status: ShopOrder['status']) => void;
+  onUpdateStatus: (orderId: string, status: Order['status']) => void;
   onViewDetails: (orderId: string) => void;
   onPrintFile?: (file: OrderFile) => void;
 }
@@ -89,7 +60,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
     return `${diffInDays}d ago`;
   };
 
-  const getNextStatus = () => {
+  const getNextStatus = (): Order['status'] | null => {
     switch (order.status) {
       case 'received': return 'started';
       case 'started': return 'completed';
@@ -216,7 +187,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
             {nextStatus && statusAction && order.status !== 'completed' && (
               <Button
                 size="sm"
-                onClick={() => onUpdateStatus(order.id, nextStatus as ShopOrder['status'])}
+                onClick={() => onUpdateStatus(order.id, nextStatus)}
                 className="w-full text-xs h-7 bg-gradient-to-r from-golden-500 to-golden-600 hover:from-golden-600 hover:to-golden-700 text-white"
               >
                 {statusAction}

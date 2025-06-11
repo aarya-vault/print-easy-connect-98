@@ -23,7 +23,7 @@ import ShopDashboard from '@/pages/shop/Dashboard';
 import ShopUploadPage from '@/pages/shop/UploadPage';
 
 // Admin Pages
-import AdminDashboard from '@/pages/admin/Dashboard';
+import AdminDashboard from '@/pages/admin/AdminDashboard';
 import AddShop from '@/pages/admin/AddShop';
 
 // Create a client

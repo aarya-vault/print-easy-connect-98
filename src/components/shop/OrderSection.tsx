@@ -1,47 +1,20 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import OrderCard from './OrderCard';
-
-interface OrderFile {
-  id: string;
-  name: string;
-  type: string;
-  size: number;
-  url: string;
-  original_name?: string;
-}
-
-interface ShopOrder {
-  id: string;
-  customer_name: string;
-  customer_phone: string;
-  customer_email?: string;
-  order_type: 'walk-in' | 'uploaded-files';
-  description: string;
-  status: 'received' | 'started' | 'completed';
-  is_urgent: boolean;
-  created_at: string;
-  files?: OrderFile[];
-  instructions?: string;
-  pages?: number;
-  copies?: number;
-  paperType?: string;
-  binding?: string;
-  color?: boolean;
-}
+import { Order, OrderFile } from '@/types/api';
 
 interface OrderSectionProps {
   title: string;
   description: string;
   icon: React.ReactNode;
-  orders: ShopOrder[];
+  orders: Order[];
   emptyMessage: string;
   emptyIcon: React.ReactNode;
   sectionColor: string;
   onToggleUrgency: (orderId: string) => void;
-  onUpdateStatus: (orderId: string, status: ShopOrder['status']) => void;
+  onUpdateStatus: (orderId: string, status: Order['status']) => void;
   onViewDetails: (orderId: string) => void;
   onPrintFile?: (file: OrderFile) => void;
 }
