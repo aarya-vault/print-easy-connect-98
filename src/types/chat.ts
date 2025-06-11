@@ -1,9 +1,9 @@
 
 export interface Message {
-  id: number;
+  id: string; // Changed from number to string to match UUID
   order_id: string;
-  sender_id: number;
-  recipient_id: number;
+  sender_id: string; // Changed from number to string to match UUID
+  recipient_id: string; // Changed from number to string to match UUID
   message: string;
   created_at: string;
   is_read: boolean;

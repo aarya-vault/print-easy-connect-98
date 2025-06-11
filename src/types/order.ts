@@ -6,14 +6,14 @@ import { Order as BaseOrder, OrderFile as BaseOrderFile } from './api';
 export type ShopOrder = BaseOrder;
 export type OrderFile = BaseOrderFile;
 
-// Legacy interface for backward compatibility - DEPRECATED, use Order from api.ts
+// Legacy interface for backward compatibility - UPDATED to match backend contract
 export interface ApiShopOrder {
   id: string;
   customer: {
     name: string;
     phone: string;
   };
-  order_type: 'digital' | 'walkin';
+  order_type: 'digital' | 'walkin'; // Updated to match backend
   description: string; // maps to notes in new schema
   status: 'pending' | 'in_progress' | 'ready' | 'completed' | 'cancelled';
   is_urgent: boolean;
