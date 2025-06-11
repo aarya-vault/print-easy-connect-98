@@ -18,8 +18,7 @@ const AddShop: React.FC = () => {
   const [formData, setFormData] = useState({
     shopName: '',
     address: '',
-    phone: '',
-    email: '',
+    contactNumber: '',
     description: '',
     ownerName: '',
     ownerEmail: '',
@@ -30,21 +29,48 @@ const AddShop: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    
+    // Validate required fields
+    if (!formData.shopName.trim()) {
+      toast.error('Shop name is required');
+      return;
+    }
+    if (!formData.address.trim()) {
+      toast.error('Address is required');
+      return;
+    }
+    if (!formData.contactNumber.trim() || formData.contactNumber.length !== 10) {
+      toast.error('Valid 10-digit contact number is required');
+      return;
+    }
+    if (!formData.ownerName.trim()) {
+      toast.error('Owner name is required');
+      return;
+    }
+    if (!formData.ownerEmail.trim()) {
+      toast.error('Owner email is required');
+      return;
+    }
+    if (!formData.ownerPassword.trim() || formData.ownerPassword.length < 6) {
+      toast.error('Owner password must be at least 6 characters');
+      return;
+    }
 
+    setIsLoading(true);
     try {
       const shopData: CreateShopRequest = {
-        shopName: formData.shopName,
-        ownerName: formData.ownerName,
-        ownerEmail: formData.ownerEmail,
+        shopName: formData.shopName.trim(),
+        ownerName: formData.ownerName.trim(),
+        ownerEmail: formData.ownerEmail.trim(),
         ownerPassword: formData.ownerPassword,
-        contactNumber: formData.phone,
-        address: formData.address,
+        contactNumber: formData.contactNumber.trim(),
+        address: formData.address.trim(),
         allowOfflineAccess: formData.allowOfflineAccess,
-        shopTimings: formData.shopTimings,
-        description: formData.description
+        shopTimings: formData.shopTimings.trim(),
+        description: formData.description.trim()
       };
 
+      console.log('Submitting shop data:', shopData);
       const response = await apiService.createShop(shopData);
       
       if (response.success) {
@@ -52,7 +78,9 @@ const AddShop: React.FC = () => {
         navigate('/admin/dashboard');
       }
     } catch (error: any) {
-      toast.error(error?.message || 'Failed to create shop');
+      console.error('Shop creation error:', error);
+      const errorMessage = error?.error || error?.message || 'Failed to create shop';
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -63,6 +91,13 @@ const AddShop: React.FC = () => {
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleContactNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+    if (value.length <= 10) {
+      handleInputChange('contactNumber', value);
+    }
   };
 
   return (
@@ -98,37 +133,39 @@ const AddShop: React.FC = () => {
                     value={formData.shopName}
                     onChange={(e) => handleInputChange('shopName', e.target.value)}
                     required
+                    placeholder="Enter shop name"
                   />
                 </div>
                 
                 <div>
-                  <Label htmlFor="phone">Contact Number *</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => handleInputChange('phone', e.target.value)}
-                    required
-                  />
+                  <Label htmlFor="contactNumber">Contact Number *</Label>
+                  <div className="flex">
+                    <div className="flex items-center px-3 border border-r-0 rounded-l-md bg-gray-50 text-gray-500">
+                      +91
+                    </div>
+                    <Input
+                      id="contactNumber"
+                      type="tel"
+                      value={formData.contactNumber}
+                      onChange={handleContactNumberChange}
+                      required
+                      maxLength={10}
+                      placeholder="Enter 10-digit number"
+                      className="rounded-l-none"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Enter exactly 10 digits
+                  </p>
                 </div>
 
-                <div>
-                  <Label htmlFor="email">Shop Email *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div>
+                <div className="md:col-span-2">
                   <Label htmlFor="shopTimings">Shop Timings</Label>
                   <Input
                     id="shopTimings"
                     value={formData.shopTimings}
                     onChange={(e) => handleInputChange('shopTimings', e.target.value)}
+                    placeholder="e.g., Mon-Sat: 9:00 AM - 7:00 PM"
                   />
                 </div>
               </div>
@@ -141,6 +178,7 @@ const AddShop: React.FC = () => {
                   onChange={(e) => handleInputChange('address', e.target.value)}
                   rows={3}
                   required
+                  placeholder="Enter complete shop address"
                 />
               </div>
 
@@ -166,6 +204,7 @@ const AddShop: React.FC = () => {
                       value={formData.ownerName}
                       onChange={(e) => handleInputChange('ownerName', e.target.value)}
                       required
+                      placeholder="Enter owner full name"
                     />
                   </div>
                   
@@ -177,6 +216,7 @@ const AddShop: React.FC = () => {
                       value={formData.ownerEmail}
                       onChange={(e) => handleInputChange('ownerEmail', e.target.value)}
                       required
+                      placeholder="Enter owner email address"
                     />
                   </div>
 
@@ -189,6 +229,7 @@ const AddShop: React.FC = () => {
                       onChange={(e) => handleInputChange('ownerPassword', e.target.value)}
                       required
                       minLength={6}
+                      placeholder="Enter password (min 6 characters)"
                     />
                   </div>
                 </div>

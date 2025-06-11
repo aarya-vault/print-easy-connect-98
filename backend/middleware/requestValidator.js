@@ -16,13 +16,15 @@ const validateRequest = (req, res, next) => {
   next();
 };
 
-// FIXED: Phone login validation - accept 10 digits without country code
+// FIXED: Phone login validation - accept exactly 10 digits
 const validatePhoneLogin = [
   body('phone')
-    .isNumeric()
-    .withMessage('Phone number must contain only digits')
+    .isString()
+    .withMessage('Phone number must be a string')
     .isLength({ min: 10, max: 10 })
-    .withMessage('Phone number must be exactly 10 digits'),
+    .withMessage('Phone number must be exactly 10 digits')
+    .matches(/^\d{10}$/)
+    .withMessage('Phone number must contain only 10 digits'),
   validateRequest
 ];
 
@@ -38,27 +40,26 @@ const validateEmailLogin = [
   validateRequest
 ];
 
-// Order creation validation
+// Order creation validation - FIXED: Use correct enum values
 const validateOrderCreation = [
   body('shopId')
-    .isInt({ min: 1 })
+    .isUUID()
     .withMessage('Valid shop ID is required'),
   body('orderType')
-    .isIn(['uploaded-files', 'walk-in'])
-    .withMessage('Order type must be either uploaded-files or walk-in'),
+    .isIn(['digital', 'walkin'])
+    .withMessage('Order type must be either digital or walkin'),
   body('customerName')
     .optional()
     .isLength({ min: 2, max: 255 })
     .withMessage('Customer name must be between 2 and 255 characters'),
   body('customerPhone')
     .optional()
-    .isNumeric()
-    .isLength({ min: 10, max: 10 })
+    .matches(/^\d{10}$/)
     .withMessage('Please provide a valid 10-digit phone number'),
-  body('description')
+  body('notes')
     .optional()
     .isLength({ max: 1000 })
-    .withMessage('Description cannot exceed 1000 characters'),
+    .withMessage('Notes cannot exceed 1000 characters'),
   validateRequest
 ];
 
@@ -70,20 +71,17 @@ const validateProfileUpdate = [
   validateRequest
 ];
 
-// Shop creation validation
+// Shop creation validation - FIXED: Add proper validation
 const validateShopCreation = [
-  body('name')
+  body('shopName')
     .isLength({ min: 2, max: 255 })
     .withMessage('Shop name must be between 2 and 255 characters'),
   body('address')
     .isLength({ min: 10, max: 500 })
     .withMessage('Address must be between 10 and 500 characters'),
-  body('phone')
-    .isLength({ min: 10 })
-    .withMessage('Phone number is required'),
-  body('email')
-    .isEmail()
-    .withMessage('Valid email is required'),
+  body('contactNumber')
+    .matches(/^\d{10}$/)
+    .withMessage('Contact number must be exactly 10 digits'),
   body('ownerName')
     .isLength({ min: 2, max: 255 })
     .withMessage('Owner name must be between 2 and 255 characters'),
@@ -93,6 +91,13 @@ const validateShopCreation = [
   body('ownerPassword')
     .isLength({ min: 6 })
     .withMessage('Owner password must be at least 6 characters long'),
+  body('allowOfflineAccess')
+    .isBoolean()
+    .withMessage('Allow offline access must be a boolean'),
+  body('shopTimings')
+    .optional()
+    .isLength({ min: 5, max: 100 })
+    .withMessage('Shop timings must be between 5 and 100 characters'),
   validateRequest
 ];
 

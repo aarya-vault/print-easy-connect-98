@@ -30,19 +30,43 @@ const Login: React.FC = () => {
     }
   }, [user, navigate]);
 
+  // Format phone number to 10 digits
+  const formatPhoneNumber = (value: string) => {
+    // Remove all non-numeric characters
+    let cleaned = value.replace(/\D/g, '');
+    
+    // Handle different formats
+    if (cleaned.startsWith('91') && cleaned.length === 12) {
+      cleaned = cleaned.substring(2); // Remove country code
+    } else if (cleaned.startsWith('0') && cleaned.length === 11) {
+      cleaned = cleaned.substring(1); // Remove leading zero
+    }
+    
+    // Limit to 10 digits
+    return cleaned.substring(0, 10);
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhoneNumber(e.target.value);
+    setPhoneNumber(formatted);
+  };
+
   const handlePhoneLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phoneNumber.trim()) return;
+    
+    const cleanPhone = formatPhoneNumber(phoneNumber);
+    if (cleanPhone.length !== 10) {
+      toast.error('Please enter a valid 10-digit phone number');
+      return;
+    }
 
     setIsLoading(true);
     try {
-      const result = await login(phoneNumber);
+      const result = await login(cleanPhone);
       toast.success('Login successful!');
-      
-      // Navigate based on user role after login
-      // The useEffect above will handle the actual redirect
     } catch (error: any) {
-      toast.error(error?.message || 'Login failed');
+      console.error('Login error:', error);
+      toast.error(error?.error || error?.message || 'Login failed');
     } finally {
       setIsLoading(false);
     }
@@ -56,10 +80,9 @@ const Login: React.FC = () => {
     try {
       await emailLogin(email, password);
       toast.success('Login successful!');
-      
-      // Navigation will be handled by useEffect above
     } catch (error: any) {
-      toast.error(error?.message || 'Login failed');
+      console.error('Email login error:', error);
+      toast.error(error?.error || error?.message || 'Login failed');
     } finally {
       setIsLoading(false);
     }
@@ -95,21 +118,30 @@ const Login: React.FC = () => {
               <form onSubmit={handlePhoneLogin} className="space-y-4">
                 <div>
                   <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="Enter your phone number"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    required
-                    className="mt-1"
-                  />
+                  <div className="flex">
+                    <div className="flex items-center px-3 border border-r-0 rounded-l-md bg-gray-50 text-gray-500">
+                      +91
+                    </div>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="Enter 10-digit phone number"
+                      value={phoneNumber}
+                      onChange={handlePhoneChange}
+                      required
+                      maxLength={10}
+                      className="rounded-l-none"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Enter exactly 10 digits (without country code)
+                  </p>
                 </div>
                 
                 <Button 
                   type="submit" 
                   className="w-full bg-gradient-to-r from-golden-500 to-golden-600 hover:from-golden-600 hover:to-golden-700 text-white font-semibold py-2.5"
-                  disabled={isLoading || !phoneNumber.trim()}
+                  disabled={isLoading || phoneNumber.length !== 10}
                 >
                   {isLoading ? (
                     <>
@@ -173,6 +205,12 @@ const Login: React.FC = () => {
             <p>
               Don't have an account? Sign in with your phone number to create one automatically.
             </p>
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+              <p className="text-sm font-medium text-blue-900">Test Credentials:</p>
+              <p className="text-xs text-blue-700">Shop Owner: owner@test.com / password123</p>
+              <p className="text-xs text-blue-700">Admin: admin@test.com / password123</p>
+              <p className="text-xs text-blue-700">Customer: Any 10-digit phone number</p>
+            </div>
           </div>
         </CardContent>
       </Card>
