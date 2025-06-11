@@ -38,10 +38,16 @@ const UploadPage: React.FC = () => {
 
         console.log('🔍 Fetching shop data for slug:', shopSlug);
         const response = await apiService.getShopBySlug(shopSlug);
-        // Extract shop data properly from response
+        // Properly extract shop data - ensure we get the Shop object directly
         const shopData = response?.shop || response;
-        setShop(shopData);
-        console.log('✅ Shop data loaded:', shopData);
+        
+        // Type guard to ensure we have a proper Shop object
+        if (shopData && typeof shopData === 'object' && 'id' in shopData) {
+          setShop(shopData as Shop);
+          console.log('✅ Shop data loaded:', shopData);
+        } else {
+          throw new Error('Invalid shop data structure');
+        }
       } catch (error: any) {
         console.error('❌ Failed to load shop:', error);
         toast.error('Shop not found');

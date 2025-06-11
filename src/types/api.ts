@@ -70,7 +70,7 @@ export interface Order {
   status: 'pending' | 'in_progress' | 'ready' | 'completed' | 'cancelled';
   is_urgent: boolean;
   files?: OrderFile[];
-  customer?: User;
+  customer: User; // Made required to match ApiShopOrder
   shop?: Shop;
   created_at: string;
   updated_at: string;
