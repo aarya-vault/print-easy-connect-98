@@ -9,8 +9,10 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   isLoading: boolean; // Alias for compatibility
+  token: string | null; // Added missing property
   login: (phone: string) => Promise<void>;
   emailLogin: (email: string, password: string) => Promise<void>;
+  loginWithEmail: (email: string, password: string) => Promise<void>; // Alias for compatibility
   logout: () => void;
   updateProfile: (name: string) => Promise<void>;
   updateUserName: (name: string) => Promise<void>; // Alias for compatibility
@@ -33,17 +35,20 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState<string | null>(localStorage.getItem('authToken'));
 
   useEffect(() => {
     const initAuth = async () => {
-      const token = localStorage.getItem('authToken');
-      if (token) {
+      const storedToken = localStorage.getItem('authToken');
+      if (storedToken) {
         try {
           const response = await apiService.getCurrentUser();
           setUser(response.user);
+          setToken(storedToken);
         } catch (error) {
           console.error('Failed to get current user:', error);
           localStorage.removeItem('authToken');
+          setToken(null);
         }
       }
       setLoading(false);
@@ -59,6 +64,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (response.success && response.token && response.user) {
         localStorage.setItem('authToken', response.token);
+        setToken(response.token);
         setUser(response.user);
       } else {
         throw new Error('Invalid login response');
@@ -78,6 +84,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (response.success && response.token && response.user) {
         localStorage.setItem('authToken', response.token);
+        setToken(response.token);
         setUser(response.user);
       } else {
         throw new Error('Invalid login response');
@@ -90,8 +97,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  // Alias for compatibility
+  const loginWithEmail = emailLogin;
+
   const logout = () => {
     localStorage.removeItem('authToken');
+    setToken(null);
     setUser(null);
   };
 
@@ -114,11 +125,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     loading,
     isLoading: loading, // Alias for compatibility
+    token,
     login,
     emailLogin,
+    loginWithEmail, // Alias for compatibility
     logout,
     updateProfile,
-    updateUserName,
+    updateUserName, // Alias for compatibility
   };
 
   return (

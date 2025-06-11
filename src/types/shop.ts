@@ -1,43 +1,20 @@
 
-export interface Shop {
-  id: string;
-  name: string;
-  address: string;
-  phone: string;
-  email: string;
-  rating: number;
-  totalReviews: number;
-  services: string[];
-  equipment: string[];
-  operatingHours: {
-    [key: string]: {
-      open: string;
-      close: string;
-      isOpen: boolean;
-    };
-  };
-  images: string[];
-  verified: boolean;
-  lastVisited?: Date;
-  visitCount?: number;
-  averageCompletionTime: string;
-  uploadSlug: string; // Unique slug for QR code uploads
-  isActive: boolean; // For admin control
-}
+// Shop-specific types that extend the core API types
+import { Shop as BaseShop } from './api';
 
-export interface VisitedShop extends Shop {
+export interface VisitedShop extends BaseShop {
   lastVisited: Date;
   visitCount: number;
   orderHistory: {
     orderId: string;
     date: Date;
     status: string;
-    orderType: 'walk-in' | 'uploaded-files';
+    orderType: 'digital' | 'walkin';
   }[];
 }
 
 export interface OrderType {
-  type: 'walk-in' | 'uploaded-files';
+  type: 'digital' | 'walkin';
   count: number;
   urgentCount: number;
 }

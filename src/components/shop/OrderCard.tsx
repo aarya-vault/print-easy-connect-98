@@ -33,18 +33,22 @@ const OrderCard: React.FC<OrderCardProps> = ({
 }) => {
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'received': return 'bg-golden-100 text-golden-800 border-golden-300';
-      case 'started': return 'bg-orange-100 text-orange-800 border-orange-300';
+      case 'pending': return 'bg-golden-100 text-golden-800 border-golden-300';
+      case 'in_progress': return 'bg-orange-100 text-orange-800 border-orange-300';
+      case 'ready': return 'bg-blue-100 text-blue-800 border-blue-300';
       case 'completed': return 'bg-green-100 text-green-800 border-green-300';
+      case 'cancelled': return 'bg-red-100 text-red-800 border-red-300';
       default: return 'bg-neutral-100 text-neutral-800 border-neutral-300';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'received': return <Bell className="w-3 h-3" />;
-      case 'started': return <Clock className="w-3 h-3" />;
+      case 'pending': return <Bell className="w-3 h-3" />;
+      case 'in_progress': return <Clock className="w-3 h-3" />;
+      case 'ready': return <CheckCircle className="w-3 h-3" />;
       case 'completed': return <CheckCircle className="w-3 h-3" />;
+      case 'cancelled': return <Clock className="w-3 h-3" />;
       default: return <Clock className="w-3 h-3" />;
     }
   };
@@ -62,16 +66,18 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
   const getNextStatus = (): Order['status'] | null => {
     switch (order.status) {
-      case 'received': return 'started';
-      case 'started': return 'completed';
+      case 'pending': return 'in_progress';
+      case 'in_progress': return 'ready';
+      case 'ready': return 'completed';
       default: return null;
     }
   };
 
   const getStatusAction = () => {
     switch (order.status) {
-      case 'received': return 'Start';
-      case 'started': return 'Complete';
+      case 'pending': return 'Start';
+      case 'in_progress': return 'Mark Ready';
+      case 'ready': return 'Complete';
       default: return null;
     }
   };
@@ -82,7 +88,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
   return (
     <Card className={`border-2 shadow-sm hover:shadow-md transition-all duration-200 ${
       order.is_urgent ? 'border-red-300 bg-red-50/30' : 
-      order.order_type === 'uploaded-files' ? 'border-blue-200 bg-blue-50/10' : 'border-purple-200 bg-purple-50/10'
+      order.order_type === 'digital' ? 'border-blue-200 bg-blue-50/10' : 'border-purple-200 bg-purple-50/10'
     }`}>
       <CardContent className="p-4">
         <div className="space-y-3">
@@ -90,14 +96,14 @@ const OrderCard: React.FC<OrderCardProps> = ({
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <p className="font-semibold text-sm">#{order.id}</p>
+                <p className="font-semibold text-sm">#{order.id.slice(-8)}</p>
                 {order.is_urgent && (
                   <Badge variant="destructive" className="text-xs">Urgent</Badge>
                 )}
               </div>
               <Badge variant="outline" className="text-xs capitalize">
-                {order.order_type === 'uploaded-files' ? (
-                  <><Upload className="w-3 h-3 mr-1" />Files</>
+                {order.order_type === 'digital' ? (
+                  <><Upload className="w-3 h-3 mr-1" />Digital</>
                 ) : (
                   <><UserCheck className="w-3 h-3 mr-1" />Walk-in</>
                 )}
@@ -105,7 +111,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
             </div>
             <Badge className={`text-xs px-2 py-0.5 ${getStatusColor(order.status)}`}>
               {getStatusIcon(order.status)}
-              <span className="ml-1 capitalize">{order.status}</span>
+              <span className="ml-1 capitalize">{order.status.replace('_', ' ')}</span>
             </Badge>
           </div>
 
@@ -117,32 +123,15 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
           {/* Description */}
           <p className="text-sm text-neutral-700 line-clamp-2">
-            {order.description}
+            {order.notes}
           </p>
 
-          {/* Order specs */}
-          <div className="flex flex-wrap gap-1 text-xs">
-            {order.pages && (
-              <span className="bg-neutral-100 text-neutral-700 px-2 py-1 rounded">
-                {order.pages} pages
-              </span>
-            )}
-            {order.copies && order.copies > 1 && (
-              <span className="bg-neutral-100 text-neutral-700 px-2 py-1 rounded">
-                {order.copies} copies
-              </span>
-            )}
-            {order.color && (
-              <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded">Color</span>
-            )}
-          </div>
-
-          {/* Files preview for uploaded-files orders */}
-          {order.order_type === 'uploaded-files' && order.files && order.files.length > 0 && (
+          {/* Files preview for digital orders */}
+          {order.order_type === 'digital' && order.files && order.files.length > 0 && (
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1 text-xs text-neutral-600">
                 <FileText className="w-3 h-3" />
-                <span>{order.files[0].original_name || order.files[0].name}</span>
+                <span>{order.files[0].original_name || order.files[0].filename}</span>
                 {order.files.length > 1 && (
                   <span className="text-neutral-500">+{order.files.length - 1} more</span>
                 )}

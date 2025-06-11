@@ -1,7 +1,10 @@
 
+// Core API Type Definitions - Single Source of Truth
+// This file must match the exact JSON structure returned by the backend
+
 // User Types
 export interface User {
-  id: string;
+  id: string; // UUID
   name: string;
   email?: string;
   phone?: string;
@@ -13,34 +16,33 @@ export interface User {
 
 // Shop Types
 export interface Shop {
-  id: string;
-  owner_user_id: string;
+  id: string; // UUID
+  owner_id: string; // UUID
   name: string;
+  slug: string;
   address: string;
-  contact_number: string;
+  phone: string; // Renamed from contact_number
   email: string;
   is_active: boolean;
-  allow_offline_access: boolean;
+  allows_offline_orders: boolean; // Renamed from allow_offline_access
   shop_timings: string;
-  slug: string;
   qr_code_url?: string;
   owner?: User;
   created_at: string;
   updated_at: string;
 }
 
-// Order Types
+// Order Types - Matching backend exactly
 export interface Order {
-  id: string;
-  customer_id: string;
-  shop_id: string;
+  id: string; // UUID
+  customer_id: string; // UUID
+  shop_id: string; // UUID
   customer_name: string;
   customer_phone: string;
-  customer_email?: string;
-  order_type: 'digital' | 'walkin';
-  notes: string;
+  order_type: 'digital' | 'walkin'; // NOT 'uploaded-files'
+  notes: string; // Unified field for description/instructions
   status: 'pending' | 'in_progress' | 'ready' | 'completed' | 'cancelled';
-  is_urgent?: boolean;
+  is_urgent: boolean;
   files?: OrderFile[];
   customer?: User;
   shop?: Shop;
@@ -50,24 +52,24 @@ export interface Order {
 
 // File Types
 export interface OrderFile {
-  id: string;
-  order_id: string;
-  file_name: string;
-  original_name?: string;
+  id: string; // UUID
+  order_id: string; // UUID
+  filename: string; // Backend field name
+  original_name: string; // Backend field name
+  file_path: string;
+  file_size: number;
   mime_type: string;
-  file_url: string;
-  backend_file_path: string;
-  restrict_download: boolean;
   created_at: string;
   updated_at: string;
 }
 
 // API Response Types
-export interface ApiResponse<T> {
+export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
   message?: string;
   error?: string;
+  code?: string;
 }
 
 export interface PaginatedResponse<T> {
@@ -78,7 +80,7 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
-// Statistics Types
+// Statistics Types - Matching backend exactly
 export interface AdminStats {
   totalUsers: number;
   activeUsers: number;
@@ -90,7 +92,7 @@ export interface AdminStats {
   todayOrders: number;
 }
 
-// Analytics Types
+// Analytics Types - Matching backend structure
 export interface AnalyticsData {
   stats: AdminStats;
   orderTrends: Array<{
@@ -118,38 +120,34 @@ export interface AnalyticsData {
   };
 }
 
-// Request Types
-export interface LoginRequest {
-  phone?: string;
-  email?: string;
-  password?: string;
-}
-
+// Request Types - Matching backend expectations exactly
 export interface CreateOrderRequest {
   shopId: string;
   orderType: 'digital' | 'walkin';
   notes: string;
+  customerName?: string;
+  customerPhone?: string;
   fileIds?: string[];
 }
 
 export interface CreateShopRequest {
-  shopName: string;
+  shopName: string; // Maps to name
   ownerName: string;
   ownerEmail: string;
   ownerPassword: string;
-  contactNumber: string;
+  contactNumber: string; // Maps to phone
   address: string;
-  preferredSlug?: string;
-  allowOfflineAccess: boolean;
-  shopTimings: string;
+  preferredSlug?: string; // Maps to slug
+  allowOfflineAccess: boolean; // Maps to allows_offline_orders
+  shopTimings: string; // Maps to shop_timings
 }
 
 export interface UpdateShopRequest {
   name?: string;
   address?: string;
-  contact_number?: string;
+  phone?: string; // Renamed from contact_number
   is_active?: boolean;
-  allow_offline_access?: boolean;
+  allows_offline_orders?: boolean; // Renamed from allow_offline_access
   shop_timings?: string;
   slug?: string;
 }
@@ -170,4 +168,31 @@ export interface QRCodeData {
   qrCodeUrl: string;
   shopUrl: string;
   message: string;
+}
+
+// Auth Response Types
+export interface AuthResponse {
+  success: boolean;
+  message: string;
+  token: string;
+  user: User;
+}
+
+export interface CurrentUserResponse {
+  user: User;
+}
+
+export interface ProfileUpdateResponse {
+  success: boolean;
+  user: User;
+}
+
+// Chat API Response Types
+export interface ChatMessagesResponse {
+  messages: ChatMessage[];
+}
+
+export interface SendMessageResponse {
+  success: boolean;
+  message: ChatMessage;
 }

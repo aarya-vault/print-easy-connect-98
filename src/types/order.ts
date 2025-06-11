@@ -1,48 +1,22 @@
 
-export interface OrderFile {
-  id: string;
-  original_name: string;
-  file_size: number;
-  mime_type: string;
-  file_path: string;
-}
+// Order-specific types that extend the core API types
+import { Order as BaseOrder, OrderFile as BaseOrderFile } from './api';
 
+// Legacy support - use API types directly
+export type ShopOrder = BaseOrder;
+export type OrderFile = BaseOrderFile;
+
+// Transformation helpers if needed
 export interface ApiShopOrder {
   id: string;
   customer: {
     name: string;
     phone: string;
   };
-  order_type: 'uploaded-files' | 'walk-in';
+  order_type: 'digital' | 'walkin';
   description: string;
-  status: 'received' | 'started' | 'completed';
+  status: 'pending' | 'in_progress' | 'ready' | 'completed' | 'cancelled';
   is_urgent: boolean;
   created_at: string;
   files?: OrderFile[];
-}
-
-export interface ShopOrder {
-  id: string;
-  customerName: string;
-  customerPhone: string;
-  customerEmail?: string;
-  orderType: 'uploaded-files' | 'walk-in';
-  status: 'received' | 'started' | 'completed';
-  isUrgent: boolean;
-  description: string;
-  createdAt: Date;
-  files?: {
-    id: string;
-    name: string;
-    type: string;
-    size: number;
-    url: string;
-  }[];
-  instructions?: string;
-  services: string[];
-  pages?: number;
-  copies?: number;
-  paperType?: string;
-  binding?: string;
-  color?: boolean;
 }

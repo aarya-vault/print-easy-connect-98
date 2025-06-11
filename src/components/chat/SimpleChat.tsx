@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { useQuery } from '@tanstack/react-query';
 import { Send } from 'lucide-react';
 import apiService from '@/services/api';
-import { ChatMessage } from '@/types/api';
+import { ChatMessagesResponse } from '@/types/api';
 
 interface SimpleChatProps {
   orderId: string;
@@ -16,7 +16,7 @@ const SimpleChat: React.FC<SimpleChatProps> = ({ orderId }) => {
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
 
-  const { data: messagesData, refetch } = useQuery<{ messages: ChatMessage[] }>({
+  const { data: messagesData, refetch } = useQuery<ChatMessagesResponse>({
     queryKey: ['order-messages', orderId],
     queryFn: () => apiService.getOrderMessages(orderId),
   });
