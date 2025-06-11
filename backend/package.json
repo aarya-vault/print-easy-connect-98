@@ -1,42 +1,14 @@
 
 {
   "name": "printeasy-backend",
-  "version": "2.0.0",
-  "description": "PrintEasy Backend API v2.0 - Connecting customers with local print shops through digital ordering and file management",
+  "version": "1.0.0",
+  "description": "PrintEasy Backend API",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
-    "db:seed": "node seeders/comprehensive-test-data.js",
-    "db:reset": "node -e \"require('./models').sequelize.sync({force: true}).then(() => {console.log('Database reset complete'); process.exit()})\"",
-    "db:setup": "npm run db:reset && npm run db:seed",
-    "test": "echo \"API testing available via Postman collection - import postman-collection.json\"",
-    "health": "curl http://localhost:3001/health || echo 'Server not running'",
-    "logs": "tail -f logs/app.log 2>/dev/null || echo 'No log file found'",
-    "postman": "echo \"Import backend/postman-collection.json into Postman for complete API testing\"",
-    "validate": "node -e \"console.log('✅ Package.json is valid')\"",
-    "production": "NODE_ENV=production node app.js"
-  },
-  "keywords": [
-    "printing",
-    "api",
-    "nodejs", 
-    "express",
-    "sequelize",
-    "postgresql",
-    "phone-login",
-    "file-upload",
-    "real-time-chat",
-    "order-management",
-    "role-based-auth",
-    "cors-enabled",
-    "postman-ready"
-  ],
-  "author": "PrintEasy Development Team",
-  "license": "MIT",
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=8.0.0"
+    "test": "jest",
+    "seed": "node seeders/comprehensive-test-data.js"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -45,24 +17,22 @@
     "pg-hstore": "^2.3.4",
     "bcrypt": "^5.1.1",
     "jsonwebtoken": "^9.0.2",
-    "multer": "^1.4.5-lts.1",
     "cors": "^2.8.5",
     "helmet": "^7.1.0",
     "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
     "compression": "^1.7.4",
     "express-rate-limit": "^7.1.5",
     "express-validator": "^7.0.1",
+    "winston": "^3.11.0",
+    "socket.io": "^4.7.4",
+    "qrcode": "^1.5.3",
+    "uuid": "^9.0.1",
     "dotenv": "^16.3.1"
   },
   "devDependencies": {
-    "nodemon": "^3.0.2"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/printeasy/backend.git"
-  },
-  "bugs": {
-    "url": "https://github.com/printeasy/backend/issues"
-  },
-  "homepage": "https://github.com/printeasy/backend#readme"
+    "nodemon": "^3.0.2",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3"
+  }
 }

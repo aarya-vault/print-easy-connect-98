@@ -4,19 +4,20 @@ const { DataTypes } = require('sequelize');
 module.exports = (sequelize) => {
   const Order = sequelize.define('Order', {
     id: {
-      type: DataTypes.STRING(20),
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
       primaryKey: true
     },
     shop_id: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
+      type: DataTypes.UUID,
+      allowNull: false,
       references: {
         model: 'shops',
         key: 'id'
       }
     },
     customer_id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.UUID,
       allowNull: true,
       references: {
         model: 'users',
@@ -25,29 +26,29 @@ module.exports = (sequelize) => {
     },
     customer_name: {
       type: DataTypes.STRING(255),
-      allowNull: true
+      allowNull: false
     },
     customer_phone: {
       type: DataTypes.STRING(20),
-      allowNull: true
+      allowNull: false
     },
     order_type: {
-      type: DataTypes.ENUM('uploaded-files', 'walk-in'),
-      allowNull: true,
-      defaultValue: 'uploaded-files'
+      type: DataTypes.ENUM('digital', 'walkin'),
+      allowNull: false,
+      defaultValue: 'digital'
     },
-    description: {
+    notes: {
       type: DataTypes.TEXT,
       allowNull: true
     },
     status: {
-      type: DataTypes.ENUM('received', 'started', 'completed'),
-      allowNull: true,
-      defaultValue: 'received'
+      type: DataTypes.ENUM('pending', 'in_progress', 'ready', 'completed', 'cancelled'),
+      allowNull: false,
+      defaultValue: 'pending'
     },
     is_urgent: {
       type: DataTypes.BOOLEAN,
-      allowNull: true,
+      allowNull: false,
       defaultValue: false
     }
   }, {

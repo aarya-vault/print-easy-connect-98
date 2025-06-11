@@ -4,12 +4,12 @@ const { DataTypes } = require('sequelize');
 module.exports = (sequelize) => {
   const Shop = sequelize.define('Shop', {
     id: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true
     },
     owner_id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.UUID,
       allowNull: false,
       references: {
         model: 'users',
@@ -18,44 +18,26 @@ module.exports = (sequelize) => {
     },
     name: {
       type: DataTypes.STRING(255),
-      allowNull: false,
-      validate: {
-        notEmpty: true,
-        len: [2, 255]
-      }
+      allowNull: false
     },
     slug: {
       type: DataTypes.STRING(255),
-      allowNull: true,
-      unique: true,
-      validate: {
-        isSlug(value) {
-          if (value && !/^[a-z0-9-]+$/.test(value)) {
-            throw new Error('Slug must contain only lowercase letters, numbers, and hyphens');
-          }
-        }
-      }
+      allowNull: false,
+      unique: true
     },
     address: {
       type: DataTypes.TEXT,
-      allowNull: false,
-      validate: {
-        notEmpty: true
-      }
+      allowNull: false
     },
     phone: {
       type: DataTypes.STRING(20),
-      allowNull: false,
-      validate: {
-        notEmpty: true
-      }
+      allowNull: false
     },
     email: {
       type: DataTypes.STRING(255),
       allowNull: false,
       validate: {
-        isEmail: true,
-        notEmpty: true
+        isEmail: true
       }
     },
     description: {
@@ -67,22 +49,13 @@ module.exports = (sequelize) => {
       allowNull: false,
       defaultValue: true
     },
-    rating: {
-      type: DataTypes.DECIMAL(3, 2),
-      allowNull: false,
-      defaultValue: 0.00,
-      validate: {
-        min: 0,
-        max: 5
-      }
-    },
     allows_offline_orders: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: true
     },
     shop_timings: {
-      type: DataTypes.TEXT,
+      type: DataTypes.STRING(255),
       allowNull: true,
       defaultValue: 'Mon-Sat: 9:00 AM - 7:00 PM'
     },
@@ -94,24 +67,7 @@ module.exports = (sequelize) => {
     tableName: 'shops',
     timestamps: true,
     createdAt: 'created_at',
-    updatedAt: 'updated_at',
-    indexes: [
-      {
-        fields: ['owner_id']
-      },
-      {
-        fields: ['is_active']
-      },
-      {
-        unique: true,
-        fields: ['slug'],
-        where: {
-          slug: {
-            [sequelize.Sequelize.Op.ne]: null
-          }
-        }
-      }
-    ]
+    updatedAt: 'updated_at'
   });
 
   return Shop;

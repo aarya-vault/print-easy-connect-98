@@ -3,17 +3,11 @@ const express = require('express');
 const { Order, User, Shop, File } = require('../models');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
 const upload = require('../middleware/upload');
+const { v4: uuidv4 } = require('uuid');
 
 const router = express.Router();
 
-// Generate order ID
-const generateOrderId = async (orderType) => {
-  const prefix = orderType === 'uploaded-files' ? 'UF' : 'WI';
-  const count = await Order.count({ where: { order_type: orderType } });
-  return `${prefix}${String(count + 1).padStart(6, '0')}`;
-};
-
-// Create new order - FIXED to handle FormData properly
+// Create new order - UPDATED to match contract
 router.post('/', authenticateToken, upload.array('files'), async (req, res) => {
   try {
     console.log('📝 Creating order with data:', req.body);
@@ -21,10 +15,10 @@ router.post('/', authenticateToken, upload.array('files'), async (req, res) => {
 
     const {
       shopId,
-      orderType = 'uploaded-files',
+      orderType = 'digital',
       customerName,
       customerPhone,
-      description
+      notes
     } = req.body;
 
     // Validate required fields
@@ -35,10 +29,10 @@ router.post('/', authenticateToken, upload.array('files'), async (req, res) => {
       });
     }
 
-    if (!description || description.trim().length === 0) {
+    if (!notes || notes.trim().length === 0) {
       return res.status(400).json({
         success: false,
-        error: 'Description is required'
+        error: 'Notes are required'
       });
     }
 
@@ -51,24 +45,19 @@ router.post('/', authenticateToken, upload.array('files'), async (req, res) => {
       });
     }
 
-    // For uploaded-files orders, files are optional now but check if they exist
-    if (orderType === 'uploaded-files' && (!req.files || req.files.length === 0)) {
-      console.log('⚠️ No files uploaded for uploaded-files order - proceeding anyway');
-    }
-
-    // Generate order ID
-    const orderId = await generateOrderId(orderType);
+    // Generate UUID for order
+    const orderId = uuidv4();
 
     // Create order
     const order = await Order.create({
       id: orderId,
-      shop_id: parseInt(shopId),
+      shop_id: shopId,
       customer_id: req.user.id,
       customer_name: customerName || req.user.name || `Customer ${req.user.phone?.slice(-4) || 'Unknown'}`,
       customer_phone: customerPhone || req.user.phone || '',
       order_type: orderType,
-      description: description.trim(),
-      status: 'received',
+      notes: notes.trim(),
+      status: 'pending',
       is_urgent: false
     });
 
@@ -85,27 +74,37 @@ router.post('/', authenticateToken, upload.array('files'), async (req, res) => {
           original_name: file.originalname,
           file_path: file.path,
           file_size: file.size,
-          mime_type: file.mimetype,
-          restrict_download: false // Default to not restricting download
+          mime_type: file.mimetype
         });
       }
       
       console.log('✅ Files processed successfully');
     }
 
-    // Get complete order data
+    // Get complete order data with proper formatting
     const completeOrder = await Order.findByPk(orderId, {
       include: [
-        { model: User, as: 'customer', attributes: ['id', 'name', 'phone'] },
-        { model: Shop, as: 'shop', attributes: ['id', 'name', 'address', 'phone'] },
-        { model: File, as: 'files' }
+        { 
+          model: User, 
+          as: 'customer', 
+          attributes: ['id', 'name', 'phone'] 
+        },
+        { 
+          model: Shop, 
+          as: 'shop', 
+          attributes: ['id', 'name', 'address', 'phone', 'email'] 
+        },
+        { 
+          model: File, 
+          as: 'files' 
+        }
       ]
     });
 
     res.status(201).json({
       success: true,
       message: 'Order created successfully',
-      order: completeOrder
+      data: completeOrder
     });
 
   } catch (error) {
@@ -124,15 +123,22 @@ router.get('/customer', authenticateToken, authorizeRoles('customer'), async (re
     const orders = await Order.findAll({
       where: { customer_id: req.user.id },
       include: [
-        { model: Shop, as: 'shop', attributes: ['id', 'name', 'address', 'phone', 'rating'] },
-        { model: File, as: 'files' }
+        { 
+          model: Shop, 
+          as: 'shop', 
+          attributes: ['id', 'name', 'address', 'phone', 'email'] 
+        },
+        { 
+          model: File, 
+          as: 'files' 
+        }
       ],
       order: [['created_at', 'DESC']]
     });
 
     res.json({
       success: true,
-      orders
+      data: orders
     });
 
   } catch (error) {
@@ -178,8 +184,15 @@ router.get('/shop', authenticateToken, authorizeRoles('shop_owner'), async (req,
     const { count, rows: orders } = await Order.findAndCountAll({
       where: whereClause,
       include: [
-        { model: User, as: 'customer', attributes: ['id', 'name', 'phone'] },
-        { model: File, as: 'files' }
+        { 
+          model: User, 
+          as: 'customer', 
+          attributes: ['id', 'name', 'phone'] 
+        },
+        { 
+          model: File, 
+          as: 'files' 
+        }
       ],
       order: [['is_urgent', 'DESC'], ['created_at', 'DESC']],
       limit: parseInt(limit),
@@ -188,10 +201,12 @@ router.get('/shop', authenticateToken, authorizeRoles('shop_owner'), async (req,
 
     res.json({
       success: true,
-      orders,
-      totalOrders: count,
-      totalPages: Math.ceil(count / limit),
-      currentPage: parseInt(page)
+      data: {
+        orders,
+        totalOrders: count,
+        totalPages: Math.ceil(count / limit),
+        currentPage: parseInt(page)
+      }
     });
 
   } catch (error) {
@@ -212,7 +227,7 @@ router.patch('/:orderId/status', authenticateToken, async (req, res) => {
     console.log(`🔄 Updating order ${orderId} status to: ${status}`);
 
     // Validate status
-    const validStatuses = ['received', 'started', 'completed'];
+    const validStatuses = ['pending', 'in_progress', 'ready', 'completed', 'cancelled'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({
         success: false,
@@ -234,9 +249,20 @@ router.patch('/:orderId/status', authenticateToken, async (req, res) => {
 
     const updatedOrder = await Order.findByPk(orderId, {
       include: [
-        { model: User, as: 'customer', attributes: ['id', 'name', 'phone'] },
-        { model: Shop, as: 'shop', attributes: ['id', 'name', 'address', 'phone'] },
-        { model: File, as: 'files' }
+        { 
+          model: User, 
+          as: 'customer', 
+          attributes: ['id', 'name', 'phone'] 
+        },
+        { 
+          model: Shop, 
+          as: 'shop', 
+          attributes: ['id', 'name', 'address', 'phone', 'email'] 
+        },
+        { 
+          model: File, 
+          as: 'files' 
+        }
       ]
     });
 
@@ -245,7 +271,7 @@ router.patch('/:orderId/status', authenticateToken, async (req, res) => {
     res.json({
       success: true,
       message: 'Order status updated',
-      order: updatedOrder
+      data: updatedOrder
     });
 
   } catch (error) {
@@ -277,16 +303,27 @@ router.patch('/:orderId/urgency', authenticateToken, authorizeRoles('shop_owner'
 
     const updatedOrder = await Order.findByPk(orderId, {
       include: [
-        { model: User, as: 'customer', attributes: ['id', 'name', 'phone'] },
-        { model: Shop, as: 'shop', attributes: ['id', 'name', 'address', 'phone'] },
-        { model: File, as: 'files' }
+        { 
+          model: User, 
+          as: 'customer', 
+          attributes: ['id', 'name', 'phone'] 
+        },
+        { 
+          model: Shop, 
+          as: 'shop', 
+          attributes: ['id', 'name', 'address', 'phone', 'email'] 
+        },
+        { 
+          model: File, 
+          as: 'files' 
+        }
       ]
     });
 
     res.json({
       success: true,
       message: 'Order urgency toggled',
-      order: updatedOrder
+      data: updatedOrder
     });
 
   } catch (error) {
@@ -305,9 +342,20 @@ router.get('/:orderId', authenticateToken, async (req, res) => {
 
     const order = await Order.findByPk(orderId, {
       include: [
-        { model: User, as: 'customer', attributes: ['id', 'name', 'phone'] },
-        { model: Shop, as: 'shop', attributes: ['id', 'name', 'address', 'phone', 'rating'] },
-        { model: File, as: 'files' }
+        { 
+          model: User, 
+          as: 'customer', 
+          attributes: ['id', 'name', 'phone'] 
+        },
+        { 
+          model: Shop, 
+          as: 'shop', 
+          attributes: ['id', 'name', 'address', 'phone', 'email'] 
+        },
+        { 
+          model: File, 
+          as: 'files' 
+        }
       ]
     });
 
@@ -320,7 +368,7 @@ router.get('/:orderId', authenticateToken, async (req, res) => {
 
     res.json({
       success: true,
-      order
+      data: order
     });
 
   } catch (error) {

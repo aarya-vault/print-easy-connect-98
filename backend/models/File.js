@@ -4,12 +4,12 @@ const { DataTypes } = require('sequelize');
 module.exports = (sequelize) => {
   const File = sequelize.define('File', {
     id: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true
     },
     order_id: {
-      type: DataTypes.STRING(20),
+      type: DataTypes.UUID,
       allowNull: false,
       references: {
         model: 'orders',
@@ -37,7 +37,7 @@ module.exports = (sequelize) => {
       allowNull: false
     }
   }, {
-    tableName: 'files', // Fixed table name
+    tableName: 'files',
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at'

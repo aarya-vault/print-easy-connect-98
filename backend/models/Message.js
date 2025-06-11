@@ -4,21 +4,21 @@ const { DataTypes } = require('sequelize');
 module.exports = (sequelize) => {
   const Message = sequelize.define('Message', {
     id: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true
     },
     order_id: {
-      type: DataTypes.STRING(20),
-      allowNull: true,
+      type: DataTypes.UUID,
+      allowNull: false,
       references: {
         model: 'orders',
         key: 'id'
       }
     },
     sender_id: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
+      type: DataTypes.UUID,
+      allowNull: false,
       references: {
         model: 'users',
         key: 'id'
@@ -26,11 +26,11 @@ module.exports = (sequelize) => {
     },
     message: {
       type: DataTypes.TEXT,
-      allowNull: true
+      allowNull: false
     },
     is_read: {
       type: DataTypes.BOOLEAN,
-      allowNull: true,
+      allowNull: false,
       defaultValue: false
     }
   }, {
