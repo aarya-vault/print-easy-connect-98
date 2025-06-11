@@ -6,7 +6,7 @@ import { Order as BaseOrder, OrderFile as BaseOrderFile } from './api';
 export type ShopOrder = BaseOrder;
 export type OrderFile = BaseOrderFile;
 
-// Transformation helpers if needed (deprecated - use API types directly)
+// Legacy interface for backward compatibility - DEPRECATED, use Order from api.ts
 export interface ApiShopOrder {
   id: string;
   customer: {

@@ -5,26 +5,22 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { QrCode, Download, ExternalLink, Copy } from 'lucide-react';
 import { toast } from 'sonner';
+import { Shop } from '@/types/api';
 
 interface QRCodeModalProps {
+  shop: Shop;
   isOpen: boolean;
   onClose: () => void;
-  shopName: string;
-  shopSlug?: string;
-  offlineModuleEnabled?: boolean;
 }
 
 const QRCodeModal: React.FC<QRCodeModalProps> = ({
+  shop,
   isOpen,
-  onClose,
-  shopName,
-  shopSlug,
-  offlineModuleEnabled = false
+  onClose
 }) => {
   // Generate proper URLs
   const baseUrl = window.location.origin;
-  const shopSlugForUrl = shopSlug || shopName.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
-  const uploadUrl = `${baseUrl}/shop/${shopSlugForUrl}`;
+  const uploadUrl = `${baseUrl}/shop/${shop.slug}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(uploadUrl)}`;
   
   const handleDownloadQR = async () => {
@@ -34,7 +30,7 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${shopSlugForUrl}-qr-code.png`;
+      link.download = `${shop.slug}-qr-code.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -71,13 +67,13 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({
           {/* QR Code Section */}
           <Card>
             <CardContent className="p-4 sm:p-6 text-center">
-              <h3 className="font-semibold text-base sm:text-lg mb-4">QR Code for {shopName}</h3>
+              <h3 className="font-semibold text-base sm:text-lg mb-4">QR Code for {shop.name}</h3>
               
               {/* Real QR Code */}
               <div className="bg-white p-4 rounded-lg border-2 border-neutral-200 inline-block mb-4">
                 <img 
                   src={qrCodeUrl}
-                  alt={`QR Code for ${shopName}`}
+                  alt={`QR Code for ${shop.name}`}
                   className="w-48 h-48 sm:w-64 sm:h-64"
                   onError={(e) => {
                     // Fallback if QR service fails
@@ -100,7 +96,7 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({
               
               <p className="text-sm text-gray-600 mb-4">
                 Customers can scan this QR code to access your upload page directly
-                {offlineModuleEnabled && (
+                {shop.allows_offline_orders && (
                   <span className="block mt-1 text-xs text-blue-600">
                     (Walk-in orders enabled)
                   </span>
@@ -157,3 +153,4 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({
 };
 
 export default QRCodeModal;
+export type { QRCodeModalProps };

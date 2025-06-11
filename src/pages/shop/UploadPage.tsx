@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,6 +38,7 @@ const UploadPage: React.FC = () => {
 
         console.log('🔍 Fetching shop data for slug:', shopSlug);
         const response = await apiService.getShopBySlug(shopSlug);
+        // Handle both possible response structures
         const shopData = response?.shop || response;
         setShop(shopData);
         console.log('✅ Shop data loaded:', shopData);
