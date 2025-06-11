@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -333,7 +332,7 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Modals */}
+      {/* Modals - Updated to use Order type consistently */}
       {selectedOrder && (
         <>
           <OrderDetailsModal
