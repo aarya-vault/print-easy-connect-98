@@ -7,7 +7,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 // Auth Pages
-import Login from '@/pages/auth/Login';
+import Login from '@/pages/Login';
 
 // Customer Pages
 import CustomerDashboard from '@/pages/customer/Dashboard';
@@ -20,7 +20,6 @@ import CustomerOrderByShop from '@/pages/customer/OrderByShop';
 
 // Shop Owner Pages
 import ShopDashboard from '@/pages/shop/Dashboard';
-import ShopSettings from '@/pages/shop/Settings';
 
 // Admin Pages
 import AdminDashboard from '@/pages/admin/AdminDashboard';
@@ -105,14 +104,6 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={['shop_owner']}>
                     <ShopDashboard />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/shop/settings" 
-                element={
-                  <ProtectedRoute allowedRoles={['shop_owner']}>
-                    <ShopSettings />
                   </ProtectedRoute>
                 } 
               />
