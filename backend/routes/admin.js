@@ -1,7 +1,8 @@
+
 const express = require('express');
 const { User, Shop, Order } = require('../models');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
-const { validateShopCreation } = require('../middleware/requestValidator');
+const { validateShopCreation, validateShopUpdate, validateUserUpdate } = require('../middleware/requestValidator');
 const bcrypt = require('bcrypt');
 const { Op } = require('sequelize');
 
@@ -53,295 +54,108 @@ router.get('/users', authenticateToken, authorizeRoles('admin'), async (req, res
   }
 });
 
-// Get all shops with management features
-router.get('/shops', authenticateToken, authorizeRoles('admin'), async (req, res) => {
+// FIXED: Create user endpoint
+router.post('/users', authenticateToken, authorizeRoles('admin'), async (req, res) => {
   try {
-    const shops = await Shop.findAll({
-      include: [
-        { 
-          model: User, 
-          as: 'owner',
-          attributes: ['id', 'name', 'email', 'phone']
-        }
-      ],
-      order: [['created_at', 'DESC']]
+    const { name, email, phone, password, role = 'customer' } = req.body;
+
+    // Validate required fields
+    if (!name || !phone) {
+      return res.status(400).json({
+        success: false,
+        error: 'Name and phone are required'
+      });
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ 
+      where: { 
+        [Op.or]: [
+          { email: email || null },
+          { phone }
+        ]
+      }
     });
 
-    res.json({
-      success: true,
-      shops
-    });
-
-  } catch (error) {
-    console.error('Get shops error:', error);
-    res.status(500).json({ 
-      success: false,
-      error: 'Failed to get shops',
-      message: 'Unable to retrieve shop list'
-    });
-  }
-});
-
-// FIXED: Create new shop endpoint with proper validation
-router.post('/shops', authenticateToken, authorizeRoles('admin'), validateShopCreation, async (req, res) => {
-  try {
-    const {
-      name,
-      address,
-      phone,
-      email,
-      description = '',
-      ownerEmail,
-      ownerName,
-      ownerPassword
-    } = req.body;
-
-    console.log('📝 Creating new shop:', { name, ownerEmail });
-
-    // Check if owner email already exists
-    const existingUser = await User.findOne({ where: { email: ownerEmail } });
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        error: 'Owner email already exists',
-        message: 'Please use a different email for the shop owner'
+        error: 'User with this email or phone already exists'
       });
     }
 
-    // Check if shop name already exists
-    const existingShop = await Shop.findOne({ where: { name } });
-    if (existingShop) {
-      return res.status(400).json({
-        success: false,
-        error: 'Shop name already exists',
-        message: 'Please use a different shop name'
-      });
+    // Hash password if provided
+    let hashedPassword = null;
+    if (password) {
+      hashedPassword = await bcrypt.hash(password, 12);
     }
 
-    // Hash password for new owner
-    const hashedPassword = await bcrypt.hash(ownerPassword, 12);
-
-    // Create shop owner
-    const owner = await User.create({
-      email: ownerEmail,
-      name: ownerName,
+    const user = await User.create({
+      name,
+      email: email || null,
+      phone,
       password: hashedPassword,
-      role: 'shop_owner',
+      role,
       is_active: true
     });
 
-    console.log('✅ Shop owner created:', owner.id);
-
-    // Generate shop slug from name
-    const slug = name.toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .trim();
-
-    // Create shop
-    const shop = await Shop.create({
-      name,
-      address,
-      phone,
-      email,
-      description,
-      owner_id: owner.id,
-      slug: slug,
-      rating: 0,
-      is_active: true,
-      allows_offline_orders: true
-    });
-
-    console.log('✅ Shop created:', shop.id);
-
-    // Get complete shop data
-    const completeShop = await Shop.findByPk(shop.id, {
-      include: [
-        { 
-          model: User, 
-          as: 'owner',
-          attributes: ['id', 'name', 'email', 'phone']
-        }
-      ]
-    });
+    const userResponse = { ...user.toJSON() };
+    delete userResponse.password;
 
     res.status(201).json({
       success: true,
-      message: 'Shop created successfully',
-      shop: completeShop
+      message: 'User created successfully',
+      user: userResponse
     });
 
   } catch (error) {
-    console.error('❌ Create shop error:', error);
+    console.error('Create user error:', error);
     res.status(500).json({ 
       success: false,
-      error: 'Failed to create shop',
-      message: error.message || 'Unable to create new shop'
+      error: 'Failed to create user'
     });
   }
 });
 
-// Get real-time analytics data
-router.get('/analytics/realtime', authenticateToken, authorizeRoles('admin'), async (req, res) => {
-  try {
-    const [totalUsers, totalShops, totalOrders, activeUsers, todayOrders] = await Promise.all([
-      User.count(),
-      Shop.count(),
-      Order.count(),
-      User.count({ where: { is_active: true } }),
-      Order.count({
-        where: {
-          created_at: {
-            [Op.gte]: new Date(new Date().setHours(0, 0, 0, 0))
-          }
-        }
-      })
-    ]);
-
-    // Get order trends for last 7 days
-    const orderTrends = await Promise.all(
-      Array.from({ length: 7 }, async (_, i) => {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        const startOfDay = new Date(date.setHours(0, 0, 0, 0));
-        const endOfDay = new Date(date.setHours(23, 59, 59, 999));
-
-        const [totalCount, uploadedCount, walkinCount] = await Promise.all([
-          Order.count({
-            where: {
-              created_at: { [Op.between]: [startOfDay, endOfDay] }
-            }
-          }),
-          Order.count({
-            where: {
-              created_at: { [Op.between]: [startOfDay, endOfDay] },
-              order_type: 'uploaded-files'
-            }
-          }),
-          Order.count({
-            where: {
-              created_at: { [Op.between]: [startOfDay, endOfDay] },
-              order_type: 'walk-in'
-            }
-          })
-        ]);
-
-        return {
-          date: startOfDay.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
-          count: totalCount,
-          uploaded_files: uploadedCount,
-          walk_in: walkinCount
-        };
-      })
-    );
-
-    // Get order status distribution
-    const ordersByStatus = await Order.findAll({
-      attributes: [
-        'status',
-        [require('sequelize').fn('COUNT', '*'), 'count']
-      ],
-      group: ['status'],
-      raw: true
-    });
-
-    // Get shop performance
-    const shopPerformance = await Shop.findAll({
-      attributes: [
-        'name',
-        [require('sequelize').fn('COUNT', require('sequelize').col('orders.id')), 'total_orders']
-      ],
-      include: [{
-        model: Order,
-        as: 'orders',
-        attributes: []
-      }],
-      group: ['Shop.id', 'Shop.name'],
-      limit: 5,
-      order: [[require('sequelize').fn('COUNT', require('sequelize').col('orders.id')), 'DESC']],
-      raw: true
-    });
-
-    const urgentOrders = await Order.count({
-      where: { 
-        is_urgent: true,
-        status: { [Op.ne]: 'completed' }
-      }
-    });
-
-    const pendingOrders = await Order.count({
-      where: { 
-        status: { [Op.in]: ['received', 'started'] }
-      }
-    });
-
-    res.json({
-      success: true,
-      analytics: {
-        orders: orderTrends.reverse(),
-        ordersByStatus: ordersByStatus.map(item => ({
-          status: item.status.charAt(0).toUpperCase() + item.status.slice(1),
-          count: parseInt(item.count)
-        })),
-        shopPerformance: shopPerformance.map(item => ({
-          shop_name: item.name.length > 15 ? item.name.substring(0, 15) + '...' : item.name,
-          total_orders: parseInt(item.total_orders),
-          avg_completion_time: Math.floor(Math.random() * 120) + 30 // Mock data for now
-        })),
-        realtimeMetrics: {
-          activeUsers,
-          ordersToday: todayOrders,
-          urgentOrders,
-          pendingOrders,
-          avgProcessingTime: Math.floor(Math.random() * 120) + 45, // Mock data for now
-          completionRate: todayOrders > 0 ? Math.round((todayOrders / totalOrders) * 100) : 0
-        }
-      }
-    });
-
-  } catch (error) {
-    console.error('Get analytics error:', error);
-    res.status(500).json({ 
-      success: false,
-      error: 'Failed to get analytics data'
-    });
-  }
-});
-
-// Update user status
-router.patch('/users/:userId/status', authenticateToken, authorizeRoles('admin'), async (req, res) => {
+// FIXED: Update user endpoint
+router.patch('/users/:userId', authenticateToken, authorizeRoles('admin'), validateUserUpdate, async (req, res) => {
   try {
     const { userId } = req.params;
-    const { isActive } = req.body;
+    const { name, email, is_active } = req.body;
 
-    const [updatedRows] = await User.update(
-      { is_active: isActive },
-      { where: { id: userId } }
-    );
-
-    if (updatedRows === 0) {
+    const user = await User.findByPk(userId);
+    if (!user) {
       return res.status(404).json({
         success: false,
         error: 'User not found'
       });
     }
 
+    await user.update({
+      name: name || user.name,
+      email: email || user.email,
+      is_active: is_active !== undefined ? is_active : user.is_active
+    });
+
+    const userResponse = { ...user.toJSON() };
+    delete userResponse.password;
+
     res.json({
       success: true,
-      message: `User ${isActive ? 'activated' : 'deactivated'} successfully`
+      message: 'User updated successfully',
+      user: userResponse
     });
 
   } catch (error) {
-    console.error('Update user status error:', error);
+    console.error('Update user error:', error);
     res.status(500).json({ 
       success: false,
-      error: 'Failed to update user status'
+      error: 'Failed to update user'
     });
   }
 });
 
-// Delete user
+// FIXED: Delete user endpoint
 router.delete('/users/:userId', authenticateToken, authorizeRoles('admin'), async (req, res) => {
   try {
     const { userId } = req.params;
@@ -371,37 +185,143 @@ router.delete('/users/:userId', authenticateToken, authorizeRoles('admin'), asyn
   }
 });
 
-// Get dashboard statistics
-router.get('/stats', authenticateToken, authorizeRoles('admin'), async (req, res) => {
+// Get all shops with management features
+router.get('/shops', authenticateToken, authorizeRoles('admin'), async (req, res) => {
   try {
-    const [totalUsers, totalShops, totalOrders, activeUsers] = await Promise.all([
-      User.count(),
-      Shop.count(),
-      Order.count(),
-      User.count({ where: { is_active: true } })
-    ]);
+    const shops = await Shop.findAll({
+      include: [
+        { 
+          model: User, 
+          as: 'owner',
+          attributes: ['id', 'name', 'email', 'phone']
+        }
+      ],
+      order: [['created_at', 'DESC']]
+    });
 
     res.json({
       success: true,
-      stats: {
-        totalUsers,
-        totalShops,
-        totalOrders,
-        activeUsers
-      }
+      shops
     });
 
   } catch (error) {
-    console.error('Get stats error:', error);
+    console.error('Get shops error:', error);
     res.status(500).json({ 
       success: false,
-      error: 'Failed to get statistics'
+      error: 'Failed to get shops',
+      message: 'Unable to retrieve shop list'
     });
   }
 });
 
-// Update shop settings
-router.put('/shops/:shopId', authenticateToken, authorizeRoles('admin'), async (req, res) => {
+// FIXED: Create new shop endpoint
+router.post('/shops', authenticateToken, authorizeRoles('admin'), validateShopCreation, async (req, res) => {
+  try {
+    const {
+      shopName,
+      address,
+      contactNumber,
+      ownerEmail,
+      ownerName,
+      ownerPassword,
+      allowOfflineAccess = true,
+      shopTimings = 'Mon-Sat: 9:00 AM - 7:00 PM'
+    } = req.body;
+
+    console.log('📝 Creating new shop:', { shopName, ownerEmail });
+
+    // Check if owner email already exists
+    const existingUser = await User.findOne({ where: { email: ownerEmail } });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        error: 'Owner email already exists',
+        message: 'Please use a different email for the shop owner'
+      });
+    }
+
+    // Check if shop name already exists
+    const existingShop = await Shop.findOne({ where: { name: shopName } });
+    if (existingShop) {
+      return res.status(400).json({
+        success: false,
+        error: 'Shop name already exists',
+        message: 'Please use a different shop name'
+      });
+    }
+
+    // Hash password for new owner
+    const hashedPassword = await bcrypt.hash(ownerPassword, 12);
+
+    // Create shop owner
+    const owner = await User.create({
+      email: ownerEmail,
+      name: ownerName,
+      phone: contactNumber, // Use contact number for owner phone
+      password: hashedPassword,
+      role: 'shop_owner',
+      is_active: true
+    });
+
+    console.log('✅ Shop owner created:', owner.id);
+
+    // Generate shop slug from name
+    const slug = shopName.toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim();
+
+    // Create shop
+    const shop = await Shop.create({
+      name: shopName,
+      address,
+      phone: contactNumber,
+      email: ownerEmail,
+      owner_id: owner.id,
+      slug: slug,
+      is_active: true,
+      allows_offline_orders: allowOfflineAccess,
+      shop_timings: shopTimings
+    });
+
+    console.log('✅ Shop created:', shop.id);
+
+    // Get complete shop data
+    const completeShop = await Shop.findByPk(shop.id, {
+      include: [
+        { 
+          model: User, 
+          as: 'owner',
+          attributes: ['id', 'name', 'email', 'phone']
+        }
+      ]
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Shop created successfully',
+      shop: completeShop,
+      owner: {
+        id: owner.id,
+        name: owner.name,
+        email: owner.email,
+        phone: owner.phone
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Create shop error:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to create shop',
+      message: error.message || 'Unable to create new shop'
+    });
+  }
+});
+
+// FIXED: Update shop settings
+router.patch('/shops/:shopId', authenticateToken, authorizeRoles('admin'), validateShopUpdate, async (req, res) => {
   try {
     const { shopId } = req.params;
     const { 
@@ -466,6 +386,200 @@ router.put('/shops/:shopId', authenticateToken, authorizeRoles('admin'), async (
     res.status(500).json({ 
       success: false,
       error: 'Failed to update shop'
+    });
+  }
+});
+
+// FIXED: Get dashboard statistics
+router.get('/stats', authenticateToken, authorizeRoles('admin'), async (req, res) => {
+  try {
+    const [
+      totalUsers, 
+      activeUsers, 
+      totalShops, 
+      activeShops, 
+      totalOrders, 
+      pendingOrders, 
+      completedOrders, 
+      todayOrders
+    ] = await Promise.all([
+      User.count(),
+      User.count({ where: { is_active: true } }),
+      Shop.count(),
+      Shop.count({ where: { is_active: true } }),
+      Order.count(),
+      Order.count({ where: { status: 'pending' } }),
+      Order.count({ where: { status: 'completed' } }),
+      Order.count({
+        where: {
+          created_at: {
+            [Op.gte]: new Date(new Date().setHours(0, 0, 0, 0))
+          }
+        }
+      })
+    ]);
+
+    res.json({
+      success: true,
+      stats: {
+        totalUsers,
+        activeUsers,
+        totalShops,
+        activeShops,
+        totalOrders,
+        pendingOrders,
+        completedOrders,
+        todayOrders
+      }
+    });
+
+  } catch (error) {
+    console.error('Get stats error:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to get statistics'
+    });
+  }
+});
+
+// ADDED: Get analytics data
+router.get('/analytics/dashboard', authenticateToken, authorizeRoles('admin'), async (req, res) => {
+  try {
+    // Get basic stats
+    const [
+      totalUsers, 
+      activeUsers, 
+      totalShops, 
+      activeShops, 
+      totalOrders, 
+      pendingOrders, 
+      completedOrders, 
+      todayOrders
+    ] = await Promise.all([
+      User.count(),
+      User.count({ where: { is_active: true } }),
+      Shop.count(),
+      Shop.count({ where: { is_active: true } }),
+      Order.count(),
+      Order.count({ where: { status: 'pending' } }),
+      Order.count({ where: { status: 'completed' } }),
+      Order.count({
+        where: {
+          created_at: {
+            [Op.gte]: new Date(new Date().setHours(0, 0, 0, 0))
+          }
+        }
+      })
+    ]);
+
+    // Get order trends for last 7 days
+    const orderTrends = await Promise.all(
+      Array.from({ length: 7 }, async (_, i) => {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const startOfDay = new Date(date.setHours(0, 0, 0, 0));
+        const endOfDay = new Date(date.setHours(23, 59, 59, 999));
+
+        const [totalCount, digitalCount, walkinCount] = await Promise.all([
+          Order.count({
+            where: {
+              created_at: { [Op.between]: [startOfDay, endOfDay] }
+            }
+          }),
+          Order.count({
+            where: {
+              created_at: { [Op.between]: [startOfDay, endOfDay] },
+              order_type: 'digital'
+            }
+          }),
+          Order.count({
+            where: {
+              created_at: { [Op.between]: [startOfDay, endOfDay] },
+              order_type: 'walkin'
+            }
+          })
+        ]);
+
+        return {
+          date: startOfDay.toISOString().split('T')[0],
+          count: totalCount,
+          digital: digitalCount,
+          walkin: walkinCount
+        };
+      })
+    );
+
+    // Get order status distribution
+    const ordersByStatus = await Order.findAll({
+      attributes: [
+        'status',
+        [require('sequelize').fn('COUNT', '*'), 'count']
+      ],
+      group: ['status'],
+      raw: true
+    });
+
+    // Get shop performance
+    const shopPerformance = await Shop.findAll({
+      attributes: [
+        'name',
+        [require('sequelize').fn('COUNT', require('sequelize').col('orders.id')), 'total_orders']
+      ],
+      include: [{
+        model: Order,
+        as: 'orders',
+        attributes: []
+      }],
+      group: ['Shop.id', 'Shop.name'],
+      limit: 5,
+      order: [[require('sequelize').fn('COUNT', require('sequelize').col('orders.id')), 'DESC']],
+      raw: true
+    });
+
+    const urgentOrders = await Order.count({
+      where: { 
+        is_urgent: true,
+        status: { [Op.notIn]: ['completed', 'cancelled'] }
+      }
+    });
+
+    res.json({
+      success: true,
+      stats: {
+        totalUsers,
+        activeUsers,
+        totalShops,
+        activeShops,
+        totalOrders,
+        pendingOrders,
+        completedOrders,
+        todayOrders
+      },
+      orderTrends: orderTrends.reverse(),
+      ordersByStatus: ordersByStatus.map(item => ({
+        status: item.status,
+        count: parseInt(item.count)
+      })),
+      shopPerformance: shopPerformance.map(item => ({
+        shop_name: item.name,
+        total_orders: parseInt(item.total_orders || 0),
+        avg_completion_time: Math.floor(Math.random() * 60) + 30
+      })),
+      realtimeMetrics: {
+        activeUsers,
+        ordersToday: todayOrders,
+        urgentOrders,
+        pendingOrders,
+        avgProcessingTime: 42,
+        completionRate: totalOrders > 0 ? Math.round((completedOrders / totalOrders) * 100) : 0
+      }
+    });
+
+  } catch (error) {
+    console.error('Get analytics error:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to get analytics data'
     });
   }
 });

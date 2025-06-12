@@ -1,3 +1,4 @@
+
 const express = require('express');
 const { Shop, User, Order } = require('../models');
 const { authenticateToken } = require('../middleware/auth');
@@ -6,8 +7,8 @@ const QRCode = require('qrcode');
 
 const router = express.Router();
 
-// Get shop settings for shop owner
-router.get('/settings', authenticateToken, async (req, res) => {
+// FIXED: Get my shop for shop owner
+router.get('/my-shop', authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== 'shop_owner') {
       return res.status(403).json({
@@ -40,35 +41,38 @@ router.get('/settings', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get shop settings error:', error);
+    console.error('Get my shop error:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to get shop settings'
+      error: 'Failed to get shop'
     });
   }
 });
 
 // Generate QR code for shop
-router.post('/qr-code', authenticateToken, async (req, res) => {
+router.post('/:shopId/generate-qr', authenticateToken, async (req, res) => {
   try {
-    if (req.user.role !== 'shop_owner') {
-      return res.status(403).json({
-        success: false,
-        error: 'Access denied. Shop owner role required.'
-      });
-    }
-
-    const shop = await Shop.findOne({ where: { owner_id: req.user.id } });
+    const { shopId } = req.params;
+    
+    // Check if user owns this shop or is admin
+    const shop = await Shop.findByPk(shopId);
     if (!shop) {
       return res.status(404).json({
         success: false,
-        error: 'No shop found for this user'
+        error: 'Shop not found'
+      });
+    }
+
+    if (req.user.role !== 'admin' && shop.owner_id !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied'
       });
     }
 
     // Generate QR code URL - pointing to customer order page
     const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    const qrUrl = `${baseUrl}/customer/order/${shop.slug || shop.id}`;
+    const qrUrl = `${baseUrl}/customer/order/${shop.slug}`;
     
     // Generate QR code as data URL
     const qrCodeDataUrl = await QRCode.toDataURL(qrUrl, {
@@ -87,11 +91,9 @@ router.post('/qr-code', authenticateToken, async (req, res) => {
 
     res.json({
       success: true,
-      qrCode: {
-        url: qrUrl,
-        dataUrl: qrCodeDataUrl,
-        shopName: shop.name
-      }
+      qrCodeUrl: qrCodeDataUrl,
+      shopUrl: qrUrl,
+      message: 'QR code generated successfully'
     });
 
   } catch (error) {
@@ -99,56 +101,6 @@ router.post('/qr-code', authenticateToken, async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to generate QR code'
-    });
-  }
-});
-
-// Get shop orders for dashboard
-router.get('/orders', authenticateToken, async (req, res) => {
-  try {
-    if (req.user.role !== 'shop_owner') {
-      return res.status(403).json({
-        success: false,
-        error: 'Access denied. Shop owner role required.'
-      });
-    }
-
-    const shop = await Shop.findOne({ where: { owner_id: req.user.id } });
-    if (!shop) {
-      return res.status(404).json({
-        success: false,
-        error: 'No shop found for this user'
-      });
-    }
-
-    const orders = await Order.findAll({
-      where: { shop_id: shop.id },
-      order: [['created_at', 'DESC']],
-      limit: 100
-    });
-
-    // Separate orders by type and status
-    const digitalOrders = orders.filter(order => order.order_type === 'uploaded-files');
-    const walkinOrders = orders.filter(order => order.order_type === 'walk-in');
-    const activeOrders = orders.filter(order => order.status !== 'completed');
-    const completedOrders = orders.filter(order => order.status === 'completed');
-
-    res.json({
-      success: true,
-      orders: {
-        all: orders,
-        digital: digitalOrders,
-        walkin: walkinOrders,
-        active: activeOrders,
-        completed: completedOrders
-      }
-    });
-
-  } catch (error) {
-    console.error('Get shop orders error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to get shop orders'
     });
   }
 });
@@ -166,9 +118,6 @@ router.get('/', async (req, res) => {
     
     const orderClause = [];
     switch (sort) {
-      case 'rating':
-        orderClause.push(['rating', 'DESC']);
-        break;
       case 'name':
         orderClause.push(['name', 'ASC']);
         break;
@@ -204,7 +153,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// ADDED: Get shop by slug for public access
+// Get shop by slug for public access
 router.get('/slug/:slug', async (req, res) => {
   try {
     const { slug } = req.params;

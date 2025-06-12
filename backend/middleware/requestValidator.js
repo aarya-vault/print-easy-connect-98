@@ -40,7 +40,7 @@ const validateEmailLogin = [
   validateRequest
 ];
 
-// Order creation validation - FIXED: Use correct enum values
+// FIXED: Order creation validation - Use correct enum values
 const validateOrderCreation = [
   body('shopId')
     .isUUID()
@@ -71,7 +71,7 @@ const validateProfileUpdate = [
   validateRequest
 ];
 
-// Shop creation validation - FIXED: Add proper validation
+// FIXED: Shop creation validation - Complete validation
 const validateShopCreation = [
   body('shopName')
     .isLength({ min: 2, max: 255 })
@@ -95,9 +95,46 @@ const validateShopCreation = [
     .isBoolean()
     .withMessage('Allow offline access must be a boolean'),
   body('shopTimings')
+    .isLength({ min: 5, max: 100 })
+    .withMessage('Shop timings must be between 5 and 100 characters'),
+  validateRequest
+];
+
+// ADDED: Shop update validation
+const validateShopUpdate = [
+  body('name')
+    .optional()
+    .isLength({ min: 2, max: 255 })
+    .withMessage('Shop name must be between 2 and 255 characters'),
+  body('address')
+    .optional()
+    .isLength({ min: 10, max: 500 })
+    .withMessage('Address must be between 10 and 500 characters'),
+  body('phone')
+    .optional()
+    .matches(/^\d{10}$/)
+    .withMessage('Contact number must be exactly 10 digits'),
+  body('shop_timings')
     .optional()
     .isLength({ min: 5, max: 100 })
     .withMessage('Shop timings must be between 5 and 100 characters'),
+  validateRequest
+];
+
+// ADDED: User update validation
+const validateUserUpdate = [
+  body('name')
+    .optional()
+    .isLength({ min: 2, max: 255 })
+    .withMessage('Name must be between 2 and 255 characters'),
+  body('email')
+    .optional()
+    .isEmail()
+    .withMessage('Valid email is required'),
+  body('is_active')
+    .optional()
+    .isBoolean()
+    .withMessage('Active status must be a boolean'),
   validateRequest
 ];
 
@@ -107,5 +144,7 @@ module.exports = {
   validateOrderCreation,
   validateProfileUpdate,
   validateShopCreation,
+  validateShopUpdate,
+  validateUserUpdate,
   validateRequest
 };
