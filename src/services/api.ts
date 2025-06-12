@@ -56,9 +56,11 @@ apiClient.interceptors.response.use(
 );
 
 const apiService = {
-  // Authentication - Returns typed data directly
+  // Authentication
   phoneLogin: async (phone: string): Promise<AuthResponse> => {
-    return apiClient.post('/auth/phone-login', { phone });
+    // Clean phone number - remove +91 prefix if present
+    const cleanPhone = phone.replace(/^\+91/, '').replace(/\D/g, '');
+    return apiClient.post('/auth/phone-login', { phone: cleanPhone });
   },
     
   emailLogin: async (email: string, password: string): Promise<AuthResponse> => {
@@ -73,7 +75,7 @@ const apiService = {
     return apiClient.patch('/auth/profile', { name });
   },
 
-  // Shop Operations - Returns typed data directly
+  // Shop Operations
   getShops: async (): Promise<{ shops: Shop[] }> => {
     return apiClient.get('/shops');
   },
@@ -90,10 +92,6 @@ const apiService = {
     return apiClient.get('/orders/shop');
   },
     
-  getShopOrderHistory: async (): Promise<{ orders: Order[] }> => {
-    return apiClient.get('/orders/shop/history');
-  },
-    
   updateOrderStatus: async (orderId: string, status: string): Promise<ApiResponse<Order>> => {
     return apiClient.patch(`/orders/${orderId}/status`, { status });
   },
@@ -106,13 +104,9 @@ const apiService = {
     return apiClient.post(`/shops/${shopId}/generate-qr`);
   },
 
-  // Customer Operations - Returns typed data directly
+  // Customer Operations
   getCustomerOrders: async (): Promise<{ orders: Order[] }> => {
     return apiClient.get('/orders/customer');
-  },
-    
-  getCustomerOrderHistory: async (): Promise<{ orders: Order[] }> => {
-    return apiClient.get('/orders/customer/history');
   },
     
   createOrder: async (orderData: CreateOrderRequest | FormData): Promise<ApiResponse<Order>> => {
@@ -132,7 +126,7 @@ const apiService = {
     return apiClient.get(`/orders/${orderId}`);
   },
 
-  // File Operations - Returns typed data directly
+  // File Operations
   uploadFiles: async (orderId: string, files: FormData): Promise<{ success: boolean; files: OrderFile[] }> => {
     return apiClient.post(`/files/upload/${orderId}`, files, {
       headers: { 'Content-Type': 'multipart/form-data' }
@@ -147,54 +141,13 @@ const apiService = {
     return apiClient.get(`/files/download/${fileId}`, { responseType: 'blob' });
   },
 
-  // Admin Operations - Returns typed data directly
+  // Admin Operations
   getAdminStats: async (): Promise<{ stats: AdminStats }> => {
     return apiClient.get('/admin/stats');
   },
     
   getAdminAnalytics: async (): Promise<AnalyticsData> => {
-    // Fallback to mock data if endpoint doesn't exist yet
-    try {
-      return apiClient.get('/admin/analytics/dashboard');
-    } catch (error) {
-      console.warn('Analytics endpoint not available, returning mock data');
-      return {
-        stats: {
-          totalUsers: 25,
-          activeUsers: 18,
-          totalShops: 8,
-          activeShops: 6,
-          totalOrders: 156,
-          pendingOrders: 12,
-          completedOrders: 132,
-          todayOrders: 8
-        },
-        orderTrends: [
-          { date: '2024-01-01', count: 10, digital: 6, walkin: 4 },
-          { date: '2024-01-02', count: 15, digital: 9, walkin: 6 },
-          { date: '2024-01-03', count: 12, digital: 7, walkin: 5 }
-        ],
-        ordersByStatus: [
-          { status: 'pending', count: 12 },
-          { status: 'in_progress', count: 8 },
-          { status: 'ready', count: 4 },
-          { status: 'completed', count: 132 }
-        ],
-        shopPerformance: [
-          { shop_name: 'Quick Print Solutions', total_orders: 65, avg_completion_time: 45 },
-          { shop_name: 'Digital Print Hub', total_orders: 52, avg_completion_time: 38 },
-          { shop_name: 'Express Copy Center', total_orders: 39, avg_completion_time: 52 }
-        ],
-        realtimeMetrics: {
-          activeUsers: 18,
-          ordersToday: 8,
-          urgentOrders: 3,
-          pendingOrders: 12,
-          avgProcessingTime: 42,
-          completionRate: 94.2
-        }
-      };
-    }
+    return apiClient.get('/admin/analytics/dashboard');
   },
     
   getAllUsers: async (params?: { search?: string; role?: string; page?: number; limit?: number }): Promise<{ users: User[] }> => {
@@ -225,7 +178,7 @@ const apiService = {
     return apiClient.delete(`/admin/users/${userId}`);
   },
 
-  // Order Chat - Returns typed data directly
+  // Order Chat
   getOrderMessages: async (orderId: string): Promise<ChatMessagesResponse> => {
     return apiClient.get(`/orders/${orderId}/messages`);
   },

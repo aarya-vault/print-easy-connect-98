@@ -54,12 +54,11 @@ router.get('/users', authenticateToken, authorizeRoles('admin'), async (req, res
   }
 });
 
-// FIXED: Create user endpoint
+// Create user endpoint
 router.post('/users', authenticateToken, authorizeRoles('admin'), async (req, res) => {
   try {
     const { name, email, phone, password, role = 'customer' } = req.body;
 
-    // Validate required fields
     if (!name || !phone) {
       return res.status(400).json({
         success: false,
@@ -67,7 +66,6 @@ router.post('/users', authenticateToken, authorizeRoles('admin'), async (req, re
       });
     }
 
-    // Check if user already exists
     const existingUser = await User.findOne({ 
       where: { 
         [Op.or]: [
@@ -84,7 +82,6 @@ router.post('/users', authenticateToken, authorizeRoles('admin'), async (req, re
       });
     }
 
-    // Hash password if provided
     let hashedPassword = null;
     if (password) {
       hashedPassword = await bcrypt.hash(password, 12);
@@ -117,7 +114,7 @@ router.post('/users', authenticateToken, authorizeRoles('admin'), async (req, re
   }
 });
 
-// FIXED: Update user endpoint
+// Update user endpoint
 router.patch('/users/:userId', authenticateToken, authorizeRoles('admin'), validateUserUpdate, async (req, res) => {
   try {
     const { userId } = req.params;
@@ -155,7 +152,7 @@ router.patch('/users/:userId', authenticateToken, authorizeRoles('admin'), valid
   }
 });
 
-// FIXED: Delete user endpoint
+// Delete user endpoint
 router.delete('/users/:userId', authenticateToken, authorizeRoles('admin'), async (req, res) => {
   try {
     const { userId } = req.params;
@@ -214,7 +211,7 @@ router.get('/shops', authenticateToken, authorizeRoles('admin'), async (req, res
   }
 });
 
-// FIXED: Create new shop endpoint
+// Create new shop endpoint - Fixed field mapping
 router.post('/shops', authenticateToken, authorizeRoles('admin'), validateShopCreation, async (req, res) => {
   try {
     const {
@@ -225,7 +222,8 @@ router.post('/shops', authenticateToken, authorizeRoles('admin'), validateShopCr
       ownerName,
       ownerPassword,
       allowOfflineAccess = true,
-      shopTimings = 'Mon-Sat: 9:00 AM - 7:00 PM'
+      shopTimings = 'Mon-Sat: 9:00 AM - 7:00 PM',
+      description = ''
     } = req.body;
 
     console.log('📝 Creating new shop:', { shopName, ownerEmail });
@@ -257,7 +255,7 @@ router.post('/shops', authenticateToken, authorizeRoles('admin'), validateShopCr
     const owner = await User.create({
       email: ownerEmail,
       name: ownerName,
-      phone: contactNumber, // Use contact number for owner phone
+      phone: contactNumber,
       password: hashedPassword,
       role: 'shop_owner',
       is_active: true
@@ -282,7 +280,8 @@ router.post('/shops', authenticateToken, authorizeRoles('admin'), validateShopCr
       slug: slug,
       is_active: true,
       allows_offline_orders: allowOfflineAccess,
-      shop_timings: shopTimings
+      shop_timings: shopTimings,
+      description: description || null
     });
 
     console.log('✅ Shop created:', shop.id);
@@ -320,7 +319,7 @@ router.post('/shops', authenticateToken, authorizeRoles('admin'), validateShopCr
   }
 });
 
-// FIXED: Update shop settings
+// Update shop settings - Fixed to handle all fields properly
 router.patch('/shops/:shopId', authenticateToken, authorizeRoles('admin'), validateShopUpdate, async (req, res) => {
   try {
     const { shopId } = req.params;
@@ -390,7 +389,7 @@ router.patch('/shops/:shopId', authenticateToken, authorizeRoles('admin'), valid
   }
 });
 
-// FIXED: Get dashboard statistics
+// Get dashboard statistics
 router.get('/stats', authenticateToken, authorizeRoles('admin'), async (req, res) => {
   try {
     const [
@@ -442,7 +441,7 @@ router.get('/stats', authenticateToken, authorizeRoles('admin'), async (req, res
   }
 });
 
-// ADDED: Get analytics data
+// FIXED: Get analytics data with proper error handling
 router.get('/analytics/dashboard', authenticateToken, authorizeRoles('admin'), async (req, res) => {
   try {
     // Get basic stats
@@ -579,7 +578,8 @@ router.get('/analytics/dashboard', authenticateToken, authorizeRoles('admin'), a
     console.error('Get analytics error:', error);
     res.status(500).json({ 
       success: false,
-      error: 'Failed to get analytics data'
+      error: 'Failed to get analytics data',
+      message: error.message
     });
   }
 });

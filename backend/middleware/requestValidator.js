@@ -16,15 +16,23 @@ const validateRequest = (req, res, next) => {
   next();
 };
 
-// FIXED: Phone login validation - accept exactly 10 digits
+// Phone login validation - strip +91 prefix and accept exactly 10 digits
 const validatePhoneLogin = [
   body('phone')
     .isString()
     .withMessage('Phone number must be a string')
-    .isLength({ min: 10, max: 10 })
-    .withMessage('Phone number must be exactly 10 digits')
-    .matches(/^\d{10}$/)
-    .withMessage('Phone number must contain only 10 digits'),
+    .custom((value) => {
+      // Remove +91 prefix if present
+      const cleanPhone = value.replace(/^\+91/, '').replace(/\D/g, '');
+      if (cleanPhone.length !== 10) {
+        throw new Error('Phone number must be exactly 10 digits');
+      }
+      return true;
+    })
+    .customSanitizer((value) => {
+      // Clean and return 10-digit phone
+      return value.replace(/^\+91/, '').replace(/\D/g, '');
+    }),
   validateRequest
 ];
 
@@ -40,7 +48,7 @@ const validateEmailLogin = [
   validateRequest
 ];
 
-// FIXED: Order creation validation - Use correct enum values
+// Order creation validation - Use correct enum values
 const validateOrderCreation = [
   body('shopId')
     .isUUID()
@@ -71,7 +79,7 @@ const validateProfileUpdate = [
   validateRequest
 ];
 
-// FIXED: Shop creation validation - Complete validation
+// Shop creation validation - Fixed field names to match frontend
 const validateShopCreation = [
   body('shopName')
     .isLength({ min: 2, max: 255 })
@@ -95,12 +103,12 @@ const validateShopCreation = [
     .isBoolean()
     .withMessage('Allow offline access must be a boolean'),
   body('shopTimings')
-    .isLength({ min: 5, max: 100 })
-    .withMessage('Shop timings must be between 5 and 100 characters'),
+    .isLength({ min: 5, max: 200 })
+    .withMessage('Shop timings must be between 5 and 200 characters'),
   validateRequest
 ];
 
-// ADDED: Shop update validation
+// Shop update validation
 const validateShopUpdate = [
   body('name')
     .optional()
@@ -116,12 +124,20 @@ const validateShopUpdate = [
     .withMessage('Contact number must be exactly 10 digits'),
   body('shop_timings')
     .optional()
-    .isLength({ min: 5, max: 100 })
-    .withMessage('Shop timings must be between 5 and 100 characters'),
+    .isLength({ min: 5, max: 200 })
+    .withMessage('Shop timings must be between 5 and 200 characters'),
+  body('is_active')
+    .optional()
+    .isBoolean()
+    .withMessage('Active status must be a boolean'),
+  body('allows_offline_orders')
+    .optional()
+    .isBoolean()
+    .withMessage('Allows offline orders must be a boolean'),
   validateRequest
 ];
 
-// ADDED: User update validation
+// User update validation
 const validateUserUpdate = [
   body('name')
     .optional()
