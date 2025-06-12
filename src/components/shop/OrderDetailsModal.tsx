@@ -1,219 +1,271 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { 
   Download, 
   Eye, 
-  Printer, 
-  FileText, 
   Phone, 
-  Mail, 
-  Calendar,
-  Upload,
-  UserCheck,
-  Zap,
-  Bell,
+  MessageCircle, 
+  Clock, 
+  User, 
+  FileText,
+  AlertTriangle,
   CheckCircle,
-  Clock,
-  Package,
-  X
+  Package
 } from 'lucide-react';
-
-interface OrderFile {
-  id: string;
-  original_name: string;
-  file_size: number;
-  mime_type: string;
-  file_path: string;
-}
-
-interface ApiShopOrder {
-  id: string;
-  customer: {
-    name: string;
-    phone: string;
-  };
-  order_type: 'uploaded-files' | 'walk-in';
-  description: string;
-  status: 'received' | 'started' | 'completed';
-  is_urgent: boolean;
-  created_at: string;
-  files?: OrderFile[];
-}
+import { toast } from 'sonner';
+import { Order } from '@/types/api';
 
 interface OrderDetailsModalProps {
-  order: ApiShopOrder | null;
+  order: Order;
   isOpen: boolean;
   onClose: () => void;
+  onStatusUpdate: (orderId: string, newStatus: string) => Promise<void>;
+  onUrgencyToggle: (orderId: string) => Promise<void>;
+  onCallCustomer: (phone: string) => void;
+  onOpenChat: () => void;
+  onFileAction: (action: 'download' | 'preview', fileId: string, filename?: string) => void;
 }
 
 const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   order,
   isOpen,
-  onClose
+  onClose,
+  onStatusUpdate,
+  onUrgencyToggle,
+  onCallCustomer,
+  onOpenChat,
+  onFileAction
 }) => {
-  if (!order) return null;
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const handleStatusUpdate = async (newStatus: string) => {
+    if (isUpdating) return;
+    
+    setIsUpdating(true);
+    try {
+      await onStatusUpdate(order.id, newStatus);
+      toast.success('Order status updated successfully');
+    } catch (error) {
+      toast.error('Failed to update order status');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleUrgencyToggle = async () => {
+    if (isUpdating) return;
+    
+    setIsUpdating(true);
+    try {
+      await onUrgencyToggle(order.id);
+      toast.success('Order urgency updated');
+    } catch (error) {
+      toast.error('Failed to update urgency');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'received': return 'bg-amber-100 text-amber-800 border-amber-300';
-      case 'started': return 'bg-blue-100 text-blue-800 border-blue-300';
-      case 'completed': return 'bg-green-100 text-green-800 border-green-300';
-      default: return 'bg-gray-100 text-gray-800 border-gray-300';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'in_progress': return 'bg-blue-100 text-blue-800';
+      case 'ready': return 'bg-green-100 text-green-800';
+      case 'completed': return 'bg-gray-100 text-gray-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'received': return <Bell className="w-4 h-4" />;
-      case 'started': return <Clock className="w-4 h-4" />;
-      case 'completed': return <CheckCircle className="w-4 h-4" />;
-      default: return <Clock className="w-4 h-4" />;
+      case 'pending': return Clock;
+      case 'in_progress': return Package;
+      case 'ready': return CheckCircle;
+      case 'completed': return CheckCircle;
+      case 'cancelled': return AlertTriangle;
+      default: return Clock;
     }
   };
 
-  const formatDate = (dateString: string) => {
-    try {
-      return new Date(dateString).toLocaleString();
-    } catch (error) {
-      return 'Invalid date';
-    }
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
+  const StatusIcon = getStatusIcon(order.status);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
-        <DialogHeader className="space-y-3">
-          <DialogTitle className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 text-left">
-            <span className="text-lg sm:text-xl">Order #{order.id}</span>
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge className={`text-xs sm:text-sm ${getStatusColor(order.status)} border-2`}>
-                {getStatusIcon(order.status)}
-                <span className="ml-2 capitalize">{order.status}</span>
-              </Badge>
-              {order.is_urgent && (
-                <Badge className="bg-red-100 text-red-800 border-red-300 text-xs sm:text-sm">
-                  <Zap className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                  URGENT
-                </Badge>
-              )}
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <StatusIcon className="w-6 h-6" />
+              <div>
+                <span className="text-xl font-bold">Order #{order.id.slice(0, 8)}</span>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge className={getStatusColor(order.status)}>
+                    {order.status.replace('_', ' ').toUpperCase()}
+                  </Badge>
+                  <Badge variant={order.order_type === 'digital' ? 'default' : 'secondary'}>
+                    {order.order_type === 'digital' ? 'Digital Files' : 'Walk-in Order'}
+                  </Badge>
+                  {order.is_urgent && (
+                    <Badge variant="destructive">URGENT</Badge>
+                  )}
+                </div>
+              </div>
             </div>
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 sm:space-y-6">
+        <div className="space-y-6">
           {/* Customer Information */}
-          <Card>
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
-                <h3 className="font-semibold text-base sm:text-lg">Customer Information</h3>
-                <Button
-                  size="sm"
-                  onClick={() => window.open(`tel:${order.customer?.phone || ''}`)}
-                  className="bg-green-500 hover:bg-green-600 text-white w-full sm:w-auto"
-                >
-                  <Phone className="w-4 h-4 mr-2" />
-                  Call Customer
-                </Button>
+          <div className="space-y-3">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <User className="w-5 h-5" />
+              Customer Information
+            </h3>
+            <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="font-medium">Name:</span>
+                <span>{order.customer_name}</span>
               </div>
-              <div className="space-y-3 sm:space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-medium text-neutral-900 truncate">{order.customer?.name || 'Unknown Customer'}</p>
-                    <p className="text-sm text-neutral-600">Customer Name</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-medium text-neutral-900">{order.customer?.phone || 'No phone'}</p>
-                    <p className="text-sm text-neutral-600">Phone Number</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-medium text-neutral-900 text-sm sm:text-base">{formatDate(order.created_at)}</p>
-                    <p className="text-sm text-neutral-600">Order Created</p>
-                  </div>
-                </div>
+              <div className="flex justify-between items-center">
+                <span className="font-medium">Phone:</span>
+                <span className="font-mono">{order.customer_phone}</span>
               </div>
-            </CardContent>
-          </Card>
+              <div className="flex justify-between items-center">
+                <span className="font-medium">Order Date:</span>
+                <span>{new Date(order.created_at).toLocaleDateString()}</span>
+              </div>
+            </div>
+          </div>
 
-          {/* Order Information */}
-          <Card>
-            <CardContent className="p-4 sm:p-6">
-              <h3 className="font-semibold text-base sm:text-lg mb-4">Order Information</h3>
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <Badge className={`text-xs sm:text-sm ${
-                    order.order_type === 'uploaded-files' ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-purple-100 text-purple-700 border-purple-300'
-                  }`}>
-                    {order.order_type === 'uploaded-files' ? (
-                      <><Upload className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />UPLOADED FILES</>
-                    ) : (
-                      <><UserCheck className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />WALK-IN</>
-                    )}
-                  </Badge>
-                </div>
+          {/* Order Details */}
+          <div className="space-y-3">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Order Details
+            </h3>
+            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+              {order.notes && (
                 <div>
-                  <p className="font-medium text-neutral-900 mb-2">Description</p>
-                  <p className="text-neutral-700 text-sm sm:text-base leading-relaxed">{order.description || 'No description provided'}</p>
+                  <span className="font-medium">Notes/Instructions:</span>
+                  <p className="mt-1 text-gray-700 whitespace-pre-wrap">{order.notes}</p>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              )}
+              
+              {order.pages && (
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">Pages:</span>
+                  <span>{order.pages}</span>
+                </div>
+              )}
+              
+              {order.copies && (
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">Copies:</span>
+                  <span>{order.copies}</span>
+                </div>
+              )}
+              
+              {order.color !== undefined && (
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">Color:</span>
+                  <span>{order.color ? 'Yes' : 'No'}</span>
+                </div>
+              )}
+            </div>
+          </div>
 
-          {/* Files Section - Only show for uploaded files */}
-          {order.order_type === 'uploaded-files' && order.files && order.files.length > 0 && (
-            <Card>
-              <CardContent className="p-4 sm:p-6">
-                <h3 className="font-semibold text-base sm:text-lg mb-4">Files ({order.files.length})</h3>
-                <div className="space-y-3">
-                  {order.files.map((file, index) => (
-                    <div key={file.id || index} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-neutral-50 rounded-lg border border-neutral-200 gap-3">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-neutral-600 flex-shrink-0" />
-                        <div className="min-w-0">
-                          <p className="font-medium text-neutral-900 text-sm sm:text-base truncate">{file.original_name}</p>
-                          <p className="text-xs sm:text-sm text-neutral-500">{formatFileSize(file.file_size)} • {file.mime_type}</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-2 flex-shrink-0">
-                        <Button size="sm" variant="outline" className="flex-1 sm:flex-none">
-                          <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
-                          <span className="ml-1 sm:hidden">View</span>
-                        </Button>
-                        <Button size="sm" variant="outline" className="flex-1 sm:flex-none">
-                          <Download className="w-3 h-3 sm:w-4 sm:h-4" />
-                          <span className="ml-1 sm:hidden">Download</span>
-                        </Button>
+          {/* Files Section - Only for digital orders */}
+          {order.order_type === 'digital' && order.files && order.files.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold">Uploaded Files</h3>
+              <div className="space-y-2">
+                {order.files.map((file) => (
+                  <div key={file.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <FileText className="w-5 h-5 text-gray-500" />
+                      <div>
+                        <p className="font-medium">{file.original_name}</p>
+                        <p className="text-sm text-gray-500">
+                          {(file.file_size / (1024 * 1024)).toFixed(2)} MB
+                        </p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => onFileAction('preview', file.id, file.original_name)}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => onFileAction('download', file.id, file.original_name)}
+                      >
+                        <Download className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
+
+          <Separator />
+
+          {/* Action Buttons */}
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                onClick={() => onCallCustomer(order.customer_phone)}
+                className="bg-green-500 hover:bg-green-600 text-white"
+              >
+                <Phone className="w-4 h-4 mr-2" />
+                Call Customer
+              </Button>
+              
+              <Button
+                onClick={onOpenChat}
+                variant="outline"
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Open Chat
+              </Button>
+              
+              <Button
+                onClick={handleUrgencyToggle}
+                variant={order.is_urgent ? "destructive" : "outline"}
+                disabled={isUpdating}
+              >
+                <AlertTriangle className="w-4 h-4 mr-2" />
+                {order.is_urgent ? 'Remove Urgent' : 'Mark Urgent'}
+              </Button>
+            </div>
+
+            {/* Status Update Buttons */}
+            <div className="space-y-2">
+              <h4 className="font-medium">Update Status:</h4>
+              <div className="flex flex-wrap gap-2">
+                {['pending', 'in_progress', 'ready', 'completed'].map((status) => (
+                  <Button
+                    key={status}
+                    size="sm"
+                    variant={order.status === status ? "default" : "outline"}
+                    onClick={() => handleStatusUpdate(status)}
+                    disabled={isUpdating || order.status === status}
+                  >
+                    {status.replace('_', ' ').toUpperCase()}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
@@ -221,3 +273,4 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
 };
 
 export default OrderDetailsModal;
+export type { OrderDetailsModalProps };
