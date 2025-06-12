@@ -40,7 +40,7 @@ apiClient.interceptors.request.use((config) => {
 // Response interceptor for error handling and data extraction
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
-    // Always return the data payload, not the full response
+    // For successful responses, return the data directly
     return response.data;
   },
   (error) => {
@@ -51,6 +51,7 @@ apiClient.interceptors.response.use(
       window.location.href = '/login';
     }
     
+    // Return the error response data or the error itself
     throw error.response?.data || error;
   }
 );
@@ -58,7 +59,6 @@ apiClient.interceptors.response.use(
 const apiService = {
   // Authentication
   phoneLogin: async (phone: string): Promise<AuthResponse> => {
-    // Clean phone number - remove +91 prefix if present
     const cleanPhone = phone.replace(/^\+91/, '').replace(/\D/g, '');
     return apiClient.post('/auth/phone-login', { phone: cleanPhone });
   },
@@ -89,7 +89,8 @@ const apiService = {
   },
     
   getShopOrders: async (): Promise<{ orders: Order[] }> => {
-    return apiClient.get('/orders/shop');
+    const response = await apiClient.get('/orders/shop');
+    return { orders: response.data?.orders || response.orders || [] };
   },
     
   updateOrderStatus: async (orderId: string, status: string): Promise<ApiResponse<Order>> => {
@@ -106,7 +107,8 @@ const apiService = {
 
   // Customer Operations
   getCustomerOrders: async (): Promise<{ orders: Order[] }> => {
-    return apiClient.get('/orders/customer');
+    const response = await apiClient.get('/orders/customer');
+    return { orders: response.data?.orders || response.orders || [] };
   },
     
   createOrder: async (orderData: CreateOrderRequest | FormData): Promise<ApiResponse<Order>> => {

@@ -14,7 +14,6 @@ router.post('/phone-login', async (req, res) => {
 
     console.log('📱 Phone login attempt:', phone);
 
-    // Enhanced phone validation
     if (!phone) {
       return res.status(400).json({
         success: false,
@@ -25,14 +24,12 @@ router.post('/phone-login', async (req, res) => {
     // Clean phone number and validate format
     let cleanPhone = phone.replace(/\D/g, '');
     
-    // Handle different phone formats
     if (cleanPhone.startsWith('91') && cleanPhone.length === 12) {
-      cleanPhone = cleanPhone.substring(2); // Remove country code
+      cleanPhone = cleanPhone.substring(2);
     } else if (cleanPhone.startsWith('0') && cleanPhone.length === 11) {
-      cleanPhone = cleanPhone.substring(1); // Remove leading zero
+      cleanPhone = cleanPhone.substring(1);
     }
     
-    // Validate final phone number length
     if (cleanPhone.length !== 10) {
       return res.status(400).json({
         success: false,
@@ -42,12 +39,10 @@ router.post('/phone-login', async (req, res) => {
 
     console.log('📱 Cleaned phone number:', cleanPhone);
     
-    // Find or create user
     let user = await User.findOne({ where: { phone: cleanPhone } });
     let isNewUser = false;
 
     if (!user) {
-      // Create new customer
       user = await User.create({
         phone: cleanPhone,
         name: `Customer ${cleanPhone.slice(-4)}`,
@@ -60,14 +55,12 @@ router.post('/phone-login', async (req, res) => {
       console.log('✅ Existing customer found:', user.id);
     }
 
-    // Generate JWT token
     const token = jwt.encode({
       userId: user.id,
       role: user.role,
-      exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) // 7 days
+      exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60)
     }, process.env.JWT_SECRET || 'your-secret-key');
 
-    // Get shop info if user is shop owner
     let shopInfo = null;
     if (user.role === 'shop_owner') {
       const shop = await Shop.findOne({ where: { owner_id: user.id } });
@@ -105,7 +98,7 @@ router.post('/phone-login', async (req, res) => {
   }
 });
 
-// Email-based login
+// Email-based login - FIXED with proper password verification
 router.post('/email-login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -125,6 +118,13 @@ router.post('/email-login', async (req, res) => {
       });
     }
 
+    if (!user.password) {
+      return res.status(401).json({
+        success: false,
+        error: 'Password not set for this account'
+      });
+    }
+
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
       return res.status(401).json({
@@ -140,21 +140,20 @@ router.post('/email-login', async (req, res) => {
       });
     }
 
-    // Generate JWT token
     const token = jwt.encode({
       userId: user.id,
       role: user.role,
-      exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) // 7 days
+      exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60)
     }, process.env.JWT_SECRET || 'your-secret-key');
 
-    // Get shop info if user is shop owner
     let shopInfo = null;
     if (user.role === 'shop_owner') {
       const shop = await Shop.findOne({ where: { owner_id: user.id } });
       if (shop) {
         shopInfo = {
           shop_id: shop.id,
-          shop_name: shop.name
+          shop_name: shop.name,
+          shop_slug: shop.slug
         };
       }
     }
@@ -196,14 +195,14 @@ router.get('/me', authenticateToken, async (req, res) => {
       });
     }
 
-    // Get shop info if user is shop owner
     let shopInfo = null;
     if (user.role === 'shop_owner') {
       const shop = await Shop.findOne({ where: { owner_id: user.id } });
       if (shop) {
         shopInfo = {
           shop_id: shop.id,
-          shop_name: shop.name
+          shop_name: shop.name,
+          shop_slug: shop.slug
         };
       }
     }
@@ -231,7 +230,7 @@ router.get('/me', authenticateToken, async (req, res) => {
 });
 
 // Update user profile
-router.patch('/update-profile', authenticateToken, async (req, res) => {
+router.patch('/profile', authenticateToken, async (req, res) => {
   try {
     const { name } = req.body;
 
@@ -242,14 +241,26 @@ router.patch('/update-profile', authenticateToken, async (req, res) => {
       });
     }
 
-    await User.update(
+    const [updatedRows] = await User.update(
       { name: name.trim() },
       { where: { id: req.user.id } }
     );
 
+    if (updatedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    const updatedUser = await User.findByPk(req.user.id, {
+      attributes: { exclude: ['password'] }
+    });
+
     res.json({
       success: true,
-      message: 'Profile updated successfully'
+      message: 'Profile updated successfully',
+      user: updatedUser
     });
 
   } catch (error) {
@@ -257,22 +268,6 @@ router.patch('/update-profile', authenticateToken, async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to update profile'
-    });
-  }
-});
-
-// Logout
-router.post('/logout', authenticateToken, async (req, res) => {
-  try {
-    res.json({
-      success: true,
-      message: 'Logged out successfully'
-    });
-  } catch (error) {
-    console.error('Logout error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to logout'
     });
   }
 });
