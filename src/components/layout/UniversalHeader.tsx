@@ -9,26 +9,42 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { User, LogOut, Settings, ArrowLeft, Home } from 'lucide-react';
+import { User, LogOut, Settings, ArrowLeft, Home, LucideIcon } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { User as UserType } from '@/types/api';
+
+interface UserMenuItem {
+  label: string;
+  icon: LucideIcon;
+  onClick: () => void;
+}
 
 interface UniversalHeaderProps {
   title: string;
   showBackButton?: boolean;
   backTo?: string;
   showHomeButton?: boolean;
+  user?: UserType;
+  onLogout?: () => void;
+  userMenuItems?: UserMenuItem[];
 }
 
 const UniversalHeader: React.FC<UniversalHeaderProps> = ({
   title,
   showBackButton = false,
   backTo,
-  showHomeButton = false
+  showHomeButton = false,
+  user: propUser,
+  onLogout: propOnLogout,
+  userMenuItems = []
 }) => {
-  const { user, logout } = useAuth();
+  const { user: contextUser, logout: contextLogout } = useAuth();
   const navigate = useNavigate();
+
+  // Use prop values or fallback to context
+  const user = propUser || contextUser;
+  const logout = propOnLogout || contextLogout;
 
   const handleLogout = () => {
     logout();
@@ -116,6 +132,13 @@ const UniversalHeader: React.FC<UniversalHeaderProps> = ({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
+                  {userMenuItems.map((item, index) => (
+                    <DropdownMenuItem key={index} onClick={item.onClick} className="cursor-pointer">
+                      <item.icon className="w-4 h-4 mr-2" />
+                      {item.label}
+                    </DropdownMenuItem>
+                  ))}
+                  {userMenuItems.length > 0 && <DropdownMenuSeparator />}
                   <DropdownMenuItem onClick={handleProfile} className="cursor-pointer">
                     <Settings className="w-4 h-4 mr-2" />
                     Profile Settings
