@@ -5,51 +5,28 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { QrCode, Download, ExternalLink, Copy } from 'lucide-react';
 import { toast } from 'sonner';
-import { Shop } from '@/types/api';
 
 interface QRCodeModalProps {
-  shop: Shop;
   isOpen: boolean;
   onClose: () => void;
+  shopName: string;
 }
 
 const QRCodeModal: React.FC<QRCodeModalProps> = ({
-  shop,
   isOpen,
-  onClose
+  onClose,
+  shopName
 }) => {
-  // Generate proper URLs
-  const baseUrl = window.location.origin;
-  const uploadUrl = `${baseUrl}/shop/${shop.slug}`;
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(uploadUrl)}`;
+  const uploadUrl = `https://printeasy.com/shop/${shopName.toLowerCase().replace(/\s+/g, '-')}/upload`;
   
-  const handleDownloadQR = async () => {
-    try {
-      const response = await fetch(qrCodeUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${shop.slug}-qr-code.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      toast.success('QR Code downloaded successfully');
-    } catch (error) {
-      console.error('Download failed:', error);
-      toast.error('Failed to download QR code');
-    }
+  const handleDownloadQR = () => {
+    // Simulate QR download
+    toast.success('QR Code downloaded successfully');
   };
 
-  const handleCopyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(uploadUrl);
-      toast.success('Upload link copied to clipboard');
-    } catch (error) {
-      console.error('Copy failed:', error);
-      toast.error('Failed to copy link');
-    }
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(uploadUrl);
+    toast.success('Upload link copied to clipboard');
   };
 
   const handleOpenUploadPage = () => {
@@ -67,40 +44,15 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({
           {/* QR Code Section */}
           <Card>
             <CardContent className="p-4 sm:p-6 text-center">
-              <h3 className="font-semibold text-base sm:text-lg mb-4">QR Code for {shop.name}</h3>
+              <h3 className="font-semibold text-base sm:text-lg mb-4">QR Code for {shopName}</h3>
               
-              {/* Real QR Code */}
-              <div className="bg-white p-4 rounded-lg border-2 border-neutral-200 inline-block mb-4">
-                <img 
-                  src={qrCodeUrl}
-                  alt={`QR Code for ${shop.name}`}
-                  className="w-48 h-48 sm:w-64 sm:h-64"
-                  onError={(e) => {
-                    // Fallback if QR service fails
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                    const parent = target.parentElement;
-                    if (parent) {
-                      parent.innerHTML = `
-                        <div class="w-48 h-48 sm:w-64 sm:h-64 bg-gray-100 rounded-lg flex items-center justify-center">
-                          <div class="text-center">
-                            <div class="text-6xl mb-2">📱</div>
-                            <p class="text-sm text-gray-600">QR Code Preview</p>
-                          </div>
-                        </div>
-                      `;
-                    }
-                  }}
-                />
+              {/* QR Code Placeholder */}
+              <div className="bg-gray-100 h-48 sm:h-64 rounded-lg flex items-center justify-center mb-4">
+                <QrCode className="w-24 h-24 sm:w-32 sm:h-32 text-gray-400" />
               </div>
               
               <p className="text-sm text-gray-600 mb-4">
                 Customers can scan this QR code to access your upload page directly
-                {shop.allows_offline_orders && (
-                  <span className="block mt-1 text-xs text-blue-600">
-                    (Walk-in orders enabled)
-                  </span>
-                )}
               </p>
               
               <Button 
@@ -140,10 +92,6 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({
                   Open Upload Page
                 </Button>
               </div>
-              
-              <p className="text-xs text-gray-500 mt-3">
-                Share this link with customers or print the QR code for easy access
-              </p>
             </CardContent>
           </Card>
         </div>
@@ -153,4 +101,3 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({
 };
 
 export default QRCodeModal;
-export type { QRCodeModalProps };

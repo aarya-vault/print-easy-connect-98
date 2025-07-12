@@ -1,10 +1,26 @@
 
-// Order-specific types that extend the core API types
-import { Order as BaseOrder, OrderFile as BaseOrderFile } from './api';
-
-// Use API types directly - no more legacy interfaces
-export type ShopOrder = BaseOrder;
-export type OrderFile = BaseOrderFile;
-
-// Removed ApiShopOrder completely - use Order from api.ts instead
-// All order-related components should now use Order from './api'
+export interface ShopOrder {
+  id: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail?: string;
+  orderType: 'uploaded-files' | 'walk-in';
+  status: 'received' | 'started' | 'completed';
+  isUrgent: boolean;
+  description: string;
+  createdAt: Date;
+  files?: {
+    id: string;
+    name: string;
+    type: string;
+    size: number;
+    url: string;
+  }[];
+  instructions?: string;
+  services: string[];
+  pages?: number;
+  copies?: number;
+  paperType?: string;
+  binding?: string;
+  color?: boolean;
+}

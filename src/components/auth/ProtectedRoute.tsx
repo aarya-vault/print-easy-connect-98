@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useAuth, UserRole } from '@/contexts/AuthContext';
 
 interface ProtectedRouteProps {
@@ -15,13 +15,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   redirectTo = '/login' 
 }) => {
   const { user, isLoading } = useAuth();
-  const location = useLocation();
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-golden-50 via-white to-golden-100">
         <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-r from-golden-500 to-golden-600 rounded-xl mx-auto mb-4 flex items-center justify-center shadow-lg animate-pulse">
+          <div className="w-16 h-16 bg-gradient-golden rounded-xl mx-auto mb-4 flex items-center justify-center shadow-lg animate-pulse">
             <span className="text-2xl font-bold text-white">PE</span>
           </div>
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-golden-500 mx-auto"></div>
@@ -32,12 +31,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (!user) {
-    return <Navigate to={redirectTo} state={{ from: location }} replace />;
+    return <Navigate to="/login" replace />;
   }
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
     // Redirect based on user role
-    const roleRedirects: Record<UserRole, string> = {
+    const roleRedirects = {
       customer: '/customer/dashboard',
       shop_owner: '/shop/dashboard',
       admin: '/admin/dashboard'

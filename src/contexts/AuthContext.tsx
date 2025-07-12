@@ -1,19 +1,26 @@
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import apiService from '@/services/api';
-import { User, UserRole } from '@/types/api';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+
+export type UserRole = 'customer' | 'shop_owner' | 'admin';
+
+export interface User {
+  id: string;
+  phone: string;
+  role: UserRole;
+  name?: string;
+  email?: string;
+  shopId?: string; // For shop owners
+  needsNameUpdate?: boolean; // Flag for new users who need to provide name
+}
 
 interface AuthContextType {
   user: User | null;
-  loading: boolean;
-  isLoading: boolean; // Alias for compatibility
-  token: string | null;
-  login: (phone: string) => Promise<{ isNewUser?: boolean }>;
-  emailLogin: (email: string, password: string) => Promise<void>;
-  loginWithEmail: (email: string, password: string) => Promise<void>; // Alias for compatibility
+  isLoading: boolean;
+  login: (phone: string) => Promise<void>;
+  loginWithEmail: (email: string, password: string) => Promise<void>;
   logout: () => void;
-  updateProfile: (name: string) => Promise<void>;
-  updateUserName: (name: string) => Promise<void>; // Alias for compatibility
+  updateUser: (userData: Partial<User>) => void;
+  updateUserName: (name: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,118 +33,138 @@ export const useAuth = () => {
   return context;
 };
 
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('authToken'));
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const initAuth = async () => {
-      const storedToken = localStorage.getItem('authToken');
-      if (storedToken) {
-        try {
-          const response = await apiService.getCurrentUser();
-          setUser(response.user);
-          setToken(storedToken);
-        } catch (error) {
-          console.error('Failed to get current user:', error);
-          localStorage.removeItem('authToken');
-          setToken(null);
-        }
+    // Check for existing session on app load
+    const storedUser = localStorage.getItem('printeasy_user');
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error('Error parsing stored user:', error);
+        localStorage.removeItem('printeasy_user');
       }
-      setLoading(false);
-    };
-
-    initAuth();
+    }
+    setIsLoading(false);
   }, []);
 
   const login = async (phone: string) => {
+    // Validate phone number - must be exactly 10 digits
+    const phoneRegex = /^[0-9]{10}$/;
+    if (!phoneRegex.test(phone)) {
+      throw new Error('Phone number must be exactly 10 digits');
+    }
+
+    setIsLoading(true);
     try {
-      setLoading(true);
-      const response = await apiService.phoneLogin(phone);
+      // Simulate API call for phone-based authentication
+      const existingUsers = JSON.parse(localStorage.getItem('printeasy_all_users') || '[]');
+      let userData = existingUsers.find((u: User) => u.phone === phone);
       
-      if (response.success && response.token && response.user) {
-        localStorage.setItem('authToken', response.token);
-        setToken(response.token);
-        setUser(response.user);
-        return { isNewUser: response.isNewUser };
-      } else {
-        throw new Error('Invalid login response');
+      if (!userData) {
+        // Create new customer account automatically
+        userData = {
+          id: `user_${Date.now()}`,
+          phone,
+          role: 'customer' as UserRole,
+          needsNameUpdate: true, // Flag for name collection popup
+        };
+        existingUsers.push(userData);
+        localStorage.setItem('printeasy_all_users', JSON.stringify(existingUsers));
       }
+      
+      setUser(userData);
+      localStorage.setItem('printeasy_user', JSON.stringify(userData));
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error('Login error:', error);
       throw error;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const emailLogin = async (email: string, password: string) => {
+  const loginWithEmail = async (email: string, password: string) => {
+    setIsLoading(true);
     try {
-      setLoading(true);
-      const response = await apiService.emailLogin(email, password);
+      // Mock shop owners and admin for demo
+      const businessUsers = [
+        {
+          id: 'shop_1',
+          email: 'shop@example.com',
+          password: 'password',
+          role: 'shop_owner' as UserRole,
+          name: 'Print Shop Owner',
+          shopId: 'shop_1',
+          phone: '9876543210'
+        },
+        {
+          id: 'admin_1',
+          email: 'admin@printeasy.com',
+          password: 'admin123',
+          role: 'admin' as UserRole,
+          name: 'PrintEasy Admin',
+          phone: '9999999999'
+        }
+      ];
       
-      if (response.success && response.token && response.user) {
-        localStorage.setItem('authToken', response.token);
-        setToken(response.token);
-        setUser(response.user);
-      } else {
-        throw new Error('Invalid login response');
+      const userData = businessUsers.find(u => u.email === email && u.password === password);
+      
+      if (!userData) {
+        throw new Error('Invalid credentials');
       }
+      
+      // Remove password from stored user data
+      const { password: _, ...userWithoutPassword } = userData;
+      setUser(userWithoutPassword);
+      localStorage.setItem('printeasy_user', JSON.stringify(userWithoutPassword));
     } catch (error) {
-      console.error('Email login failed:', error);
+      console.error('Email login error:', error);
       throw error;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  // Alias for compatibility
-  const loginWithEmail = emailLogin;
+  const updateUserName = async (name: string) => {
+    if (user) {
+      const updatedUser = { ...user, name, needsNameUpdate: false };
+      setUser(updatedUser);
+      localStorage.setItem('printeasy_user', JSON.stringify(updatedUser));
+      
+      // Update in all users list too
+      const existingUsers = JSON.parse(localStorage.getItem('printeasy_all_users') || '[]');
+      const updatedUsers = existingUsers.map((u: User) => 
+        u.id === user.id ? updatedUser : u
+      );
+      localStorage.setItem('printeasy_all_users', JSON.stringify(updatedUsers));
+    }
+  };
 
   const logout = () => {
-    localStorage.removeItem('authToken');
-    setToken(null);
     setUser(null);
+    localStorage.removeItem('printeasy_user');
   };
 
-  const updateProfile = async (name: string) => {
-    try {
-      const response = await apiService.updateProfile(name);
-      if (response.success && response.user) {
-        setUser(response.user);
-      }
-    } catch (error) {
-      console.error('Profile update failed:', error);
-      throw error;
+  const updateUser = (userData: Partial<User>) => {
+    if (user) {
+      const updatedUser = { ...user, ...userData };
+      setUser(updatedUser);
+      localStorage.setItem('printeasy_user', JSON.stringify(updatedUser));
     }
   };
-
-  // Alias for compatibility
-  const updateUserName = updateProfile;
 
   const value: AuthContextType = {
     user,
-    loading,
-    isLoading: loading, // Alias for compatibility
-    token,
+    isLoading,
     login,
-    emailLogin,
-    loginWithEmail, // Alias for compatibility
+    loginWithEmail,
     logout,
-    updateProfile,
-    updateUserName, // Alias for compatibility
+    updateUser,
+    updateUserName,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
-
-export type { UserRole };

@@ -1,5 +1,4 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -9,89 +8,88 @@
     --font-sans: 'Poppins', system-ui, sans-serif;
     
     --background: 0 0% 100%;
-    --foreground: 0 0% 0%;
+    --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 0%;
+    --card-foreground: 222.2 84% 4.9%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
+    --popover-foreground: 222.2 84% 4.9%;
 
-    /* Updated primary to golden yellow */
-    --primary: 48 100% 50%;
-    --primary-foreground: 0 0% 0%;
+    --primary: 42 100% 50%;
+    --primary-foreground: 210 40% 98%;
 
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 9%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
 
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 48 100% 50%;
-    --accent-foreground: 0 0% 0%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
-    --ring: 48 100% 50%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 42 100% 50%;
 
     --radius: 0.5rem;
 
-    /* Custom golden theme colors */
-    --golden-50: 48 100% 97%;
-    --golden-100: 48 100% 92%;
-    --golden-200: 48 100% 84%;
-    --golden-300: 48 100% 76%;
-    --golden-400: 48 100% 68%;
-    --golden-500: 48 100% 50%;
-    --golden-600: 45 93% 47%;
-    --golden-700: 41 86% 42%;
-    --golden-800: 36 75% 35%;
-    --golden-900: 30 60% 25%;
+    --sidebar-background: 0 0% 98%;
 
-    /* Neutral colors for black/white */
-    --neutral-50: 0 0% 98%;
-    --neutral-100: 0 0% 96%;
-    --neutral-200: 0 0% 90%;
-    --neutral-300: 0 0% 83%;
-    --neutral-400: 0 0% 64%;
-    --neutral-500: 0 0% 45%;
-    --neutral-600: 0 0% 32%;
-    --neutral-700: 0 0% 25%;
-    --neutral-800: 0 0% 15%;
-    --neutral-900: 0 0% 9%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 42 100% 50%;
   }
 
   .dark {
-    --background: 0 0% 4%;
-    --foreground: 0 0% 98%;
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
 
-    --card: 0 0% 4%;
-    --card-foreground: 0 0% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 0 0% 4%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 48 100% 50%;
-    --primary-foreground: 0 0% 9%;
+    --primary: 42 100% 50%;
+    --primary-foreground: 222.2 47.4% 11.2%;
 
-    --secondary: 0 0% 15%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 64%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 48 100% 50%;
-    --accent-foreground: 0 0% 9%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 62% 30%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 0 0% 15%;
-    --input: 0 0% 15%;
-    --ring: 48 100% 50%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 42 100% 50%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 42 100% 50%;
   }
 }
 
@@ -101,145 +99,15 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans;
-    font-feature-settings: "rlig" 1, "calt" 1;
-  }
-
-  html {
-    scroll-behavior: smooth;
+    @apply bg-background text-foreground font-poppins;
   }
 }
 
-/* Golden Theme Components */
-@layer components {
-  /* Smooth Transitions */
-  .smooth-transition {
-    @apply transition-all duration-300 ease-in-out;
-  }
-
-  /* Golden Theme Buttons */
-  .btn-golden {
-    @apply bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black font-semibold rounded-xl shadow-lg hover:shadow-xl smooth-transition;
-  }
-
-  .btn-golden-outline {
-    @apply border-2 border-yellow-500 text-yellow-600 hover:bg-yellow-50 hover:border-yellow-600 rounded-xl smooth-transition;
-  }
-
-  /* Black & White Buttons */
-  .btn-black {
-    @apply bg-black hover:bg-neutral-800 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl smooth-transition;
-  }
-
-  .btn-white {
-    @apply bg-white hover:bg-neutral-50 text-black border border-neutral-200 font-semibold rounded-xl shadow-lg hover:shadow-xl smooth-transition;
-  }
-
-  /* Golden Cards */
-  .card-golden {
-    @apply bg-white border border-yellow-200 rounded-2xl shadow-lg hover:shadow-xl smooth-transition;
-  }
-
-  .card-premium {
-    @apply bg-gradient-to-br from-yellow-50 to-white border border-yellow-200 rounded-2xl shadow-xl hover:shadow-2xl smooth-transition;
-  }
-
-  /* Mobile Optimizations */
-  .mobile-padding {
-    @apply px-4 md:px-6 lg:px-8;
-  }
-
-  .mobile-text {
-    @apply text-sm md:text-base lg:text-lg;
-  }
-
-  .mobile-heading {
-    @apply text-2xl md:text-4xl lg:text-6xl;
-  }
-
-  /* Golden Gradients */
-  .gradient-golden {
-    background: linear-gradient(135deg, #FDE047 0%, #FACC15 50%, #EAB308 100%);
-  }
-
-  .gradient-golden-text {
-    @apply bg-gradient-to-r from-yellow-600 via-yellow-500 to-yellow-600 bg-clip-text text-transparent;
-  }
-
-  /* Black to Yellow Gradients */
-  .gradient-black-golden {
-    background: linear-gradient(135deg, #000000 0%, #1F1F1F 30%, #FACC15 100%);
-  }
-
-  /* Premium Shadows */
-  .shadow-golden {
-    box-shadow: 0 10px 40px rgba(250, 204, 21, 0.3);
-  }
-
-  .shadow-golden-lg {
-    box-shadow: 0 20px 60px rgba(250, 204, 21, 0.4);
-  }
-
-  /* Custom Scrollbar */
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 8px;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-track {
-    @apply bg-yellow-100 rounded-full;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-gradient-to-b from-yellow-400 to-yellow-500 rounded-full;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    @apply from-yellow-500 to-yellow-600;
-  }
-
-  /* Responsive Grid */
-  .responsive-grid {
-    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
-  }
-
-  .responsive-grid-2 {
-    @apply grid grid-cols-1 lg:grid-cols-2 gap-8;
-  }
-
-  /* Premium Loading States */
-  .loading-shimmer {
-    @apply animate-pulse bg-gradient-to-r from-yellow-100 via-yellow-200 to-yellow-100;
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-  }
-
-  /* Focus States for Accessibility */
-  .focus-golden:focus-visible {
-    @apply outline-2 outline-offset-2 outline-yellow-500;
-  }
+/* Custom Glassmorphism Effects */
+.bg-glass {
+  @apply bg-white/60 backdrop-blur-lg;
 }
 
-/* Minimal Keyframes */
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Utility Animations */
-.animate-fade-in {
-  animation: fadeIn 0.6s ease-out;
-}
-
-/* Custom Selection */
-::selection {
-  @apply bg-yellow-200 text-black;
-}
-
-::-moz-selection {
-  @apply bg-yellow-200 text-black;
+.bg-glass-dark {
+  @apply bg-neutral-900/60 backdrop-blur-lg;
 }

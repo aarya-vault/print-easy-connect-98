@@ -15,10 +15,10 @@ import {
   Upload,
   UserCheck
 } from 'lucide-react';
-import { Shop } from '@/types/api';
+import { VisitedShop } from '@/types/shop';
 
 interface VisitedShopsSectionProps {
-  visitedShops: Shop[];
+  visitedShops: VisitedShop[];
   title?: string;
   showRequestButton?: boolean;
   onRequestNewShop?: () => void;
@@ -30,8 +30,7 @@ const VisitedShopsSection: React.FC<VisitedShopsSectionProps> = ({
   showRequestButton = false,
   onRequestNewShop 
 }) => {
-  const formatLastVisited = (date?: Date) => {
-    if (!date) return 'Recently';
+  const formatLastVisited = (date: Date) => {
     const now = new Date();
     const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
     
@@ -42,17 +41,13 @@ const VisitedShopsSection: React.FC<VisitedShopsSectionProps> = ({
     return `${Math.floor(diffInDays / 30)} months ago`;
   };
 
-  const getCurrentStatus = (operatingHours?: Shop['operatingHours']) => {
-    if (!operatingHours) {
-      return { isOpen: true, text: 'Open' };
-    }
-    
+  const getCurrentStatus = (operatingHours: VisitedShop['operatingHours']) => {
     const now = new Date();
     const currentDay = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() as keyof typeof operatingHours;
     const currentTime = now.getHours() * 100 + now.getMinutes();
     
     const todayHours = operatingHours[currentDay];
-    if (!todayHours?.isOpen) return { isOpen: false, text: 'Closed Today' };
+    if (!todayHours.isOpen) return { isOpen: false, text: 'Closed Today' };
     
     const openTime = parseInt(todayHours.open.replace(':', ''));
     const closeTime = parseInt(todayHours.close.replace(':', ''));
@@ -64,11 +59,10 @@ const VisitedShopsSection: React.FC<VisitedShopsSectionProps> = ({
     }
   };
 
-  const getOrderTypeStats = (orderHistory?: Shop['orderHistory']) => {
-    if (!orderHistory) return { digital: 0, walkin: 0 };
-    const digital = orderHistory.filter(order => order.orderType === 'digital').length;
-    const walkin = orderHistory.filter(order => order.orderType === 'walkin').length;
-    return { digital, walkin };
+  const getOrderTypeStats = (orderHistory: VisitedShop['orderHistory']) => {
+    const uploadedFiles = orderHistory.filter(order => order.orderType === 'uploaded-files').length;
+    const walkIns = orderHistory.filter(order => order.orderType === 'walk-in').length;
+    return { uploadedFiles, walkIns };
   };
 
   return (
@@ -127,8 +121,8 @@ const VisitedShopsSection: React.FC<VisitedShopsSectionProps> = ({
                       </div>
                       <div className="flex items-center gap-2 mb-2">
                         <Star className="w-4 h-4 text-golden-500 fill-current" />
-                        <span className="font-semibold text-neutral-900">{shop.rating || 4.5}</span>
-                        <span className="text-sm text-neutral-500">({shop.totalReviews || 0} reviews)</span>
+                        <span className="font-semibold text-neutral-900">{shop.rating}</span>
+                        <span className="text-sm text-neutral-500">({shop.totalReviews} reviews)</span>
                       </div>
                     </div>
                     <Badge className={`text-xs font-medium border-2 ${
@@ -156,7 +150,7 @@ const VisitedShopsSection: React.FC<VisitedShopsSectionProps> = ({
                     <div className="flex items-center gap-2">
                       <TrendingUp className="w-4 h-4 text-neutral-500" />
                       <span className="text-sm text-neutral-600 font-medium">
-                        {shop.visitCount || 0} visits • Avg: {shop.averageCompletionTime || '2 hours'}
+                        {shop.visitCount} visits • Avg: {shop.averageCompletionTime}
                       </span>
                     </div>
                   </div>
@@ -165,14 +159,14 @@ const VisitedShopsSection: React.FC<VisitedShopsSectionProps> = ({
                     <div>
                       <h4 className="text-sm font-semibold text-neutral-900 mb-2">Services:</h4>
                       <div className="flex flex-wrap gap-1">
-                        {(shop.services || ['Printing', 'Binding', 'Scanning']).slice(0, 3).map((service) => (
+                        {shop.services.slice(0, 3).map((service) => (
                           <Badge key={service} variant="outline" className="text-xs border-neutral-300 text-neutral-700">
                             {service}
                           </Badge>
                         ))}
-                        {(shop.services || []).length > 3 && (
+                        {shop.services.length > 3 && (
                           <Badge variant="outline" className="text-xs border-neutral-300 text-neutral-700">
-                            +{(shop.services || []).length - 3} more
+                            +{shop.services.length - 3} more
                           </Badge>
                         )}
                       </div>
@@ -205,16 +199,16 @@ const VisitedShopsSection: React.FC<VisitedShopsSectionProps> = ({
                       <div className="flex items-center justify-between text-xs text-neutral-500 font-medium">
                         <span>Order history: {shop.orderHistory.length} total</span>
                         <div className="flex items-center gap-3">
-                          {orderStats.digital > 0 && (
+                          {orderStats.uploadedFiles > 0 && (
                             <div className="flex items-center gap-1">
                               <Upload className="w-3 h-3 text-blue-600" />
-                              <span>{orderStats.digital}</span>
+                              <span>{orderStats.uploadedFiles}</span>
                             </div>
                           )}
-                          {orderStats.walkin > 0 && (
+                          {orderStats.walkIns > 0 && (
                             <div className="flex items-center gap-1">
                               <UserCheck className="w-3 h-3 text-purple-600" />
-                              <span>{orderStats.walkin}</span>
+                              <span>{orderStats.walkIns}</span>
                             </div>
                           )}
                         </div>

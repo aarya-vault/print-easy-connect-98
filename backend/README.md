@@ -1,250 +1,112 @@
 
-# PrintEasy Backend API
+# PrintEasy Shop Backend
 
-A comprehensive Node.js backend for the PrintEasy platform - connecting customers with local print shops through digital file uploads and walk-in order management.
+Node.js backend API for the PrintEasy Shop Management System.
 
-## 🚀 Quick Start
+## Features
+
+- **Order Management**: Create, update, and track printing orders
+- **File Upload**: Handle customer file uploads with validation
+- **Shop Dashboard**: Real-time statistics and order tracking
+- **PostgreSQL Database**: Robust data storage with proper relationships
+- **RESTful API**: Clean and consistent API endpoints
+
+## Quick Start
 
 ### Prerequisites
-- Node.js 18+ installed
-- PostgreSQL database running
-- Git installed
+
+- Node.js (v16 or higher)
+- PostgreSQL (v12 or higher)
 
 ### Installation
 
-1. **Clone and setup**
-   ```bash
-   cd backend
-   npm install
-   ```
-
-2. **Database setup**
-   ```bash
-   # Create database
-   createdb printeasy_dev
-   
-   # Update .env file with your database credentials
-   cp .env.example .env
-   ```
-
-3. **Start the server**
-   ```bash
-   npm run dev
-   ```
-
-4. **Seed test data (optional)**
-   ```bash
-   npm run db:seed
-   ```
-
-The API will be running at `http://localhost:3001`
-
-## 📋 API Testing
-
-### Postman Collection
-Import `postman-collection.json` into Postman for complete API testing with:
-- Pre-configured requests for all endpoints
-- Environment variables for easy testing
-- Auto-authentication token handling
-- Response examples and documentation
-
-### Health Check
-Visit `http://localhost:3001/health` to verify the server is running.
-
-## 🔐 Authentication
-
-### Customer Login (Phone-based)
+1. Install dependencies:
 ```bash
-POST /api/auth/phone-login
-Content-Type: application/json
-
-{
-  "phone": "9876543210"
-}
+npm install
 ```
 
-### Shop Owner Login (Email-based)
+2. Create PostgreSQL database:
+```sql
+CREATE DATABASE printeasy_shop;
+```
+
+3. Set up environment variables:
 ```bash
-POST /api/auth/email-login
-Content-Type: application/json
-
-{
-  "email": "shop@example.com",
-  "password": "password"
-}
+cp .env.example .env
+# Edit .env with your database credentials
 ```
 
-## 📊 API Endpoints
-
-### Core Features
-- **Authentication**: Phone login for customers, email login for shop owners
-- **Order Management**: Create, track, and manage printing orders
-- **File Handling**: Upload, download, and manage documents
-- **Shop Discovery**: Browse and select print shops
-- **Real-time Chat**: Communication between customers and shop owners
-- **Status Tracking**: Three-stage order lifecycle (received → started → completed)
-
-### Endpoint Categories
-
-| Category | Endpoints | Description |
-|----------|-----------|-------------|
-| **Auth** | `/api/auth/*` | User authentication and profile management |
-| **Orders** | `/api/orders/*` | Order creation, tracking, and management |
-| **Shops** | `/api/shops/*` | Shop discovery and information |
-| **Files** | `/api/files/*` | File upload, download, and management |
-| **Chat** | `/api/chat/*` | Real-time messaging system |
-| **System** | `/health`, `/` | Health checks and API information |
-
-## 🗄️ Database Schema
-
-### Core Tables
-- **users**: Customer and shop owner accounts
-- **shops**: Print shop information and settings
-- **orders**: Print orders with status tracking
-- **order_files**: Uploaded documents and files
-- **messages**: Chat system for order communication
-
-### Order Types
-- **uploaded-files**: Digital documents for printing (ID: UF######)
-- **walk-in**: Physical document services (ID: WI######)
-
-### Order Status Flow
-1. **received**: Initial order placement
-2. **started**: Work has begun
-3. **completed**: Ready for pickup/delivery
-
-## 🛠️ Development
-
-### Available Scripts
+4. Initialize database schema:
 ```bash
-npm start          # Production server
-npm run dev        # Development server with auto-reload
-npm run db:seed    # Seed database with test data
-npm run db:reset   # Reset database (caution: deletes all data)
+npm run init-db
 ```
 
-### Environment Variables
-```env
-NODE_ENV=development
-PORT=3001
-HOST=0.0.0.0
-
-# Database
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=printeasy_dev
-DB_USER=your_username
-DB_PASSWORD=your_password
-
-# Security
-JWT_SECRET=your-secret-key
+5. Start the development server:
+```bash
+npm run dev
 ```
 
-### File Uploads
-- **Location**: `uploads/` directory
-- **Size Limit**: Unlimited (development)
-- **Types**: All file types accepted
-- **Organization**: Files organized by order ID
+The API will be available at `http://localhost:3001`
 
-## 🔧 Features
+## API Endpoints
 
-### Phone-based Authentication
-- Auto-registration for new customers
-- No password required for customers
-- JWT token-based session management
-
-### Dual Order System
-- **Upload Orders**: Customers upload files digitally
-- **Walk-in Orders**: Customers describe services needed
-
-### Real-time Communication
-- Order-based chat system
-- Message read status tracking
-- Unread message counters
+### Orders
+- `GET /api/orders` - Get all orders with filters
+- `POST /api/orders` - Create new order
+- `PUT /api/orders/:id/status` - Update order status
+- `PUT /api/orders/:id/urgent` - Toggle order urgency
 
 ### File Management
-- Multiple file uploads per order
-- Secure file access with authentication
-- File download and deletion capabilities
+- `POST /api/orders/:id/files` - Upload files for an order
 
-## 🧪 Testing Credentials
+### Shop Management
+- `GET /api/shop/:id/stats` - Get shop dashboard statistics
 
-### Default Test Data
-After running `npm run db:seed`:
+## Database Schema
 
-**Customer Login:**
-- Phone: `9876543210`
+The system uses PostgreSQL with the following main tables:
 
-**Shop Owner Login:**
-- Email: `shop@example.com`
-- Password: `password`
+- **shops**: Shop information and settings
+- **orders**: Customer orders with status tracking
+- **order_files**: File attachments for orders
+- **customers**: Customer information
+- **order_status_history**: Audit trail for status changes
+- **notifications**: System notifications
 
-### Test Orders
-Sample orders are created with different statuses for testing the dashboard views.
+## File Upload
 
-## 🚀 Production Deployment
+Supports the following file types:
+- PDF documents
+- Images (JPEG, PNG)
+- Word documents (DOC, DOCX)
 
-### Requirements
-- Node.js 18+ runtime
-- PostgreSQL database
-- SSL certificates for HTTPS
-- Process manager (PM2 recommended)
+Maximum file size: 10MB per file
 
-### Production Setup
-1. Set `NODE_ENV=production`
-2. Configure production database
-3. Set secure JWT secret
-4. Enable SSL/HTTPS
-5. Configure rate limiting
-6. Set up monitoring
+## Development
 
-## 📈 Performance
+### Running Tests
+```bash
+npm test
+```
 
-### Current Optimizations
-- Gzip compression enabled
-- Static file serving optimized
-- Database connection pooling
-- Request rate limiting
-- Memory usage monitoring
+### Database Migration
+```bash
+npm run migrate
+```
 
-### Monitoring
-Health check endpoint provides:
-- Server uptime
-- Memory usage
-- Database connection status
-- Environment information
+### API Documentation
+API documentation is available at `/api/docs` when running in development mode.
 
-## 🔒 Security
+## Deployment
 
-### Implemented Features
-- Helmet.js security headers
-- CORS configuration
-- Rate limiting
-- JWT authentication
-- Input validation
-- File upload restrictions
+1. Set production environment variables
+2. Run database migrations
+3. Start the server with PM2 or similar process manager
 
-### Development Mode
-- Permissive CORS for testing
-- Detailed error messages
-- Unlimited file uploads
-- High rate limits
+```bash
+pm2 start server.js --name printeasy-api
+```
 
-## 🤝 Contributing
+## Environment Variables
 
-1. Follow existing code style and conventions
-2. Add tests for new features
-3. Update API documentation
-4. Test with Postman collection
-5. Ensure database migrations work
-
-## 📚 Additional Resources
-
-- **Postman Collection**: Complete API testing suite
-- **Database Schema**: SQL files in `database/` directory
-- **Middleware**: Authentication and upload handling
-- **Models**: Sequelize ORM definitions
-
----
-
-**PrintEasy Backend v1.0.0** - Built with Node.js, Express, PostgreSQL, and Sequelize
+See `.env.example` for all available configuration options.

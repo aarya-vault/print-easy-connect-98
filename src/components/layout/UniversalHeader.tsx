@@ -1,164 +1,205 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { 
+  LogOut, 
+  RefreshCw, 
+  Bell, 
+  User, 
+  ChevronDown,
+  Menu,
+  X
+} from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { User, LogOut, Settings, ArrowLeft, Home, LucideIcon } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { User as UserType } from '@/types/api';
-
-interface UserMenuItem {
-  label: string;
-  icon: LucideIcon;
-  onClick: () => void;
-}
+import { Badge } from '@/components/ui/badge';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { toast } from 'sonner';
 
 interface UniversalHeaderProps {
   title: string;
-  showBackButton?: boolean;
-  backTo?: string;
-  showHomeButton?: boolean;
-  user?: UserType;
-  onLogout?: () => void;
-  userMenuItems?: UserMenuItem[];
+  subtitle?: string;
+  onRefresh?: () => void;
 }
 
-const UniversalHeader: React.FC<UniversalHeaderProps> = ({
-  title,
-  showBackButton = false,
-  backTo,
-  showHomeButton = false,
-  user: propUser,
-  onLogout: propOnLogout,
-  userMenuItems = []
+const UniversalHeader: React.FC<UniversalHeaderProps> = ({ 
+  title, 
+  subtitle, 
+  onRefresh 
 }) => {
-  const { user: contextUser, logout: contextLogout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
-
-  // Use prop values or fallback to context
-  const user = propUser || contextUser;
-  const logout = propOnLogout || contextLogout;
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
+    setIsMobileMenuOpen(false);
   };
 
-  const handleBack = () => {
-    if (backTo) {
-      navigate(backTo);
+  const handleRefresh = () => {
+    if (onRefresh) {
+      onRefresh();
     } else {
-      navigate(-1);
+      window.location.reload();
     }
+    setIsMobileMenuOpen(false);
   };
 
-  const handleHome = () => {
-    const roleRedirects = {
-      customer: '/customer/dashboard',
-      shop_owner: '/shop/dashboard',
-      admin: '/admin/dashboard'
-    };
-    navigate(roleRedirects[user?.role || 'customer']);
+  const handleNotificationClick = () => {
+    toast.info('Opening notifications...');
+    // Add notification modal/page logic here
   };
 
-  const handleProfile = () => {
+  const handleProfileClick = () => {
     navigate('/profile');
+    setIsMobileMenuOpen(false);
   };
 
-  const getRoleBadge = (role: string) => {
-    switch (role) {
-      case 'admin': return 'Administrator';
-      case 'shop_owner': return 'Shop Owner';
-      case 'customer': return 'Customer';
-      default: return role;
-    }
-  };
-
-  return (
-    <header className="bg-white border-b border-neutral-200 shadow-sm">
-      <div className="container mx-auto px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            {showBackButton && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handleBack}
-                className="p-2"
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
-            )}
-            
-            {showHomeButton && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handleHome}
-                className="p-2"
-              >
-                <Home className="w-4 h-4" />
-              </Button>
-            )}
-
-            <div>
-              <h1 className="text-2xl font-bold text-neutral-900">
-                Print<span className="text-golden-600">Easy</span>
-              </h1>
-              {title && <p className="text-sm text-neutral-600">{title}</p>}
-            </div>
-          </div>
-
-          {user && (
-            <div className="flex items-center gap-4">
-              <div className="text-right hidden md:block">
-                <p className="font-medium text-neutral-900">{user.name}</p>
-                <Badge variant="secondary" className="text-xs">
-                  {getRoleBadge(user.role)}
-                </Badge>
-              </div>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="w-10 h-10 rounded-full p-0">
-                    <User className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  {userMenuItems.map((item, index) => (
-                    <DropdownMenuItem key={index} onClick={item.onClick} className="cursor-pointer">
-                      <item.icon className="w-4 h-4 mr-2" />
-                      {item.label}
-                    </DropdownMenuItem>
-                  ))}
-                  {userMenuItems.length > 0 && <DropdownMenuSeparator />}
-                  <DropdownMenuItem onClick={handleProfile} className="cursor-pointer">
-                    <Settings className="w-4 h-4 mr-2" />
-                    Profile Settings
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleHome} className="cursor-pointer">
-                    <Home className="w-4 h-4 mr-2" />
-                    Dashboard
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600">
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Logout
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          )}
+  // Mobile menu content
+  const MobileMenuContent = () => (
+    <div className="flex flex-col space-y-4 p-4">
+      <div className="flex items-center space-x-3 pb-4 border-b">
+        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+          <User className="w-5 h-5 text-blue-600" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="font-medium text-gray-900 truncate">{user?.name || user?.phone}</p>
+          <p className="text-sm text-gray-500">Shop Owner</p>
         </div>
       </div>
-    </header>
+      
+      <Button
+        variant="outline"
+        onClick={handleRefresh}
+        className="w-full justify-start"
+      >
+        <RefreshCw className="w-4 h-4 mr-3" />
+        Refresh Dashboard
+      </Button>
+
+      <Button
+        variant="outline"
+        onClick={handleNotificationClick}
+        className="w-full justify-start relative"
+      >
+        <Bell className="w-4 h-4 mr-3" />
+        Notifications
+        <Badge className="absolute right-2 px-1 min-w-[20px] h-5 text-xs">
+          3
+        </Badge>
+      </Button>
+
+      <Button
+        variant="outline"
+        onClick={handleProfileClick}
+        className="w-full justify-start"
+      >
+        <User className="w-4 h-4 mr-3" />
+        Profile Settings
+      </Button>
+
+      <Button
+        variant="outline"
+        onClick={handleLogout}
+        className="w-full justify-start text-red-600 border-red-200 hover:bg-red-50"
+      >
+        <LogOut className="w-4 h-4 mr-3" />
+        Sign Out
+      </Button>
+    </div>
+  );
+
+  return (
+    <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4">
+      <div className="flex items-center justify-between">
+        {/* Title Section */}
+        <div className="min-w-0 flex-1">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">{title}</h1>
+          {subtitle && (
+            <p className="text-gray-600 text-sm mt-1 truncate hidden sm:block">{subtitle}</p>
+          )}
+        </div>
+        
+        {/* Desktop Actions */}
+        <div className="hidden sm:flex items-center space-x-3">
+          {/* Refresh Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            className="flex items-center space-x-2"
+          >
+            <RefreshCw className="w-4 h-4" />
+            <span className="hidden md:inline">Refresh</span>
+          </Button>
+
+          {/* Notifications */}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="relative"
+            onClick={handleNotificationClick}
+          >
+            <Bell className="w-4 h-4" />
+            <Badge className="absolute -top-2 -right-2 px-1 min-w-[20px] h-5 text-xs">
+              3
+            </Badge>
+          </Button>
+
+          {/* User Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex items-center space-x-2 max-w-48">
+                <User className="w-4 h-4 flex-shrink-0" />
+                <span className="truncate hidden lg:inline">{user?.name || user?.phone}</span>
+                <ChevronDown className="w-4 h-4 flex-shrink-0" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={handleProfileClick}>
+                <User className="w-4 h-4 mr-2" />
+                Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* Mobile Menu */}
+        <div className="sm:hidden">
+          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Menu className="w-4 h-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-80">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold">Menu</h2>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              <MobileMenuContent />
+            </SheetContent>
+          </Sheet>
+        </div>
+      </div>
+    </div>
   );
 };
 

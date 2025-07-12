@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Send, Phone } from 'lucide-react';
 import { toast } from 'sonner';
-import { Order } from '@/types/api';
 
 interface Message {
   id: string;
@@ -16,13 +15,17 @@ interface Message {
 }
 
 interface OrderChatModalProps {
-  order: Order;
+  orderId: string;
+  customerName: string;
+  customerPhone: string;
   isOpen: boolean;
   onClose: () => void;
 }
 
 const OrderChatModal: React.FC<OrderChatModalProps> = ({
-  order,
+  orderId,
+  customerName,
+  customerPhone,
   isOpen,
   onClose
 }) => {
@@ -58,8 +61,8 @@ const OrderChatModal: React.FC<OrderChatModalProps> = ({
   };
 
   const handleCall = () => {
-    window.open(`tel:${order.customer_phone}`);
-    toast.success(`Calling ${order.customer_name}`);
+    window.open(`tel:${customerPhone}`);
+    toast.success(`Calling ${customerName}`);
   };
 
   return (
@@ -68,9 +71,9 @@ const OrderChatModal: React.FC<OrderChatModalProps> = ({
         <DialogHeader className="p-4 sm:p-6 border-b">
           <DialogTitle className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="min-w-0">
-              <div className="text-lg font-semibold truncate">{order.customer_name}</div>
+              <div className="text-lg font-semibold truncate">{customerName}</div>
               <div className="flex items-center gap-2 mt-1">
-                <Badge variant="outline" className="text-xs">Order #{order.id.slice(0, 8)}</Badge>
+                <Badge variant="outline" className="text-xs">Order #{orderId}</Badge>
               </div>
             </div>
             <Button
@@ -139,4 +142,3 @@ const OrderChatModal: React.FC<OrderChatModalProps> = ({
 };
 
 export default OrderChatModal;
-export type { OrderChatModalProps };
