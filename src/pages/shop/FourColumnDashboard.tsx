@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import MobileHeader from '@/components/layout/MobileHeader';
+import QRCodeDisplay from '@/components/shop/QRCodeDisplay';
+import ChatSystem from '@/components/shop/ChatSystem';
 import { 
   Clock, 
   Package, 
@@ -13,7 +15,10 @@ import {
   Eye,
   Search,
   Filter,
-  MoreVertical
+  MoreVertical,
+  X,
+  Upload,
+  User
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -90,6 +95,20 @@ const FourColumnDashboard: React.FC = () => {
     // Add urgency toggle logic here
   };
 
+  const handleCancelOrder = (orderId: string) => {
+    console.log(`Cancelling order ${orderId}`);
+    // Add cancel order logic here
+  };
+
+  const getOrdersByType = (type: 'uploaded-files' | 'walk-in') => {
+    return orders.filter(order => 
+      order.orderType === type && 
+      (order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+       order.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+       order.id.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  };
+
   const formatTimeAgo = (date: Date) => {
     const now = new Date();
     const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
@@ -144,6 +163,13 @@ const FourColumnDashboard: React.FC = () => {
               <DropdownMenuItem>
                 <Phone className="w-4 h-4 mr-2" />
                 Call Customer
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => handleCancelOrder(order.id)}
+                className="text-red-600"
+              >
+                <X className="w-4 h-4 mr-2" />
+                Cancel Order
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -251,87 +277,97 @@ const FourColumnDashboard: React.FC = () => {
       {/* 4-Column Layout */}
       <div className="p-4">
         <div className="max-w-7xl mx-auto">
-          {/* Desktop 4-Column Layout */}
+          {/* QR Code and Chat Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <QRCodeDisplay 
+              shopId="shop_1"
+              shopName="Print Shop"
+              shopAddress="MG Road, Bangalore"
+            />
+            <ChatSystem />
+          </div>
+
+          {/* Desktop 4-Column Layout - 2 Upload, 2 Walk-in */}
           <div className="hidden lg:grid lg:grid-cols-4 gap-6">
-            {/* New Orders Column */}
+            {/* Upload Orders - New */}
             <div className="bg-card rounded-lg border">
               <ColumnHeader
-                title="New Orders"
-                count={getOrdersByStatus('new').length}
-                icon={<Clock className="w-5 h-5" />}
-                color="bg-primary/10"
+                title="Upload Orders - New"
+                count={getOrdersByType('uploaded-files').filter(o => o.status === 'new').length}
+                icon={<Upload className="w-5 h-5" />}
+                color="bg-blue-50 border-blue-200"
               />
-              <div className="p-4 max-h-[calc(100vh-300px)] overflow-y-auto">
-                {getOrdersByStatus('new').map(order => (
+              <div className="p-4 max-h-[calc(100vh-350px)] overflow-y-auto">
+                {getOrdersByType('uploaded-files').filter(o => o.status === 'new').map(order => (
                   <OrderCard key={order.id} order={order} />
                 ))}
-                {getOrdersByStatus('new').length === 0 && (
+                {getOrdersByType('uploaded-files').filter(o => o.status === 'new').length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
-                    <Clock className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p>No new orders</p>
+                    <Upload className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p>No new upload orders</p>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Processing Column */}
+            {/* Upload Orders - Processing/Ready */}
             <div className="bg-card rounded-lg border">
               <ColumnHeader
-                title="Processing"
-                count={getOrdersByStatus('processing').length}
+                title="Upload Orders - Active"
+                count={getOrdersByType('uploaded-files').filter(o => o.status === 'processing' || o.status === 'ready').length}
                 icon={<Package className="w-5 h-5" />}
-                color="bg-primary/20"
+                color="bg-green-50 border-green-200"
               />
-              <div className="p-4 max-h-[calc(100vh-300px)] overflow-y-auto">
-                {getOrdersByStatus('processing').map(order => (
+              <div className="p-4 max-h-[calc(100vh-350px)] overflow-y-auto">
+                {getOrdersByType('uploaded-files').filter(o => o.status === 'processing' || o.status === 'ready').map(order => (
                   <OrderCard key={order.id} order={order} />
                 ))}
-                {getOrdersByStatus('processing').length === 0 && (
+                {getOrdersByType('uploaded-files').filter(o => o.status === 'processing' || o.status === 'ready').length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     <Package className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p>No orders in processing</p>
+                    <p>No active upload orders</p>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Ready Column */}
+            {/* Walk-in Orders - New */}
             <div className="bg-card rounded-lg border">
               <ColumnHeader
-                title="Ready"
-                count={getOrdersByStatus('ready').length}
-                icon={<CheckCircle className="w-5 h-5" />}
-                color="bg-primary/30"
+                title="Walk-in Orders - New"
+                count={getOrdersByType('walk-in').filter(o => o.status === 'new').length}
+                icon={<User className="w-5 h-5" />}
+                color="bg-orange-50 border-orange-200"
               />
-              <div className="p-4 max-h-[calc(100vh-300px)] overflow-y-auto">
-                {getOrdersByStatus('ready').map(order => (
+              <div className="p-4 max-h-[calc(100vh-350px)] overflow-y-auto">
+                {getOrdersByType('walk-in').filter(o => o.status === 'new').map(order => (
                   <OrderCard key={order.id} order={order} />
                 ))}
-                {getOrdersByStatus('ready').length === 0 && (
+                {getOrdersByType('walk-in').filter(o => o.status === 'new').length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
-                    <CheckCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p>No orders ready</p>
+                    <User className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p>No new walk-in orders</p>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Completed Column */}
+            {/* Walk-in Orders - Processing/Ready */}
             <div className="bg-card rounded-lg border">
               <ColumnHeader
-                title="Completed"
-                count={getOrdersByStatus('completed').length}
+                title="Walk-in Orders - Active"
+                count={getOrdersByType('walk-in').filter(o => o.status === 'processing' || o.status === 'ready').length}
                 icon={<CheckCircle className="w-5 h-5" />}
-                color="bg-muted"
+                color="bg-purple-50 border-purple-200"
               />
-              <div className="p-4 max-h-[calc(100vh-300px)] overflow-y-auto">
-                {getOrdersByStatus('completed').map(order => (
+              <div className="p-4 max-h-[calc(100vh-350px)] overflow-y-auto">
+                {getOrdersByType('walk-in').filter(o => o.status === 'processing' || o.status === 'ready').map(order => (
                   <OrderCard key={order.id} order={order} />
                 ))}
-                {getOrdersByStatus('completed').length === 0 && (
+                {getOrdersByType('walk-in').filter(o => o.status === 'processing' || o.status === 'ready').length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     <CheckCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p>No completed orders</p>
+                    <p>No active walk-in orders</p>
                   </div>
                 )}
               </div>
@@ -341,28 +377,26 @@ const FourColumnDashboard: React.FC = () => {
           {/* Mobile Accordion Layout */}
           <div className="lg:hidden space-y-4">
             {[
-              { status: 'new' as const, title: 'New Orders', icon: Clock, color: 'bg-primary/10' },
-              { status: 'processing' as const, title: 'Processing', icon: Package, color: 'bg-primary/20' },
-              { status: 'ready' as const, title: 'Ready', icon: CheckCircle, color: 'bg-primary/30' },
-              { status: 'completed' as const, title: 'Completed', icon: CheckCircle, color: 'bg-muted' }
-            ].map(({ status, title, icon: Icon, color }) => (
-              <Card key={status}>
-                <CardHeader className={`${color} rounded-t-lg`}>
+              { type: 'uploaded-files' as const, title: 'Upload Orders', icon: Upload, color: 'bg-blue-50 border-blue-200' },
+              { type: 'walk-in' as const, title: 'Walk-in Orders', icon: User, color: 'bg-orange-50 border-orange-200' }
+            ].map(({ type, title, icon: Icon, color }) => (
+              <Card key={type} className={color}>
+                <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Icon className="w-5 h-5" />
                       {title}
                     </div>
                     <Badge variant="secondary">
-                      {getOrdersByStatus(status).length}
+                      {getOrdersByType(type).length}
                     </Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4">
-                  {getOrdersByStatus(status).map(order => (
+                  {getOrdersByType(type).map(order => (
                     <OrderCard key={order.id} order={order} />
                   ))}
-                  {getOrdersByStatus(status).length === 0 && (
+                  {getOrdersByType(type).length === 0 && (
                     <div className="text-center py-8 text-muted-foreground">
                       <Icon className="w-12 h-12 mx-auto mb-2 opacity-50" />
                       <p>No {title.toLowerCase()}</p>

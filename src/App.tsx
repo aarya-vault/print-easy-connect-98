@@ -11,6 +11,8 @@ import { useAuth } from '@/contexts/AuthContext';
 // Pages
 import Home from '@/pages/Home';
 import Login from '@/pages/Login';
+import BusinessLogin from '@/pages/BusinessLogin';
+import AdminLogin from '@/pages/AdminLogin';
 
 // Customer pages
 import CustomerDashboard from '@/pages/customer/Dashboard';
@@ -45,6 +47,8 @@ const AppContent: React.FC = () => {
           {/* Public routes */}
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/business-login" element={<BusinessLogin />} />
+          <Route path="/admin-login" element={<AdminLogin />} />
 
           {/* Customer routes */}
           <Route path="/customer/dashboard" element={

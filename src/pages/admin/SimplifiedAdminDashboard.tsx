@@ -14,8 +14,15 @@ import {
   Check,
   X,
   Phone,
-  Mail
+  Mail,
+  Edit,
+  Trash2,
+  Plus
 } from 'lucide-react';
+import AddShopForm from '@/components/admin/AddShopForm';
+import EditUserModal from '@/components/admin/EditUserModal';
+import EditShopModal from '@/components/admin/EditShopModal';
+import { toast } from 'sonner';
 
 interface User {
   id: string;
@@ -40,7 +47,10 @@ interface Shop {
 
 const SimplifiedAdminDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'shops'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'shops' | 'add-shop'>('overview');
+  const [showAddShopForm, setShowAddShopForm] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editingShop, setEditingShop] = useState<Shop | null>(null);
 
   // Simplified mock data without revenue
   const [stats] = useState({
@@ -50,28 +60,8 @@ const SimplifiedAdminDashboard: React.FC = () => {
     pendingShops: 3
   });
 
-  const [users] = useState<User[]>([
-    {
-      id: 'usr1',
-      name: 'John Doe',
-      email: 'john@example.com',
-      phone: '9876543210',
-      role: 'customer',
-      status: 'active',
-      createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000)
-    },
-    {
-      id: 'usr2',
-      name: 'Jane Smith',
-      email: 'jane@printshop.com',
-      phone: '8765432109',
-      role: 'shop_owner',
-      status: 'active',
-      createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-    }
-  ]);
 
-  const [shops] = useState<Shop[]>([
+  const [shops, setShops] = useState<Shop[]>([
     {
       id: 'shp1',
       name: 'Quick Print Solutions',
@@ -94,14 +84,77 @@ const SimplifiedAdminDashboard: React.FC = () => {
     }
   ]);
 
+  const [users, setUsers] = useState<User[]>([
+    {
+      id: 'usr1',
+      name: 'John Doe',
+      email: 'john@example.com',
+      phone: '9876543210',
+      role: 'customer',
+      status: 'active',
+      createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000)
+    },
+    {
+      id: 'usr2',
+      name: 'Jane Smith',
+      email: 'jane@printshop.com',
+      phone: '8765432109',
+      role: 'shop_owner',
+      status: 'active',
+      createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    }
+  ]);
+
   const handleApproveShop = (shopId: string) => {
-    console.log(`Approving shop ${shopId}`);
-    // Add approval logic here
+    setShops(prev => prev.map(shop => 
+      shop.id === shopId ? { ...shop, status: 'approved' as const } : shop
+    ));
+    toast.success('Shop approved successfully!');
   };
 
   const handleRejectShop = (shopId: string) => {
-    console.log(`Rejecting shop ${shopId}`);
-    // Add rejection logic here
+    setShops(prev => prev.map(shop => 
+      shop.id === shopId ? { ...shop, status: 'rejected' as const } : shop
+    ));
+    toast.success('Shop rejected');
+  };
+
+  const handleRemoveUser = (userId: string) => {
+    setUsers(prev => prev.filter(user => user.id !== userId));
+    toast.success('User removed successfully');
+  };
+
+  const handleRemoveShop = (shopId: string) => {
+    setShops(prev => prev.filter(shop => shop.id !== shopId));
+    toast.success('Shop removed successfully');
+  };
+
+  const handleAddShop = (shopData: Omit<Shop, 'id' | 'createdAt'>) => {
+    const newShop: Shop = {
+      ...shopData,
+      id: `shp_${Date.now()}`,
+      createdAt: new Date(),
+      status: 'approved'
+    };
+    setShops(prev => [...prev, newShop]);
+    setShowAddShopForm(false);
+    toast.success('Shop added successfully!');
+  };
+
+  const handleUpdateUser = (userData: User) => {
+    setUsers(prev => prev.map(user => 
+      user.id === userData.id ? userData : user
+    ));
+    setEditingUser(null);
+    toast.success('User updated successfully');
+  };
+
+  const handleUpdateShop = (shopData: Shop) => {
+    setShops(prev => prev.map(shop => 
+      shop.id === shopData.id ? shopData : shop
+    ));
+    setEditingShop(null);
+    toast.success('Shop updated successfully');
   };
 
   const formatTimeAgo = (date: Date) => {
@@ -181,7 +234,8 @@ const SimplifiedAdminDashboard: React.FC = () => {
           {[
             { key: 'overview', label: 'Overview' },
             { key: 'users', label: 'Users' },
-            { key: 'shops', label: 'Shops' }
+            { key: 'shops', label: 'Shops' },
+            { key: 'add-shop', label: 'Add Shop' }
           ].map((tab) => (
             <button
               key={tab.key}
@@ -369,7 +423,7 @@ const SimplifiedAdminDashboard: React.FC = () => {
                         <span>{formatTimeAgo(shop.createdAt)}</span>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                     <div className="flex gap-2">
                       {shop.status === 'pending' && (
                         <>
                           <Button
@@ -388,8 +442,20 @@ const SimplifiedAdminDashboard: React.FC = () => {
                           </Button>
                         </>
                       )}
-                      <Button size="sm" variant="outline">
-                        <Eye className="w-4 h-4" />
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => setEditingShop(shop)}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleRemoveShop(shop.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
@@ -398,7 +464,33 @@ const SimplifiedAdminDashboard: React.FC = () => {
             ))}
           </div>
         )}
+
+        {activeTab === 'add-shop' && (
+          <AddShopForm
+            onAddShop={handleAddShop}
+            onCancel={() => setActiveTab('shops')}
+          />
+        )}
       </div>
+
+      {/* Edit Modals */}
+      {editingUser && (
+        <EditUserModal
+          user={editingUser}
+          isOpen={!!editingUser}
+          onClose={() => setEditingUser(null)}
+          onSave={handleUpdateUser}
+        />
+      )}
+
+      {editingShop && (
+        <EditShopModal
+          shop={editingShop}
+          isOpen={!!editingShop}
+          onClose={() => setEditingShop(null)}
+          onSave={handleUpdateShop}
+        />
+      )}
     </div>
   );
 };

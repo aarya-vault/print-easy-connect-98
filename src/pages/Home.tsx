@@ -31,8 +31,15 @@ const Home: React.FC = () => {
       return;
     }
 
-    if (!/^\d{10}$/.test(phoneNumber.replace(/\D/g, ''))) {
-      toast.error('Please enter a valid 10-digit phone number');
+    // Validate phone number - must be exactly 10 digits and start with 678 or 9
+    const cleanPhone = phoneNumber.replace(/\D/g, '');
+    if (cleanPhone.length !== 10) {
+      toast.error('Phone number must be exactly 10 digits');
+      return;
+    }
+
+    if (!cleanPhone.startsWith('678') && !cleanPhone.startsWith('9')) {
+      toast.error('Phone number must start with 678 or 9');
       return;
     }
 
@@ -88,7 +95,7 @@ const Home: React.FC = () => {
             </div>
             <Button
               variant="outline"
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/business-login')}
               className="hidden sm:flex"
             >
               Shop Owner Login
@@ -165,7 +172,7 @@ const Home: React.FC = () => {
               <div className="text-center mt-6">
                 <Button
                   variant="ghost"
-                  onClick={() => navigate('/login')}
+                  onClick={() => navigate('/business-login')}
                   className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10"
                 >
                   Shop Owner? Login Here
@@ -251,9 +258,20 @@ const Home: React.FC = () => {
               </div>
               <span className="font-bold text-foreground">PrintEasy</span>
             </div>
-            <p className="text-sm text-muted-foreground">
-              © 2024 PrintEasy. Making printing simple and accessible.
-            </p>
+            <div className="flex items-center gap-4">
+              <p className="text-sm text-muted-foreground">
+                © 2024 PrintEasy. Making printing simple and accessible.
+              </p>
+              {/* Hidden Admin Login Button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/admin-login')}
+                className="text-muted-foreground/50 hover:text-muted-foreground text-xs opacity-30 hover:opacity-100 transition-opacity"
+              >
+                Admin
+              </Button>
+            </div>
           </div>
         </div>
       </footer>
