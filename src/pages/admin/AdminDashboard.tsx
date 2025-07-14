@@ -1,9 +1,9 @@
 
 import React from 'react';
-import MobileAdminDashboard from './MobileAdminDashboard';
+import SimplifiedAdminDashboard from './SimplifiedAdminDashboard';
 
 const AdminDashboard: React.FC = () => {
-  return <MobileAdminDashboard />;
+  return <SimplifiedAdminDashboard />;
 };
 
 export default AdminDashboard;

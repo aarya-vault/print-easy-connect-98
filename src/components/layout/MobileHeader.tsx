@@ -9,7 +9,8 @@ import {
   User, 
   LogOut,
   Bell,
-  ArrowLeft
+  ArrowLeft,
+  Printer
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
@@ -76,9 +77,14 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
                 <ArrowLeft className="w-5 h-5" />
               </Button>
             )}
-            <h1 className="text-lg font-semibold text-foreground truncate">
-              {title}
-            </h1>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-primary rounded-md flex items-center justify-center">
+                <Printer className="w-4 h-4 text-primary-foreground" />
+              </div>
+              <h1 className="text-lg font-semibold text-foreground truncate">
+                {title}
+              </h1>
+            </div>
           </div>
 
           {/* Right Side */}
@@ -92,7 +98,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
                   onClick={() => {/* TODO: Implement notifications */}}
                 >
                   <Bell className="w-5 h-5" />
-                  <Badge className="absolute -top-1 -right-1 px-1 min-w-[18px] h-4 text-xs">
+                  <Badge className="absolute -top-1 -right-1 px-1 min-w-[18px] h-4 text-xs bg-primary text-primary-foreground">
                     3
                   </Badge>
                 </Button>
@@ -119,7 +125,12 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
           <div className="absolute right-0 top-0 h-full w-80 max-w-[90vw] bg-background border-l shadow-xl">
             {/* Menu Header */}
             <div className="flex items-center justify-between p-4 border-b">
-              <h2 className="text-lg font-semibold">Menu</h2>
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-primary rounded-md flex items-center justify-center">
+                  <Printer className="w-4 h-4 text-primary-foreground" />
+                </div>
+                <h2 className="text-lg font-semibold">PrintEasy</h2>
+              </div>
               <Button
                 variant="ghost"
                 size="sm"
@@ -135,8 +146,8 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
               {user && (
                 <>
                   {/* User Info */}
-                  <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                  <div className="flex items-center gap-3 p-3 bg-primary/10 rounded-lg">
+                    <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
                       <User className="w-5 h-5 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -153,7 +164,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
                   <div className="space-y-2">
                     <Button
                       variant="ghost"
-                      className="w-full justify-start text-left"
+                      className="w-full justify-start text-left hover:bg-muted"
                       onClick={handleProfileNav}
                     >
                       <User className="w-4 h-4 mr-3" />
@@ -162,12 +173,12 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
 
                     <Button
                       variant="ghost"
-                      className="w-full justify-start text-left"
+                      className="w-full justify-start text-left hover:bg-muted"
                       onClick={() => {/* TODO: Implement notifications */}}
                     >
                       <Bell className="w-4 h-4 mr-3" />
                       Notifications
-                      <Badge className="ml-auto px-2 py-1 text-xs">3</Badge>
+                      <Badge className="ml-auto px-2 py-1 text-xs bg-primary text-primary-foreground">3</Badge>
                     </Button>
 
                     <div className="border-t pt-2 mt-4">

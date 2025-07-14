@@ -49,7 +49,7 @@ const BottomNavigation: React.FC = () => {
       label: 'Orders',
       icon: Package,
       path: '/customer/orders',
-      badge: 2 // Active orders
+      badge: 2
     },
     {
       id: 'profile',
@@ -66,7 +66,7 @@ const BottomNavigation: React.FC = () => {
       label: 'Orders',
       icon: Package,
       path: '/shop/dashboard',
-      badge: 5 // New orders
+      badge: 5
     },
     {
       id: 'analytics',
@@ -111,7 +111,7 @@ const BottomNavigation: React.FC = () => {
       label: 'Shops',
       icon: Package,
       path: '/admin/shops',
-      badge: 3 // Pending approvals
+      badge: 3
     },
     {
       id: 'settings',
@@ -164,7 +164,7 @@ const BottomNavigation: React.FC = () => {
               <div className="relative">
                 <Icon className="w-5 h-5" />
                 {tab.badge && tab.badge > 0 && (
-                  <Badge className="absolute -top-2 -right-2 px-1 min-w-[16px] h-4 text-xs">
+                  <Badge className="absolute -top-2 -right-2 px-1 min-w-[16px] h-4 text-xs bg-primary text-primary-foreground">
                     {tab.badge}
                   </Badge>
                 )}
