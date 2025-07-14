@@ -1,9 +1,9 @@
 
 import React from 'react';
-import ImprovedCustomerDashboard from './ImprovedDashboard';
+import MobileOptimizedDashboard from './MobileOptimizedDashboard';
 
 const CustomerDashboard: React.FC = () => {
-  return <ImprovedCustomerDashboard />;
+  return <MobileOptimizedDashboard />;
 };
 
 export default CustomerDashboard;

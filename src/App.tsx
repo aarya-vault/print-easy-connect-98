@@ -5,6 +5,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { Toaster } from 'sonner';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import NameCollectionPopup from '@/components/auth/NameCollectionPopup';
+import BottomNavigation from '@/components/layout/BottomNavigation';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Pages
@@ -39,7 +40,7 @@ const AppContent: React.FC = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background pb-16 md:pb-0">
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<Home />} />
@@ -99,6 +100,10 @@ const AppContent: React.FC = () => {
           {/* Catch all route */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        
+        {/* Bottom Navigation for Mobile */}
+        <BottomNavigation />
+        
         <Toaster position="top-right" richColors />
       </div>
 

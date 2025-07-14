@@ -1,9 +1,9 @@
 
 import React from 'react';
-import FourColumnShopDashboard from './FourColumnShopDashboard';
+import MobileShopDashboard from './MobileShopDashboard';
 
 const Dashboard: React.FC = () => {
-  return <FourColumnShopDashboard />;
+  return <MobileShopDashboard />;
 };
 
 export default Dashboard;
