@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -42,12 +41,8 @@ const Home: React.FC = () => {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Mock login success
-      await login({
-        phone: phoneNumber,
-        name: 'Customer',
-        role: 'customer'
-      });
+      // Call login with just the phone number string
+      await login(phoneNumber);
 
       toast.success('Welcome to PrintEasy!');
       navigate('/customer/dashboard');
@@ -181,43 +176,6 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Services Section */}
-      <section className="py-16 md:py-24 bg-muted/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Our Services
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Professional printing services at your fingertips
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {services.map((service, index) => (
-              <Card key={index} className="card-yellow hover:shadow-lg transition-shadow">
-                <CardHeader className="text-center">
-                  <div className="w-16 h-16 bg-primary/20 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-                    <service.icon className="w-8 h-8 text-primary" />
-                  </div>
-                  <CardTitle className="text-xl">{service.title}</CardTitle>
-                </CardHeader>
-                <CardContent className="text-center">
-                  <p className="text-muted-foreground mb-4">{service.description}</p>
-                  <div className="flex flex-wrap justify-center gap-2">
-                    {service.features.map((feature, idx) => (
-                      <Badge key={idx} variant="secondary" className="bg-primary/10 text-foreground">
-                        {feature}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* How It Works */}
       <section className="py-16 md:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -271,7 +229,10 @@ const Home: React.FC = () => {
           </p>
           <Button
             size="lg"
-            onClick={() => document.querySelector('input[type="tel"]')?.focus()}
+            onClick={() => {
+              const phoneInput = document.querySelector('input[type="tel"]') as HTMLInputElement;
+              phoneInput?.focus();
+            }}
             className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-8 py-4 text-lg"
           >
             Get Started Now
